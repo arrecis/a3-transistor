@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laboratorio de Compuertas Lógicas</title>
+<style>
+  :root {
+    --bg: #12141a;
+    --panel: #1b1f29;
+    --border: #2a3040;
+    --text: #c8d0dd;
+    --dim: #6b7385;
+    --accent: #ffd75e;
+    --high: #ffd75e;
+    --low: #4a5568;
+    --error: #ff5d5d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  h1 { font-size: 15px; font-weight: 600; letter-spacing: .3px; }
+  h1 span { color: var(--dim); font-weight: 400; font-size: 12px; margin-left: 6px; }
+  .toolbar { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+  button {
+    background: #232838;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12.5px;
+    font-family: inherit;
+    transition: background .12s, border-color .12s;
+  }
+  button:hover { background: #2c3348; }
+  button.active { border-color: var(--accent); color: var(--accent); }
+  button .key {
+    display: inline-block;
+    font-size: 9.5px;
+    color: var(--dim);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0 4px;
+    margin-right: 5px;
+  }
+  button.active .key { color: var(--accent); border-color: var(--accent); }
+  .btn-danger:hover { border-color: var(--error); color: var(--error); }
+  .spacer { flex: 1; }
+  #powerBtn {
+    padding: 6px 16px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    border-radius: 8px;
+  }
+  #powerBtn.on {
+    background: #2d3d1f;
+    border-color: #7fbf3f;
+    color: #9ade3f;
+    box-shadow: 0 0 10px rgba(140, 220, 70, .25);
+  }
+  #powerBtn.off {
+    background: #3a2020;
+    border-color: #a33;
+    color: #e66;
+  }
+  select {
+    background: #232838;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  input {
+    background: #232838;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-family: inherit;
+    width: 110px;
+  }
+  #packBtn { border-color: #7f6f2f; }
+  #packBtn:hover { border-color: var(--accent); color: var(--accent); }
+  #canvasWrap { position: relative; flex: 1; min-height: 0; }
+  canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+  #status {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    background: rgba(20, 23, 32, .9);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    line-height: 1.7;
+    pointer-events: none;
+    max-width: 460px;
+  }
+  #status .warn { color: var(--error); font-weight: 600; }
+  #status .ok { color: #9ade3f; }
+  #help {
+    position: absolute;
+    right: 12px;
+    bottom: 44px;
+    background: rgba(20, 23, 32, .97);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 11.5px;
+    color: var(--dim);
+    pointer-events: none;
+    line-height: 1.7;
+    text-align: left;
+    display: none;
+    max-width: 520px;
+    z-index: 40;
+  }
+  #helpBtn {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #232838;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    z-index: 41;
+  }
+  #helpBtn:hover { border-color: var(--accent); color: var(--accent); }
+  #packBar {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 16px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: rgba(20, 23, 32, .97);
+    border: 1px solid #7f6f2f;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 12.5px;
+    z-index: 50;
+  }
+  #packBar b { color: var(--accent); }
+  #packBar button { padding: 4px 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Laboratorio de Compuertas Lógicas <span>nivel 1 — lógica digital</span></h1>
+  <div class="toolbar" id="tools">
+    <button data-tool="select" class="active"><span class="key">1</span>Seleccionar</button>
+    <button data-tool="switch"><span class="key">3</span>Entrada</button>
+    <button data-tool="out"><span class="key">4</span>Salida</button>
+    <button data-tool="clock"><span class="key">C</span>⏱ Reloj</button>
+    <button data-tool="not"><span class="key">5</span>NOT</button>
+    <button data-tool="and"><span class="key">6</span>AND</button>
+    <button data-tool="or"><span class="key">7</span>OR</button>
+    <button data-tool="nand"><span class="key">8</span>NAND</button>
+    <button data-tool="nor"><span class="key">9</span>NOR</button>
+    <button data-tool="xor"><span class="key">X</span>XOR</button>
+    <button data-tool="unpack"><span class="key">0</span>↩ Desempaquetar</button>
+    <button data-tool="pack"><span class="key">P</span>📦 Empaquetar</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="toolbar">
+    <button id="clearBtn" class="btn-danger">Limpiar</button>
+    <button id="powerBtn" class="off">⏻ FUENTE OFF</button>
+  </div>
+  <div class="toolbar" id="libTools" style="border-top:1px solid var(--border); padding-top:6px; width:100%; display:none;">
+    <span style="font-size:11px; color:var(--dim)">🧩 Componentes:</span>
+  </div>
+</header>
+
+<div id="canvasWrap">
+  <canvas id="cv"></canvas>
+  <div id="status"></div>
+  <div id="helpBtn" title="Ayuda">?</div>
+  <div id="help">
+    <b>Compuertas</b>: teclas 5–0 (NOT, AND, OR, NAND, NOR, XOR) · 3 Entrada · 4 Salida<br>
+    <b>Cables</b>: arrastrá desde un circulo (terminal) hasta otro · suelto en el vacío se cancela<br>
+    <b>Rueda</b>: zoom centrado en el cursor · <b>Rueda presionada</b>: mover el mundo<br>
+    <b>Click derecho</b>: borrar componente o cable directamente<br>
+    <b>Seleccionar (1)</b>: arrastrá desde el vacío para marcar varios · click en uno de los marcados los mueve a todos juntos<br>
+    <b>Entradas</b>: click simple para alternar 0/1 · <b>R</b> rota el componente bajo el cursor<br>
+    <b>📦 Empaquetar (P)</b>: arrastrá para marcar los componentes → "Crear componente" → elegí nombre y pines<br>
+    <b>↩ Desempaquetar (0)</b>: click en una instancia para expandirla aquí (otros quedan intactos)<br>
+    <b>Doble click</b> en una instancia: panel lateral para renombrar pines y el componente<br>
+    <b>X roja</b> en la toolbar: elimina el componente de la biblioteca (y sus instancias)<br>
+    <b>Supr</b>: borra lo marcado (o lo que esté bajo el cursor)
+  </div>
+  <div id="packBar">
+    <span>📦 Marcados: <b id="packCount">0</b></span>
+    <button id="packBarOk" style="border-color:var(--accent); color:var(--accent);">Crear componente</button>
+    <button id="packBarCancel">Cancelar</button>
+  </div>
+
+  <!-- Panel lateral de pines del componente empaquetado -->
+  <div id="pinPanel" style="display:none; position:absolute; right:0; top:0; bottom:0; width:260px; background:var(--panel); border-left:1px solid var(--border); z-index:60; flex-direction:column; padding:16px; overflow:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+      <h3 id="pinPanelTitle" style="font-size:14px; color:var(--accent);">🧩</h3>
+      <button id="pinPanelClose" style="padding:2px 9px;">✕</button>
+    </div>
+    <p style="font-size:11.5px; color:var(--dim); margin-bottom:8px; line-height:1.5;">
+      Renombrá los pines. Los cambios aplican a <b>todas</b> las instancias de este componente.
+    </p>
+    <div id="pinPanelRows"></div>
+  </div>
+</div>
+
+<!-- Panel lateral de pines del componente empaquetado -->
+<div id="pinPanel" style="display:none; position:absolute; right:0; top:0; bottom:0; width:260px; background:var(--panel); border-left:1px solid var(--border); z-index:60; flex-direction:column; padding:16px; overflow:auto;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+    <h3 id="pinPanelTitle" style="font-size:14px; color:var(--accent);">🧩</h3>
+    <button id="pinPanelClose" style="padding:2px 9px;">✕</button>
+  </div>
+  <p style="font-size:11.5px; color:var(--dim); margin-bottom:8px; line-height:1.5;">
+    Renombrá los pines. Los cambios aplican a <b>todas</b> las instancias de este componente.
+  </p>
+  <div id="pinPanelRows"></div>
+</div>
+
+<!-- Modal de empaquetado -->
+<div id="packModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:100; align-items:center; justify-content:center;">
+  <div style="background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:22px 26px; min-width:420px; max-width:520px; max-height:80vh; overflow:auto;">
+    <h2 style="font-size:16px; color:var(--accent); margin-bottom:4px;">📦 Empaquetar componente</h2>
+    <p style="font-size:12px; color:var(--dim); margin-bottom:14px;">
+      Selección: <b id="packCount">0</b> componentes.
+    </p>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px; color:var(--dim); display:block; margin-bottom:4px;">Nombre del componente</label>
+      <input id="packName" placeholder="ej: FLIPFLOP_D" style="width:100%;">
+    </div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:12px; color:var(--dim); display:block; margin-bottom:6px;">
+        Pines de entrada <span style="opacity:.7">(click para elegir; click de nuevo para quitar)</span>
+      </label>
+      <div id="packInputs" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:12px; color:var(--dim); display:block; margin-bottom:6px;">
+        Pines de salida
+      </label>
+      <div id="packOutputs" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+    </div>
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button id="packCancel">Cancelar</button>
+      <button id="packOk" style="border-color:var(--accent); color:var(--accent); font-weight:600;">Crear componente</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   MOTOR DE SIMULACIÓN — independiente del render.
+   Nivel de abstracción: COMPUERTAS LÓGICAS primitivas
+   (NOT, AND, OR, NAND, NOR, XOR). Cada una es una función
+   booleana de sus entradas; las Entradas (switches) imponen
+   valores en sus nodos.
+
+   Evaluación iterativa en pasos discretos: en cada pasada, cada
+   compuerta calcula su salida a partir de los valores de la
+   pasada anterior. Esto resuelve la retroalimentación (latches)
+   y permite detectar oscilación (anillos de inversores) y
+   cortocircuito (dos salidas manejando el mismo nodo).
+
+   Este nivel reemplaza al de transistores: esas quedan como una
+   posible vista interna opcional a futuro. La arquitectura de
+   composición recursiva de la spec no cambia: en la siguiente
+   fase, un grupo de compuertas se empaqueta como Componente.
+   ============================================================ */
+
+const TYPE_DEFS = {
+  not:    { label: "NOT",        terms: [[-30, 0], [30, 0]],           termNames: ["A", "Y"] },
+  and:    { label: "AND",        terms: [[-30, -16], [-30, 16], [30, 0]], termNames: ["A", "B", "Y"] },
+  or:     { label: "OR",         terms: [[-30, -16], [-30, 16], [30, 0]], termNames: ["A", "B", "Y"] },
+  nand:   { label: "NAND",       terms: [[-30, -16], [-30, 16], [30, 0]], termNames: ["A", "B", "Y"] },
+  nor:    { label: "NOR",        terms: [[-30, -16], [-30, 16], [30, 0]], termNames: ["A", "B", "Y"] },
+  xor:    { label: "XOR",        terms: [[-30, -16], [-30, 16], [30, 0]], termNames: ["A", "B", "Y"] },
+  switch: { label: "Entrada",    terms: [[24, 0]],                     termNames: ["OUT"] },
+  out:    { label: "Salida",     terms: [[-24, 0]],                    termNames: ["IN"] },
+  clock:  { label: "RELOJ",      terms: [[26, 0]],                     termNames: ["CLK"] },
+};
+
+const GATE_FN = {
+  not:  a => a ? 0 : 1,
+  and:  (a, b) => (a && b) ? 1 : 0,
+  or:   (a, b) => (a || b) ? 1 : 0,
+  nand: (a, b) => (a && b) ? 0 : 1,
+  nor:  (a, b) => (a || b) ? 0 : 1,
+  xor:  (a, b) => (a !== b) ? 1 : 0,
+};
+const isGate = type => type in GATE_FN;
+// índice del terminal de salida dentro de TYPE_DEFS.terms
+const OUT_IDX = { not: 1, and: 2, or: 2, nand: 2, nor: 2, xor: 2 };
+// cantidad de entradas de la compuerta
+const IN_COUNT = { not: 1, and: 2, or: 2, nand: 2, nor: 2, xor: 2 };
+
+const state = {
+  components: [],   // { id, type, x, y, rot, on (entrada), sel (selección) }
+  wires: [],        // { id, a: {c, t}, b: {c, t} }
+  powerOn: false,
+  tool: "select",
+  nextId: 1,
+};
+
+/* Relojes: valor actual de cada reloj (compId -> bool) y velocidad
+   (compId -> Hz). El tick global avanza con un setInterval de 100ms
+   que evalúa cuántos flancos corresponden según la frecuencia. */
+const globalClockState = new Map();  // compId -> bool
+const globalClockFreq = new Map();   // compId -> Hz
+const clockAcc = new Map();          // compId -> acumulador de tiempo fraccional
+let clockTimer = null;
+const CLOCK_TICK_MS = 40;
+const CLOCK_TIMER_DT = 40; // ms por tick (para el cálculo de fase)
+
+function clockTick() {
+  const dt = CLOCK_TIMER_DT / 1000;
+  for (const comp of state.components) {
+    if (comp.type !== "clock") continue;
+    const freq = globalClockFreq.get(comp.id) ?? 2;
+    // acumular fase; un ciclo completo alterna 2 veces
+    const acc = (clockAcc.get(comp.id) ?? 0) + dt * freq;
+    if (acc >= 1) {
+      globalClockState.set(comp.id, !globalClockState.get(comp.id));
+      clockAcc.set(comp.id, acc - 1);
+    } else {
+      clockAcc.set(comp.id, acc);
+    }
+  }
+}
+
+function ensureClockTimer() {
+  const needs = state.components.some(c => c.type === "clock");
+  if (needs && !clockTimer) {
+    clockTimer = setInterval(clockTick, CLOCK_TICK_MS);
+  } else if (!needs && clockTimer) {
+    clearInterval(clockTimer);
+    clockTimer = null;
+  }
+}
+
+/* Biblioteca de componentes empaquetados.
+   defs[nombre] = {
+     name, inputs: [nombre...], outputs: [nombre...],
+     components: [...], wires: [...]   (circuito interno, ids propios)
+   }
+   Los tipos empaquetados se registran en TYPE_DEFS y GATE_FN
+   dinámicamente (evaluados como sub-circuitos por el motor). */
+const lib = {};
+
+// Memoria de estado de las compuertas (para latches entre simulaciones)
+const gateOuts = new Map(); // cid -> último valor de salida
+
+/* ------------------------------------------------------------
+   APLANADO RECURSIVO (corazón del empaquetado):
+   una instancia de componente empaquetado se expande a su
+   circuito interno, con ids únicos por instancia
+   ("instId:compInterno"). Los pines externos se unen con los
+   terminales internos mediante pseudo-cables. Sin límite de
+   profundidad (salvo guarda anti-ciclo).
+   ------------------------------------------------------------ */
+const MAX_DEPTH = 32;
+
+function flattenCircuit() {
+  const comps = [];  // { id: string, type }  (solo compuertas primitivas)
+  const consts = []; // { id: string, value }  constantes internas (entradas no expuestas)
+  const wires = state.wires.map(w => ({
+    a: { c: String(w.a.c), t: w.a.t },
+    b: { c: String(w.b.c), t: w.b.t },
+  }));
+
+  const walk = (compsIn, prefix, depth) => {
+    for (const c of compsIn) {
+      const cid = prefix === null ? String(c.id) : prefix + ":" + c.id;
+      if (depth < MAX_DEPTH && lib[c.type]) {
+        const def = lib[c.type];
+        walk(def.components, cid, depth + 1);
+        for (const w of def.wires)
+          wires.push({
+            a: { c: cid + ":" + w.a.c, t: w.a.t },
+            b: { c: cid + ":" + w.b.c, t: w.b.t },
+          });
+        // unir el pin externo i-ésimo con el stub interno correspondiente
+        def.inStubs.forEach((sid, i) =>
+          wires.push({ a: { c: String(c.id), t: i }, b: { c: cid + ":" + sid, t: 0 } }));
+        def.outStubs.forEach((oid, j) =>
+          wires.push({ a: { c: String(c.id), t: def.inputs.length + j }, b: { c: cid + ":" + oid, t: 0 } }));
+      } else if (c.type === "switch" && prefix !== null) {
+        // Entrada interna NO expuesta como pin → constante con el valor
+        // congelado que tenía al momento de empaquetar (ej: Cin=0 fijo)
+        consts.push({ id: cid, value: !!c.on });
+      } else if (isGate(c.type)) {
+        comps.push({ id: cid, type: c.type });
+      }
+    }
+  };
+  walk(state.components, null, 0);
+  return { comps, consts, wires };
+}
+
+/* Los ids aplanados son strings ("3", "5:12", "5:2:7"...).
+   Esta función devuelve la lista completa de componentes lógicos. */
+function flattenedGates() {
+  return flattenCircuit().comps;
+}
+
+// --- Unión-find para construir nodos (nets) a partir de cables ---
+function buildNets() {
+  const parent = new Map();
+  const find = k => {
+    let root = k;
+    while (parent.get(root) !== root) root = parent.get(root);
+    while (parent.get(k) !== root) { const next = parent.get(k); parent.set(k, root); k = next; }
+    return root;
+  };
+  const union = (a, b) => parent.set(find(a), find(b));
+  const touch = k => { if (!parent.has(k)) parent.set(k, k); };
+
+  const { comps, consts, wires } = flattenCircuit();
+
+  // terminales de compuertas aplanadas, y de pines de instancias
+  for (const c of comps) {
+    const n = TYPE_DEFS[c.type].terms.length;
+    for (let t = 0; t < n; t++) touch(c.id + ":" + t);
+  }
+  // terminales de las constantes internas
+  for (const c of consts) touch(c.id + ":0");
+  for (const c of state.components) {
+    const td = TYPE_DEFS[c.type];
+    if (!td) continue;
+    for (let t = 0; t < (td.terms?.length ?? 0); t++) touch(c.id + ":" + t);
+  }
+  // tocar también los extremos de TODOS los cables (los stubs internos
+  // de los empaquetados no corresponden a ningún componente visible)
+  for (const w of wires) {
+    touch(w.a.c + ":" + w.a.t);
+    touch(w.b.c + ":" + w.b.t);
+    union(w.a.c + ":" + w.a.t, w.b.c + ":" + w.b.t);
+  }
+
+  const netOf = new Map();    // terminal -> índice numérico de nodo
+  const nets = [];            // índice de nodo -> [terminales]
+  const netIndex = new Map();
+  for (const k of parent.keys()) {
+    const r = find(k);
+    if (!netIndex.has(r)) {
+      netIndex.set(r, nets.length);
+      nets.push([]);
+    }
+    const idx = netIndex.get(r);
+    nets[idx].push(k);
+    netOf.set(k, idx);
+  }
+  return { nets, netOf, comps, consts };
+}
+
+/* values[nodo] = -1 desconocido | 0 | 1 | 2 cortocircuito */
+function simulate() {
+  const { nets, netOf, comps, consts } = buildNets();
+  const N = nets.length;
+  const values = new Int8Array(N).fill(-1);
+  const driver = new Array(N).fill(null); // qué fuente maneja cada nodo
+
+  const gates = comps.filter(c => isGate(c.type));
+
+  if (state.powerOn) {
+    // Sembrar constantes internas (entradas no expuestas de empaquetados)
+    for (const c of consts) {
+      const net = netOf.get(c.id + ":0");
+      if (net === undefined) continue;
+      const id = "const" + c.id;
+      if (!driver[net]) { driver[net] = id; values[net] = c.value ? 1 : 0; }
+      else if (driver[net] !== id) values[net] = 2;
+    }
+    // Sembrar switches (el switch es un driver en su pin externo)
+    for (const comp of state.components) {
+      if (comp.type !== "switch") continue;
+      const net = netOf.get(comp.id + ":0");
+      if (net === undefined) continue;
+      const id = "sw" + comp.id;
+      if (!driver[net]) { driver[net] = id; values[net] = comp.on ? 1 : 0; }
+      else if (driver[net] !== id) values[net] = 2;
+    }
+    // Sembrar relojes (driver cuyo valor alterna según globalClockState)
+    for (const comp of state.components) {
+      if (comp.type !== "clock") continue;
+      const net = netOf.get(comp.id + ":0");
+      if (net === undefined) continue;
+      const id = "clk" + comp.id;
+      const v = globalClockState.get(comp.id) ? 1 : 0;
+      if (!driver[net]) { driver[net] = id; values[net] = v; }
+      else if (driver[net] !== id) values[net] = 2;
+    }
+    // Sembrar salidas recordadas de las compuertas (estado secuencial)
+    for (const g of gates) {
+      const prev = gateOuts.get(g.id);
+      if (prev === undefined) continue;
+      const net = netOf.get(g.id + ":" + OUT_IDX[g.type]);
+      if (net === undefined) continue;
+      if (!driver[net]) { driver[net] = g.id; values[net] = prev; }
+      else if (driver[net] !== g.id) values[net] = 2;
+    }
+  }
+
+  const seen = new Set();
+  let oscillating = false;
+  let prevSnap = null;
+
+  const MAX_ITER = 50;
+  for (let iter = 0; iter < MAX_ITER; iter++) {
+    const old = Int8Array.from(values);
+    let changed = false;
+
+    // Cada compuerta calcula su salida leyendo el estado de la pasada anterior
+    // Lógica ternaria: si una entrada es desconocida (-1) pero el resultado ya
+    // se puede determinar (ej. AND con un 0 → 0), se computa igual.
+    for (const g of gates) {
+      const nIn = IN_COUNT[g.type];
+      const ins = [];
+      for (let i = 0; i < nIn; i++) ins.push(old[netOf.get(g.id + ":" + i)]);
+      let v;
+      if (ins.includes(2)) v = 2;
+      else if (!ins.includes(-1)) v = GATE_FN[g.type](...ins);
+      else {
+        // ternaria: resultado parcial cuando hay entradas desconocidas
+        const t = g.type;
+        if (t === "and" && ins.includes(0)) v = 0;
+        else if (t === "or" && ins.includes(1)) v = 1;
+        else if (t === "nand" && ins.includes(0)) v = 1;
+        else if (t === "nor" && ins.includes(1)) v = 0;
+        else continue; // realmente indeterminado
+      }
+      const net = netOf.get(g.id + ":" + OUT_IDX[g.type]);
+      if (!driver[net] || driver[net] === g.id) {
+        // es su propio nodo (o estaba libre): actualizar sin conflicto
+        if (values[net] !== v) changed = true;
+        values[net] = v;
+        driver[net] = g.id;
+      } else {
+        // otro driver maneja el mismo nodo con distinto valor
+        if (values[net] !== v) { values[net] = 2; changed = true; }
+        else if (values[net] === -1) { values[net] = v; changed = true; }
+      }
+    }
+
+    // ¿Estable (pasada sin cambios) u oscilando (estado repetido no consecutivo)?
+    const snap = String.fromCharCode(...values);
+    if (!changed && prevSnap === null) break;            // estable desde el inicio
+    if (!changed) break;                                  // estable
+    if (snap === prevSnap) break;                         // estable
+    if (seen.has(snap)) { oscillating = true; break; }    // oscilación
+    seen.add(snap);
+    prevSnap = snap;
+  }
+
+  // Recordar salidas de compuertas para el próximo ciclo (memoria secuencial)
+  for (const g of gates) {
+    const net = netOf.get(g.id + ":" + OUT_IDX[g.type]);
+    if (net === undefined) continue;
+    const v = values[net];
+    if (v === 0 || v === 1) gateOuts.set(g.id, v);
+  }
+
+  return { values, netOf, nets, oscillating };
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+let mouse = { x: 0, y: 0 };
+let dragComp = null, dragOff = { x: 0, y: 0 };
+let wireDrag = null;  // { from: {c,t}, moved, downP } — cable arrastrado desde terminal
+let hoverTerm = null, hoverComp = null, hoverWire = null;
+
+/* Cámara: offset del mundo respecto a la pantalla + zoom.
+   Pan con rueda presionada · zoom con la rueda (centrado en el cursor). */
+const cam = { x: 0, y: 0, zoom: 1 };
+const ZOOM_MIN = 0.4, ZOOM_MAX = 2.5;
+let panning = false, panStart = { x: 0, y: 0 };
+let dragSel = null; // arrastre de selección marcada: [{c, dx, dy}]
+
+function resize() {
+  const wrap = document.getElementById("canvasWrap");
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = wrap.clientWidth * dpr;
+  cv.height = wrap.clientHeight * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener("resize", resize);
+
+function termPos(comp, tIdx) {
+  const [tx, ty] = TYPE_DEFS[comp.type].terms[tIdx];
+  const r = comp.rot * Math.PI / 2;
+  return {
+    x: comp.x + tx * Math.cos(r) - ty * Math.sin(r),
+    y: comp.y + tx * Math.sin(r) + ty * Math.cos(r),
+  };
+}
+
+function drawGrid() {
+  const w = cv.clientWidth, h = cv.clientHeight, step = 20 * cam.zoom;
+  ctx.fillStyle = "#12141a";
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = "#1c2130";
+  const ox = ((cam.x % step) + step) % step;
+  const oy = ((cam.y % step) + step) % step;
+  for (let x = -ox + step; x < w; x += step)
+    for (let y = -oy + step; y < h; y += step)
+      ctx.fillRect(x, y, 1.2, 1.2);
+}
+
+/* Zoom con la rueda, centrado en el cursor.
+   El punto del mundo bajo el cursor debe quedarse fijo en pantalla. */
+function zoomAt(px, py, factor) {
+  const newZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, cam.zoom * factor));
+  const k = newZoom / cam.zoom;
+  // mundo bajo el cursor: wx = px - cam.x  →  se preserva: px - camNuevoX = (px - camViejoX)·k
+  cam.x = px - (px - cam.x) * k;
+  cam.y = py - (py - cam.y) * k;
+  cam.zoom = newZoom;
+}
+
+const NET_COLORS = { high: "#ffd75e", low: "#55617a", unknown: "#39425a", short: "#ff5d5d" };
+const WIRE_ON = "#ffd75e", WIRE_OFF = "#4a5568", WIRE_NONE = "#39425a", WIRE_ERR = "#ff5d5d";
+
+function netColor(v) {
+  if (v === 1) return WIRE_ON;
+  if (v === 0) return WIRE_OFF;
+  if (v === 2) return WIRE_ERR;
+  return WIRE_NONE;
+}
+
+function drawComp(comp, values, netOf) {
+  const activeWire = (netV, on) =>
+    netV === 1 ? WIRE_ON : netV === 2 ? WIRE_ERR : on ? WIRE_ON : "#8a93a8";
+
+  ctx.save();
+  ctx.translate(comp.x, comp.y);
+  ctx.rotate(comp.rot * Math.PI / 2);
+  ctx.font = "10px system-ui";
+  ctx.textAlign = "center";
+  ctx.lineWidth = 1.8;
+
+  if (isGate(comp.type)) {
+    const outV = values[netOf.get(comp.id + ":" + OUT_IDX[comp.type])];
+    const color = outV === 2 ? WIRE_ERR : outV === 1 ? WIRE_ON : outV === 0 ? "#9aa6ba" : "#8a93a8";
+    ctx.strokeStyle = color;
+
+    const body = () => {
+      if (comp.type === "and" || comp.type === "nand") {
+        ctx.beginPath();
+        ctx.moveTo(-16, -16);
+        ctx.lineTo(2, -16);
+        ctx.arc(2, 0, 16, -Math.PI / 2, Math.PI / 2);
+        ctx.lineTo(-16, 16);
+        ctx.closePath();
+        ctx.stroke();
+      } else if (comp.type === "or" || comp.type === "nor" || comp.type === "xor") {
+        ctx.beginPath();
+        ctx.moveTo(-18, -16);
+        ctx.quadraticCurveTo(4, -16, 16, 0);
+        ctx.quadraticCurveTo(4, 16, -18, 16);
+        ctx.quadraticCurveTo(-10, 0, -18, -16);
+        ctx.closePath();
+        ctx.stroke();
+        if (comp.type === "xor") {
+          ctx.beginPath();
+          ctx.moveTo(-24, -16);
+          ctx.quadraticCurveTo(-16, 0, -24, 16);
+          ctx.stroke();
+        }
+      } else if (comp.type === "not") {
+        ctx.beginPath();
+        ctx.moveTo(-14, -13);
+        ctx.lineTo(-14, 13);
+        ctx.lineTo(12, 0);
+        ctx.closePath();
+        ctx.stroke();
+      }
+      // burbuja de inversión
+      if (comp.type === "nand" || comp.type === "nor" || comp.type === "not") {
+        ctx.beginPath();
+        ctx.arc(19, 0, 4, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    };
+    body();
+
+    ctx.fillStyle = "#5f6a7f";
+    ctx.fillText(TYPE_DEFS[comp.type].label, 0, comp.type === "not" ? 26 : 30);
+
+    // brillo suave cuando la salida está en 1
+    if (outV === 1) {
+      ctx.save();
+      ctx.globalAlpha = 0.14;
+      ctx.fillStyle = WIRE_ON;
+      ctx.beginPath();
+      ctx.arc(2, 0, 26, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+  else if (comp.type === "switch") {
+    ctx.fillStyle = comp.on ? "#9ade3f" : "#4a5568";
+    ctx.beginPath();
+    ctx.arc(0, 0, 13, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#8a93a8";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = comp.on ? "#0e1a08" : "#c8d0dd";
+    ctx.font = "bold 13px system-ui";
+    ctx.fillText(comp.on ? "1" : "0", 0, 4.5);
+  }
+  else if (comp.type === "clock") {
+    // cuadrado de reloj: oscila con el valor actual
+    const on = globalClockState.get(comp.id);
+    ctx.fillStyle = "#1e2433";
+    ctx.strokeStyle = on ? WIRE_ON : "#8a93a8";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(-14, -14, 28, 28, 5);
+    ctx.fill();
+    ctx.stroke();
+    // onda cuadrada dentro
+    ctx.strokeStyle = on ? WIRE_ON : "#5f6a7f";
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    if (on) { ctx.moveTo(-9, 5); ctx.lineTo(-9, -5); ctx.lineTo(0, -5); ctx.lineTo(0, 5); }
+    else    { ctx.moveTo(-9, 5); ctx.lineTo(-2, 5); ctx.lineTo(-2, -5); ctx.lineTo(9, -5); }
+    ctx.stroke();
+    ctx.fillStyle = "#5f6a7f";
+    ctx.font = "8.5px system-ui";
+    ctx.textAlign = "center";
+    const freq = globalClockFreq.get(comp.id) ?? 2;
+    ctx.fillText(freq + " Hz", 0, 26);
+  }
+  else if (lib[comp.type]) {
+    // Componente empaquetado: caja negra con nombre y pines etiquetados
+    const td = TYPE_DEFS[comp.type];
+    const w = 56, h = Math.max(60, td.terms.length * 24);
+    const anyHigh = td.terms.some((_, i) => {
+      const v = values[netOf.get(comp.id + ":" + i)];
+      return v === 1;
+    });
+    ctx.fillStyle = "#1e2433";
+    ctx.strokeStyle = anyHigh ? WIRE_ON : "#7a86a0";
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.roundRect(-w / 2, -h / 2, w, h, 8);
+    ctx.fill();
+    ctx.stroke();
+    // nombre
+    ctx.fillStyle = anyHigh ? WIRE_ON : "#aeb8cc";
+    ctx.font = "bold 9px system-ui";
+    ctx.fillText(comp.type, 0, h / 2 + 12);
+    // etiquetas de pines
+    ctx.font = "8.5px system-ui";
+    ctx.fillStyle = "#5f6a7f";
+    td.termNames.forEach((nm, i) => {
+      const [tx, ty] = td.terms[i];
+      ctx.fillText(nm, tx < 0 ? -14 : 14, ty + 3);
+    });
+  }
+  else if (comp.type === "out") {
+    const v = values[netOf.get(comp.id + ":0")];
+    let fill = "#1c2130", stroke = "#8a93a8";
+    if (v === 1) { fill = "#ffd75e"; stroke = "#ffd75e"; }
+    if (v === 0) { fill = "#1c2130"; stroke = "#55617a"; }
+    if (v === 2) { fill = "#5a1f1f"; stroke = WIRE_ERR; }
+    ctx.strokeStyle = stroke;
+    ctx.fillStyle = fill;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(6, 0, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = stroke;
+    ctx.font = "10px system-ui";
+    ctx.fillText(v === 1 ? "1" : v === 0 ? "0" : v === 2 ? "✕" : "?", 6, 4);
+  }
+  ctx.restore();
+
+  // caja de selección o hover
+  if (comp.sel) {
+    ctx.strokeStyle = "#9ade3f";
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5, 3]);
+    ctx.strokeRect(comp.x - 32, comp.y - 46, 64, 92);
+    ctx.setLineDash([]);
+  } else if (comp === hoverComp && state.tool === "select") {
+    ctx.strokeStyle = "rgba(255, 215, 94, .5)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeRect(comp.x - 30, comp.y - 44, 60, 88);
+    ctx.setLineDash([]);
+  }
+  // NOTA: sin botón X en el canvas — el click derecho borra directamente
+}
+
+function draw() {
+  resize();
+  drawGrid();
+
+  const sim = simulate();
+  const { values, netOf } = sim;
+
+  ctx.save();
+  ctx.translate(cam.x, cam.y);
+  ctx.scale(cam.zoom, cam.zoom); // cámara: pan + zoom
+
+  // cables
+  for (const w of state.wires) {
+    const pa = termPos(byId(w.a.c), w.a.t);
+    const pb = termPos(byId(w.b.c), w.b.t);
+    const v = values[netOf.get(w.a.c + ":" + w.a.t)];
+    ctx.strokeStyle = netColor(v);
+    ctx.lineWidth = (v === 1) ? 2.5 : 2;
+    if (w === hoverWire) ctx.lineWidth += 1.5;
+    ctx.beginPath();
+    ctx.moveTo(pa.x, pa.y);
+    ctx.lineTo(pb.x, pb.y);
+    ctx.stroke();
+  }
+
+  // preview del cable arrastrado desde un terminal
+  if (wireDrag && wireDrag.moved) {
+    const p = termPos(byId(wireDrag.from.c), wireDrag.from.t);
+    ctx.strokeStyle = "rgba(255, 215, 94, .6)";
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(mouse.x, mouse.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // componentes y terminales
+  for (const comp of state.components) drawComp(comp, values, netOf);
+
+  for (const comp of state.components) {
+    const defs = TYPE_DEFS[comp.type];
+    for (let t = 0; t < defs.terms.length; t++) {
+      const p = termPos(comp, t);
+      const isHover = hoverTerm && hoverTerm.c === comp.id && hoverTerm.t === t;
+      const netV = values[netOf.get(comp.id + ":" + t)];
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, (isHover || (wireDrag && wireDrag.moved)) ? 6 : 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = isHover ? "#fff" : netColor(netV);
+      ctx.fill();
+    }
+  }
+
+  // rectángulo de selección en curso
+  if (dragBox) {
+    ctx.strokeStyle = "rgba(154, 222, 63, .8)";
+    ctx.fillStyle = "rgba(154, 222, 63, .08)";
+    ctx.lineWidth = 1.5;
+    const x = Math.min(dragBox.x1, dragBox.x2), y = Math.min(dragBox.y1, dragBox.y2);
+    const w = Math.abs(dragBox.x2 - dragBox.x1), h = Math.abs(dragBox.y2 - dragBox.y1);
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeRect(x, y, w, h);
+  }
+
+  ctx.restore(); // fin de la cámara
+
+  drawStatus(sim);
+  requestAnimationFrame(draw);
+}
+
+function drawStatus(sim) {
+  const el = document.getElementById("status");
+  let html = "";
+  if (!state.powerOn) {
+    html = `Fuente <b>apagada</b> — enciéndela para ver las señales.`;
+  } else if (sim.oscillating) {
+    html = `<span class="warn">⚠ Oscilación detectada</span> — el circuito nunca se estabiliza (así funcionan los relojes).`;
+  } else if (sim.values.includes(2)) {
+    html = `<span class="warn">⚠ ¡Conflicto!</span> — dos salidas manejan el mismo nodo con valores distintos.`;
+  } else {
+    html = `<span class="ok">● Estable</span> — ${sim.nets.length} nodos, ${state.components.length} componentes.`;
+  }
+  el.innerHTML = html;
+}
+
+/* ============================================================
+   INTERACCIÓN
+   ============================================================ */
+function byId(id) { return state.components.find(c => c.id === id); }
+function snap(v) { return Math.round(v / 20) * 20; }
+
+function pos(e) {
+  const r = cv.getBoundingClientRect();
+  // pantalla → mundo: restar cámara y dividir por zoom
+  return { x: (e.clientX - r.left - cam.x) / cam.zoom, y: (e.clientY - r.top - cam.y) / cam.zoom };
+}
+function screenPos(e) {
+  const r = cv.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+function hitTerm(p) {
+  for (const comp of state.components) {
+    const defs = TYPE_DEFS[comp.type];
+    for (let t = 0; t < defs.terms.length; t++) {
+      const tp = termPos(comp, t);
+      if (Math.hypot(tp.x - p.x, tp.y - p.y) < 10) return { c: comp.id, t };
+    }
+  }
+  return null;
+}
+function hitComp(p) {
+  for (let i = state.components.length - 1; i >= 0; i--) {
+    const c = state.components[i];
+    if (Math.abs(p.x - c.x) <= 32 && Math.abs(p.y - c.y) <= 46) return c;
+  }
+  return null;
+}
+function distToSeg(p, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const l2 = dx * dx + dy * dy || 1;
+  let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+}
+function hitWire(p) {
+  for (let i = state.wires.length - 1; i >= 0; i--) {
+    const w = state.wires[i];
+    if (distToSeg(p, termPos(byId(w.a.c), w.a.t), termPos(byId(w.b.c), w.b.t)) < 6) return w;
+  }
+  return null;
+}
+function wireExists(a, b) {
+  return state.wires.some(w =>
+    (w.a.c === a.c && w.a.t === a.t && w.b.c === b.c && w.b.t === b.t) ||
+    (w.a.c === b.c && w.a.t === b.t && w.b.c === a.c && w.b.t === a.t));
+}
+
+function addComp(type, x, y) {
+  const comp = { id: state.nextId++, type, x: snap(x), y: snap(y), rot: 0, on: false };
+  if (type === "clock") {
+    globalClockFreq.set(comp.id, 2);
+    globalClockState.set(comp.id, false);
+    clockAcc.set(comp.id, 0);
+    ensureClockTimer();
+  }
+  state.components.push(comp);
+  save();
+  return comp;
+}
+
+function deleteComp(comp) {
+  state.components = state.components.filter(c => c !== comp);
+  state.wires = state.wires.filter(w => w.a.c !== comp.id && w.b.c !== comp.id);
+  gateOuts.delete(comp.id);
+  globalClockState.delete(comp.id);
+  globalClockFreq.delete(comp.id);
+  clockAcc.delete(comp.id);
+  ensureClockTimer();
+  save();
+}
+
+/* ============================================================
+   EMPAQUETADO: convertir una selección en un Componente reutilizable
+   El circuito seleccionado se guarda como definición en `lib`.
+   - Las Entradas (switch) internas se convierten en pines de entrada.
+   - Las Salidas (out) internas se convierten en pines de salida.
+   - El resto queda oculto dentro de la caja negra.
+   ============================================================ */
+let selectionStart = null;   // para arrastre de selección
+let dragBox = null;
+
+function makePackage(sel, name, inIdx, outIdx) {
+  // sel: componentes seleccionados; inIdx/outIdx: índices dentro de sel
+  // de las Entradas/Salidas que actúan como pines (orden elegido por el usuario)
+  const idMap = new Map();   // viejo id -> nuevo id (renumerado desde 1)
+  let nid = 1;
+  const def = { name, inputs: [], outputs: [], inStubs: [], outStubs: [], components: [], wires: [] };
+
+  // stubs: componente "stub" con un terminal 0, servirá de conexión pin<->interno
+  let stubId = 1000;
+  const mkStub = () => stubId++;
+
+  for (const c of sel) {
+    const newId = nid++;
+    idMap.set(c.id, newId);
+  }
+
+  // clasificar componentes: pines son switch/out seleccionados como pines
+  const pinInSel = new Set(inIdx);   // ids de switch elegidos como pines de entrada
+  const pinOutSel = new Set(outIdx); // ids de out elegidos como pines de salida
+
+  for (const c of sel) {
+    const newId = idMap.get(c.id);
+    if (c.type === "switch" && pinInSel.has(c.id)) {
+      // pin de entrada: se registra como stub, no va al circuito interno
+      def.inStubs.push(newId);
+      def.inputs.push(c.label || "IN" + (def.inputs.length + 1));
+      continue;
+    }
+    if (c.type === "out" && pinOutSel.has(c.id)) {
+      def.outStubs.push(newId);
+      def.outputs.push("OUT" + (def.outputs.length + 1));
+      continue;
+    }
+    def.components.push({ id: newId, type: c.type, on: c.on });
+  }
+
+  // cables internos: solo entre componentes que van dentro (o a stubs)
+  for (const w of state.wires) {
+    const inSelA = idMap.has(w.a.c), inSelB = idMap.has(w.b.c);
+    if (!inSelA || !inSelB) continue;
+    def.wires.push({
+      a: { c: idMap.get(w.a.c), t: w.a.t },
+      b: { c: idMap.get(w.b.c), t: w.b.t },
+    });
+  }
+
+  // registrar el tipo dinámicamente
+  registerPackedType(def);
+  lib[name] = def;
+
+  // reemplazar la selección en el canvas por UNA instancia del componente
+  const instance = {
+    id: state.nextId++,
+    type: name,
+    x: (Math.min(...sel.map(c => c.x)) + Math.max(...sel.map(c => c.x))) / 2,
+    y: (Math.min(...sel.map(c => c.y)) + Math.max(...sel.map(c => c.y))) / 2,
+    rot: 0,
+    on: false,
+  };
+  // recordar la posición de cada pieza respecto al centro de la instancia,
+  // para poder desempaquetar y que quede como estaba
+  def.layout = {};
+  for (const c of sel) def.layout[idMap.get(c.id)] = { dx: c.x - instance.x, dy: c.y - instance.y };
+  state.components = state.components.filter(c => !sel.includes(c));
+  // Los cables que unían la selección con el mundo exterior se reconectan
+  // a los pines de la instancia (si el extremo interno era un pin).
+  const pinTermOf = new Map(); // viejoId de pin -> índice de terminal en la instancia
+  def.inStubs.forEach((sid, i) => {
+    const oldId = [...idMap.entries()].find(([, v]) => v === sid)?.[0];
+    if (oldId !== undefined) pinTermOf.set(oldId, i);
+  });
+  def.outStubs.forEach((oid, j) => {
+    const oldId = [...idMap.entries()].find(([, v]) => v === oid)?.[0];
+    if (oldId !== undefined) pinTermOf.set(oldId, def.inputs.length + j);
+  });
+  state.wires = state.wires.filter(w => {
+    const aIn = idMap.has(w.a.c), bIn = idMap.has(w.b.c);
+    if (aIn && bIn) return false;          // interno: se fue con el paquete
+    if (!aIn && !bIn) return true;         // externo: queda
+    // mixto: reconectar el extremo interno al pin de la instancia
+    const inner = aIn ? w.a : w.b;
+    const term = pinTermOf.get(inner.c);
+    if (term === undefined) return false;  // no era pin: el cable se descarta
+    if (aIn) w.a = { c: instance.id, t: term };
+    else w.b = { c: instance.id, t: term };
+    return true;
+  });
+  state.components.push(instance);
+
+  // reconectar los cables externos que llegaban a las Entradas/Salidas-pino
+  // (los que iban a otros componentes seleccionados ya están dentro)
+  save();
+  return instance;
+}
+
+/* Registrar el tipo empaquetado: terminales = inStubs + outStubs */
+function registerPackedType(def) {
+  const terms = [];
+  for (let i = 0; i < def.inputs.length; i++) terms.push([-30, (i - (def.inputs.length - 1) / 2) * 22]);
+  for (let j = 0; j < def.outputs.length; j++) terms.push([30, (j - (def.outputs.length - 1) / 2) * 22]);
+  TYPE_DEFS[def.name] = { label: def.name, terms, termNames: [...def.inputs, ...def.outputs] };
+  OUT_IDX[def.name] = null;    // no es compuerta primitiva: lo maneja el aplanado
+  IN_COUNT[def.name] = def.inputs.length;
+  // NOTA: no se agrega a GATE_FN — se expande en flattenCircuit()
+}
+
+/* Re-registrar el tipo después de editar los nombres de los pines */
+function refreshPins(def) {
+  registerPackedType(def);  // términos iguales; termNames se actualiza
+  // el panel lateral y las etiquetas del canvas se refrescan solos (rAF)
+}
+
+/* ============================================================
+   PANEL LATERAL DE EDICIÓN DE COMPONENTES EMPAQUETADOS
+   Se abre con doble click sobre una instancia en el canvas.
+   Permite renombrar los pines de entrada y salida.
+   ============================================================ */
+let pinPanelFor = null; // nombre del tipo en edición
+
+function openPinPanel(typeName) {
+  pinPanelFor = typeName;
+  const def = lib[typeName];
+  if (!def) return;
+  const panel = document.getElementById("pinPanel");
+  const rows = document.getElementById("pinPanelRows");
+  rows.innerHTML = "";
+
+  const addSection = (title, list, stubKey) => {
+    const h = document.createElement("div");
+    h.style.cssText = "font-size:11px;color:var(--accent);margin:10px 0 4px;font-weight:600;";
+    h.textContent = title;
+    rows.appendChild(h);
+    list.forEach((pinName, i) => {
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;align-items:center;gap:6px;margin-bottom:5px;";
+      const idx = document.createElement("span");
+      idx.style.cssText = "font-size:11px;color:var(--dim);min-width:38px;";
+      idx.textContent = stubKey === "inputs" ? "IN " + (i + 1) : "OUT " + (i + 1);
+      const inp = document.createElement("input");
+      inp.value = pinName;
+      inp.style.cssText = "flex:1; padding:3px 7px; font-size:12px;";
+      inp.addEventListener("input", () => {
+        def[stubKey][i] = inp.value.trim() || (stubKey === "inputs" ? "IN" + (i + 1) : "OUT" + (i + 1));
+        refreshPins(def);
+        save();
+      });
+      row.appendChild(idx);
+      row.appendChild(inp);
+      rows.appendChild(row);
+    });
+  };
+
+  const title = document.getElementById("pinPanelTitle");
+  title.textContent = "🧩 " + typeName;
+  addSection("Entradas", def.inputs, "inputs");
+  addSection("Salidas", def.outputs, "outputs");
+
+  // sección de renombrar el componente entero
+  const hName = document.createElement("div");
+  hName.style.cssText = "font-size:11px;color:var(--accent);margin:14px 0 4px;font-weight:600;";
+  hName.textContent = "Nombre del componente";
+  rows.appendChild(hName);
+  const nameRow = document.createElement("div");
+  nameRow.style.cssText = "display:flex; gap:6px; align-items:center;";
+  const nameInput = document.createElement("input");
+  nameInput.value = typeName;
+  nameInput.style.cssText = "flex:1; padding:3px 7px; font-size:12px;";
+  nameInput.addEventListener("keydown", ev => {
+    if (ev.key === "Enter") nameInput.blur();
+  });
+  nameInput.addEventListener("change", () => {
+    const ok = renamePackedType(pinPanelFor, nameInput.value);
+    if (ok) {
+      openPinPanel(nameInput.value.trim().toUpperCase().replace(/\s+/g, "_"));
+    } else {
+      nameInput.value = pinPanelFor; // restaurar
+    }
+  });
+  nameRow.appendChild(nameInput);
+  rows.appendChild(nameRow);
+
+  panel.style.display = "flex";
+}
+
+/* ============================================================
+   RENOMBRAR UN COMPONENTE EMPAQUETADO
+   Cambia el nombre del tipo en la biblioteca, re-registra el
+   tipo, actualiza las instancias colocadas y el botón toolbar.
+   ============================================================ */
+function renamePackedType(oldName, newName) {
+  newName = newName.trim().toUpperCase().replace(/\s+/g, "_");
+  if (!newName || newName === oldName) return false;
+  if (TYPE_DEFS[newName]) {
+    alert("Ya existe un componente con ese nombre.");
+    return false;
+  }
+  // reubicar la definición
+  lib[newName] = lib[oldName];
+  lib[newName].name = newName;
+  delete lib[oldName];
+
+  // actualizar instancias colocadas
+  for (const c of state.components) {
+    if (c.type === oldName) c.type = newName;
+  }
+
+  // re-registrar el tipo y borrar el viejo
+  registerPackedType(lib[newName]);
+  delete TYPE_DEFS[oldName];
+  delete OUT_IDX[oldName];
+  delete IN_COUNT[oldName];
+
+  // actualizar botón de la toolbar
+  const btn = document.querySelector(`#libTools button[data-tool="${oldName}"]`);
+  if (btn) {
+    btn.dataset.tool = newName;
+    btn.innerHTML = "🧩 " + newName;
+    const x = document.createElement("span");
+    x.textContent = " ✕";
+    x.style.cssText = "color:#ff7a7a; margin-left:5px; font-weight:700;";
+    x.title = "Eliminar componente de la biblioteca";
+    x.addEventListener("click", ev => {
+      ev.stopPropagation();
+      removeLibComponent(newName, btn);
+    });
+    btn.appendChild(x);
+  }
+  if (pinPanelFor === oldName) pinPanelFor = newName;
+  save();
+  return true;
+}
+
+function closePinPanel() {
+  pinPanelFor = null;
+  document.getElementById("pinPanel").style.display = "none";
+}
+
+/* ============================================================
+   PANEL DEL RELOJ: doble click en un reloj para cambiar su velocidad
+   ============================================================ */
+function openClockPanel(comp) {
+  const panel = document.getElementById("pinPanel");
+  const rows = document.getElementById("pinPanelRows");
+  rows.innerHTML = "";
+  document.getElementById("pinPanelTitle").textContent = "⏱ Reloj";
+
+  const note = document.createElement("p");
+  note.style.cssText = "font-size:11.5px;color:var(--dim);margin-bottom:10px;line-height:1.5;";
+  note.textContent = "Frecuencia del reloj en Hz (ciclos por segundo).";
+  rows.appendChild(note);
+
+  const input = document.createElement("input");
+  input.type = "number";
+  input.min = "0.5";
+  input.max = "12";
+  input.step = "0.5";
+  input.value = globalClockFreq.get(comp.id) ?? 2;
+  input.style.cssText = "width:100%; padding:6px 8px; font-size:13px;";
+  input.addEventListener("change", () => {
+    let v = parseFloat(input.value);
+    if (isNaN(v) || v < 0.5) v = 0.5;
+    if (v > 12) v = 12;
+    globalClockFreq.set(comp.id, v);
+    input.value = v;
+    save();
+  });
+  rows.appendChild(input);
+
+  // botones rápidos
+  const quick = document.createElement("div");
+  quick.style.cssText = "display:flex; gap:5px; margin-top:10px; flex-wrap:wrap;";
+  for (const f of [1, 2, 4, 8, 12]) {
+    const b = document.createElement("button");
+    b.textContent = f + " Hz";
+    b.style.fontSize = "11.5px";
+    b.addEventListener("click", () => {
+      globalClockFreq.set(comp.id, f);
+      input.value = f;
+      save();
+    });
+    quick.appendChild(b);
+  }
+  rows.appendChild(quick);
+
+  panel.style.display = "flex";
+}
+
+/* ============================================================
+   DESEMPAQUETADO DE UNA INSTANCIA
+   Expande SOLO la instancia indicada: recrea sus componentes
+   internos en sus posiciones originales (layout relativo),
+   recrea los cables internos y reconecta los externos.
+   La biblioteca y las demás instancias quedan intactas.
+   ============================================================ */
+function unpackInstance(inst) {
+  const def = lib[inst.type];
+  if (!def) return;
+
+  // 1. recrear los componentes internos en su layout relativo
+  const idMap = new Map(); // id de definición -> nuevo id real
+  const recreate = (defId, type, on) => {
+    const L = def.layout?.[defId] ?? { dx: 0, dy: 0 };
+    const comp = {
+      id: state.nextId++,
+      type,
+      x: inst.x + L.dx,
+      y: inst.y + L.dy,
+      rot: 0,
+      on: !!on,
+    };
+    state.components.push(comp);
+    idMap.set(defId, comp.id);
+  };
+  for (const c of def.components) recreate(c.id, c.type, c.on);
+
+  // 3. reconectar los cables externos ANTES de recrear stubs:
+  //    - pines de ENTRADA con cable externo → el cable va directo al vecino
+  //      interno (no se recrea el switch, habría dos drivers en conflicto)
+  //    - pines de ENTRADA sin cable externo → se recrea la Entrada (constante)
+  //    - pines de SALIDA → se recrea la Salida (indicador, sin conflicto)
+  const stubPos = new Map();
+  def.inStubs.forEach((sid, i) => stubPos.set(sid, i));
+  def.outStubs.forEach((oid, j) => stubPos.set(oid, def.inputs.length + j));
+  const stubPeer = new Map(); // stubId -> {cid, t} del componente interno vecino
+  for (const w of def.wires) {
+    if (stubPos.has(w.a.c)) stubPeer.set(w.a.c, { cid: w.b.c, t: w.b.t });
+    if (stubPos.has(w.b.c)) stubPeer.set(w.b.c, { cid: w.a.c, t: w.a.t });
+  }
+  const externWires = state.wires.filter(w => w.a.c === inst.id || w.b.c === inst.id);
+  const stubHasExtern = new Set(); // stubId con cable externo (solo entradas)
+  for (const w of externWires) {
+    for (const end of ["a", "b"]) {
+      if (w[end].c !== inst.id) continue;
+      const t = w[end].t;
+      if (t < def.inputs.length) {
+        const stubId = def.inStubs[t];
+        const peer = stubPeer.get(stubId);
+        // cable externo → directo al vecino interno
+        const other = end === "a" ? "b" : "a";
+        if (peer) w[end] = { c: idMap.get(peer.cid), t: peer.t };
+        // si el otro extremo también era la caja (raro), dejarlo
+        stubHasExtern.add(stubId);
+      }
+    }
+  }
+  // in-stubs SIN cable externo: recrear la Entrada (queda como constante suelta)
+  def.inStubs.forEach((sid, i) => {
+    if (!stubHasExtern.has(sid)) recreate(sid, "switch", false);
+  });
+  // out-stubs: siempre se recrean como Salida y se les pasa el cable externo
+  def.outStubs.forEach((oid, j) => {
+    recreate(oid, "out", false);
+    const newId = idMap.get(oid);
+    for (const w of externWires) {
+      for (const end of ["a", "b"]) {
+        if (w[end].c === inst.id && w[end].t === def.inputs.length + j)
+          w[end] = { c: newId, t: 0 };
+      }
+    }
+  });
+
+  // 2b. recrear los cables internos, saltando los que tocan in-stubs
+  //     con cable externo (esos ya quedaron unidos por la reconexión)
+  for (const w of def.wires) {
+    const aIsInStub = stubHasExtern.has(w.a.c) && stubPos.get(w.a.c) < def.inputs.length;
+    const bIsInStub = stubHasExtern.has(w.b.c) && stubPos.get(w.b.c) < def.inputs.length;
+    if (aIsInStub && bIsInStub) continue; // cable stub↔stub raro: saltar
+    if (aIsInStub || bIsInStub) continue; // su información ya la aporta el cable externo
+    state.wires.push({
+      id: state.nextId++,
+      a: { c: idMap.get(w.a.c), t: w.a.t },
+      b: { c: idMap.get(w.b.c), t: w.b.t },
+    });
+  }
+
+  // 4. quitar la caja
+  state.components = state.components.filter(c => c !== inst);
+  gateOuts.delete(inst.id);
+  save();
+}
+
+cv.addEventListener("mousedown", e => {
+  // rueda presionada → pan del mundo (siempre)
+  if (e.button === 1) {
+    e.preventDefault();
+    panning = true;
+    panStart = { x: e.clientX - cam.x, y: e.clientY - cam.y };
+    cv.style.cursor = "grabbing";
+    return;
+  }
+  if (e.button !== 0) return;
+  const p = pos(e);
+
+  // drag desde un terminal → arrancar cable (en cualquier modo)
+  const term0 = hitTerm(p);
+  if (term0 && (state.tool === "select" || state.tool === "wireDrag")) {
+    wireDrag = { from: term0, moved: false, downP: p };
+    return;
+  }
+
+  if (state.tool === "pack") {
+    // Modo empaquetar: arrastrar un rectángulo de selección
+    selectionStart = p;
+    dragBox = { x1: p.x, y1: p.y, x2: p.x, y2: p.y, tool: state.tool };
+    return;
+  }
+
+  if (state.tool === "select") {
+    const comp = hitComp(p);
+    if (comp) {
+      // Si el componente clickeado está dentro de una selección de varios,
+      // arrastrar TODOS los marcados; si no, solo él.
+      const sel = state.components.filter(c => c.sel);
+      if (comp.sel && sel.length > 1) {
+        dragSel = sel.map(c => ({ c, dx: c.x - p.x, dy: c.y - p.y }));
+      } else {
+        dragComp = comp;
+        dragOff = { x: comp.x - p.x, y: comp.y - p.y };
+        if (comp.type === "switch") comp._downPos = p;
+      }
+    } else {
+      // sobre espacio vacío: rectángulo de selección de área
+      selectionStart = p;
+      dragBox = { x1: p.x, y1: p.y, x2: p.x, y2: p.y, tool: state.tool };
+    }
+    return;
+  }
+
+  if (state.tool === "unpack") {
+    // Click sobre una instancia empaquetada: expandirla aquí
+    const comp = hitComp(p);
+    if (comp && lib[comp.type]) {
+      unpackInstance(comp);
+    } else if (comp) {
+      alert("Ese componente no es un empaquetado (es primitivo).");
+    }
+    return;
+  }
+
+  if (state.tool === "delete") {
+    const comp = hitComp(p);
+    if (comp) { deleteComp(comp); return; }
+    const wire = hitWire(p);
+    if (wire) { state.wires = state.wires.filter(w => w !== wire); save(); }
+    return;
+  }
+
+  // colocación de componentes
+  if (TYPE_DEFS[state.tool]) addComp(state.tool, p.x, p.y);
+});
+
+cv.addEventListener("contextmenu", e => {
+  e.preventDefault();
+  const p = pos(e);
+  const comp = hitComp(p);
+  if (comp) { deleteComp(comp); return; }
+  const wire = hitWire(p);
+  if (wire) { state.wires = state.wires.filter(w => w !== wire); save(); }
+});
+
+cv.addEventListener("mousemove", e => {
+  // pan en curso
+  if (panning) {
+    cam.x = e.clientX - panStart.x;
+    cam.y = e.clientY - panStart.y;
+    return;
+  }
+  // arrastre de la selección marcada
+  if (dragSel) {
+    const p = pos(e);
+    for (const { c, dx, dy } of dragSel) {
+      c.x = snap(p.x + dx);
+      c.y = snap(p.y + dy);
+    }
+    return;
+  }
+  // arrastre de cable desde terminal
+  if (wireDrag) {
+    const p = pos(e);
+    mouse = p;
+    const moved = Math.hypot(p.x - wireDrag.downP.x, p.y - wireDrag.downP.y) > 6;
+    wireDrag.moved = moved;
+    if (!moved) return;
+    const t = hitTerm(p);
+    if (t && !wireExists(wireDrag.from, t)
+        && (t.c !== wireDrag.from.c || t.t !== wireDrag.from.t)) {
+      // soltar sobre otro terminal → crear el cable y terminar el drag
+      state.wires.push({ id: state.nextId++, a: wireDrag.from, b: t });
+      wireDrag = null;
+      save();
+    }
+    return;
+  }
+  const p = pos(e);
+  mouse = p;
+  hoverTerm = hitTerm(p);
+  hoverWire = state.tool === "delete" ? hitWire(p) : null;
+  hoverComp = !hoverTerm ? hitComp(p) : null;
+  cv.style.cursor = hoverTerm
+    ? "pointer"
+    : (hoverComp && state.tool === "select") ? "move"
+    : state.tool === "delete" ? "not-allowed" : "crosshair";
+
+  if (dragComp) {
+    dragComp.x = snap(p.x + dragOff.x);
+    dragComp.y = snap(p.y + dragOff.y);
+  }
+
+  // rectángulo de selección (modos empaquetar y seleccionar)
+  if (dragBox && selectionStart) {
+    dragBox.x2 = p.x;
+    dragBox.y2 = p.y;
+    const x1 = Math.min(dragBox.x1, dragBox.x2), x2 = Math.max(dragBox.x1, dragBox.x2);
+    const y1 = Math.min(dragBox.y1, dragBox.y2), y2 = Math.max(dragBox.y1, dragBox.y2);
+    for (const c of state.components)
+      c.sel = c.x >= x1 - 32 && c.x <= x2 + 32 && c.y >= y1 - 46 && c.y <= y2 + 46;
+    if (state.tool === "pack")
+      document.getElementById("packCount").textContent =
+        state.components.filter(c => c.sel).length;
+  }
+  save();
+});
+
+window.addEventListener("mouseup", e => {
+  if (e.button === 1) {
+    if (dragSel) { dragSel = null; save(); }
+    if (panning) { panning = false; }
+    cv.style.cursor = "crosshair";
+    return;
+  }
+  // fin del rectángulo de selección
+  if (dragBox) {
+    // click sin arrastre: deseleccionar todo
+    if (Math.abs(dragBox.x2 - dragBox.x1) < 6 && Math.abs(dragBox.y2 - dragBox.y1) < 6)
+      for (const c of state.components) delete c.sel;
+    dragBox = null;
+    selectionStart = null;
+    if (state.tool === "pack")
+      document.getElementById("packCount").textContent =
+        state.components.filter(c => c.sel).length;
+    save();
+    return;
+  }
+  // fin del arrastre de cable desde terminal (soltado en el vacío → cancelar)
+  if (wireDrag && e.button === 0) wireDrag = null;
+  // fin del arrastre de selección múltiple con click izquierdo
+  if (dragSel && e.button === 0) { dragSel = null; save(); }
+  if (dragComp && dragComp.type === "switch" && dragComp._downPos) {
+    const p = pos(e);
+    // fue click sin arrastre → alternar
+    if (Math.hypot(p.x - dragComp._downPos.x, p.y - dragComp._downPos.y) < 4) {
+      dragComp.on = !dragComp.on;
+    }
+    dragComp._downPos = null;
+  }
+  dragComp = null;
+});
+
+/* Doble click sobre una instancia empaquetada → panel de renombrar pines */
+cv.addEventListener("dblclick", e => {
+  const p = pos(e);
+  const comp = hitComp(p);
+  if (comp && lib[comp.type]) { openPinPanel(comp.type); return; }
+  if (comp && comp.type === "clock") { openClockPanel(comp); }
+});
+
+/* Botón de cerrar el panel de pines */
+document.getElementById("pinPanelClose").addEventListener("click", closePinPanel);
+
+/* Botón de ayuda: muestra/oculta las instrucciones */
+document.getElementById("helpBtn").addEventListener("click", e => {
+  e.stopPropagation();
+  const h = document.getElementById("help");
+  h.style.display = h.style.display === "block" ? "none" : "block";
+});
+document.addEventListener("mousedown", e => {
+  const h = document.getElementById("help");
+  const b = document.getElementById("helpBtn");
+  if (h.style.display === "block" && !h.contains(e.target) && e.target !== b) {
+    h.style.display = "none";
+  }
+});
+
+/* Evitar el menú de pegado cuando se suelta la rueda en el canvas */
+cv.addEventListener("auxclick", e => {
+  if (e.button === 1) e.preventDefault();
+});
+
+/* Zoom con la rueda del mouse, centrado en el cursor */
+cv.addEventListener("wheel", e => {
+  e.preventDefault();
+  const sp = screenPos(e);
+  const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+  zoomAt(sp.x, sp.y, factor);
+}, { passive: false });
+
+window.addEventListener("keydown", e => {
+  const toolKeys = { "1": "select", "3": "switch", "4": "out", "5": "not", "6": "and", "7": "or", "8": "nand", "9": "nor", "x": "xor", "0": "unpack" };
+  const k = e.key.toLowerCase();
+  if (toolKeys[e.key]) setTool(toolKeys[e.key]);
+  if (k === "escape") wireDrag = null;
+  if (k === "r" && hoverComp && state.tool === "select") { hoverComp.rot = (hoverComp.rot + 3) % 4; save(); }
+  if (k === "delete" || k === "backspace") {
+    // si hay varios componentes marcados, borrarlos todos juntos
+    const marcados = state.components.filter(c => c.sel);
+    if (marcados.length > 1) {
+      for (const c of marcados) deleteComp(c);
+    } else if (hoverComp) {
+      deleteComp(hoverComp);
+    } else if (hoverWire) {
+      state.wires = state.wires.filter(w => w !== hoverWire); save();
+    }
+  }
+  // Desempaquetar la instancia bajo el cursor con el atajo 0
+  if (k === "0" && hoverComp && lib[hoverComp.type]) {
+    unpackInstance(hoverComp);
+  }
+  if (k === "a" && (e.ctrlKey || e.metaKey) && state.tool === "pack") {
+    e.preventDefault();
+    for (const c of state.components) c.sel = true;
+    document.getElementById("packCount").textContent = state.components.length;
+    save();
+  }
+});
+
+/* ============================================================
+   UI
+   ============================================================ */
+function setTool(t) {
+  state.tool = t;
+  wireDrag = null;
+  document.querySelectorAll("#tools button, #libTools button").forEach(b =>
+    b.classList.toggle("active", b.dataset.tool === t));
+  updatePackBar();
+}
+document.getElementById("tools").addEventListener("click", e => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  setTool(btn.dataset.tool);
+});
+// Los componentes empaquetados viven en su propia fila de herramientas
+document.getElementById("libTools").addEventListener("click", e => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  setTool(btn.dataset.tool);
+});
+
+const powerBtn = document.getElementById("powerBtn");
+powerBtn.addEventListener("click", () => {
+  state.powerOn = !state.powerOn;
+  powerBtn.textContent = state.powerOn ? "⏻ FUENTE ON" : "⏻ FUENTE OFF";
+  powerBtn.className = state.powerOn ? "on" : "off";
+  save();
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  if (confirm("¿Borrar todo el circuito?")) {
+    state.components = [];
+    state.wires = [];
+    gateOuts.clear();
+    save();
+  }
+});
+
+/* ============================================================
+   MODAL DE EMPAQUETADO
+   ============================================================ */
+let packState = null; // { sel, inputs: [], outputs: [] }
+
+function openPackModal(sel) {
+  packState = {
+    sel,
+    inputs: [],   // componentes "switch" elegidos como pines de entrada
+    outputs: [],  // componentes "out" elegidos como pines de salida
+    inOrder: [],  // ids en orden de click
+    outOrder: [],
+  };
+  const sws = sel.filter(c => c.type === "switch");
+  const outs = sel.filter(c => c.type === "out");
+
+  const divIn = document.getElementById("packInputs");
+  const divOut = document.getElementById("packOutputs");
+  divIn.innerHTML = sws.length ? "" : '<span style="color:var(--dim);font-size:12px">No hay Entradas en la selección.</span>';
+  divOut.innerHTML = outs.length ? "" : '<span style="color:var(--dim);font-size:12px">No hay Salidas en la selección.</span>';
+
+  const mkBtn = (host, comp, list, orderKey) => {
+    const b = document.createElement("button");
+    b.textContent = (comp.type === "switch" ? "ENTRADA" : "SALIDA") + " #" + comp.id;
+    b.style.fontSize = "11px";
+    b.style.padding = "3px 8px";
+    const refresh = () => {
+      const idx = packState[orderKey].indexOf(comp.id);
+      b.style.borderColor = idx >= 0 ? "var(--accent)" : "var(--border)";
+      b.style.color = idx >= 0 ? "var(--accent)" : "var(--text)";
+      b.textContent = b.textContent.replace(/ → \d+$/, "") + (idx >= 0 ? " → " + (idx + 1) : "");
+    };
+    b.addEventListener("click", () => {
+      const i = packState[orderKey].indexOf(comp.id);
+      if (i >= 0) packState[orderKey].splice(i, 1);
+      else packState[orderKey].push(comp.id);
+      refresh();
+    });
+    refresh();
+    host.appendChild(b);
+  };
+  for (const c of sws) mkBtn(divIn, c, null, "inOrder");
+  for (const c of outs) mkBtn(divOut, c, null, "outOrder");
+
+  document.getElementById("packCount").textContent = sel.length;
+  document.getElementById("packModal").style.display = "flex";
+}
+
+document.getElementById("packCancel").addEventListener("click", () => {
+  document.getElementById("packModal").style.display = "none";
+  packState = null;
+});
+
+document.getElementById("packOk").addEventListener("click", () => {
+  const name = document.getElementById("packName").value.trim().toUpperCase().replace(/\s+/g, "_");
+  if (!name) { alert("Poné un nombre al componente."); return; }
+  if (TYPE_DEFS[name]) { alert("Ya existe un componentes con ese nombre."); return; }
+  if (!packState.inOrder.length || !packState.outOrder.length) {
+    alert("Elegí al menos una Entrada y una Salida como pines.");
+    return;
+  }
+  const sel = state.components.filter(c => packState.sel.includes(c));
+  makePackage(sel, name, packState.inOrder, packState.outOrder);
+  document.getElementById("packModal").style.display = "none";
+  packState = null;
+  // agregar botón a la caja de herramientas
+  addLibButton(name);
+  save();
+});
+
+function addLibBtnToToolbar(name) {
+  const tools = document.getElementById("libTools");
+  if (tools.querySelector(`[data-tool="${name}"]`)) return;
+  tools.style.display = "flex";
+  const b = document.createElement("button");
+  b.dataset.tool = name;
+  b.innerHTML = "🧩 " + name;
+  b.style.paddingRight = "4px";
+  // X para eliminar el componente de la biblioteca
+  const x = document.createElement("span");
+  x.textContent = " ✕";
+  x.style.cssText = "color:#ff7a7a; margin-left:5px; font-weight:700;";
+  x.title = "Eliminar componente de la biblioteca";
+  x.addEventListener("click", ev => {
+    ev.stopPropagation();  // no activar la herramienta
+    removeLibComponent(name, b);
+  });
+  b.appendChild(x);
+  tools.appendChild(b);
+}
+
+/* Eliminar un componente de la biblioteca (con sus instancias) */
+function removeLibComponent(name, btnEl) {
+  const n = state.components.filter(c => c.type === name).length;
+  const msg = n > 0
+    ? `¿Eliminar "${name}" de la biblioteca? También se borrarán ${n} instancia(s) colocada(s) en el canvas.`
+    : `¿Eliminar "${name}" de la biblioteca?`;
+  if (!confirm(msg)) return;
+  // borrar instancias colocadas
+  const ids = state.components.filter(c => c.type === name).map(c => c.id);
+  state.components = state.components.filter(c => c.type !== name);
+  state.wires = state.wires.filter(w => !ids.includes(w.a.c) && !ids.includes(w.b.c));
+  // borrar definición y botón
+  delete lib[name];
+  delete TYPE_DEFS[name];
+  delete OUT_IDX[name];
+  delete IN_COUNT[name];
+  if (btnEl) btnEl.remove();
+  else document.querySelector(`#libTools button[data-tool="${name}"]`)?.remove();
+  const tools = document.getElementById("libTools");
+  if (!tools.querySelector("button")) tools.style.display = "none";
+  if (pinPanelFor === name) closePinPanel();
+  save();
+}
+
+/* ============================================================
+   EJEMPLOS
+   ============================================================ */
+function addLibButton(name) { addLibBtnToToolbar(name); }
+
+/* Barra flotante del modo empaquetar */
+function updatePackBar() {
+  const bar = document.getElementById("packBar");
+  if (state.tool === "pack") {
+    bar.style.display = "flex";
+    document.getElementById("packCount").textContent =
+      state.components.filter(c => c.sel).length;
+  } else {
+    bar.style.display = "none";
+  }
+}
+
+document.getElementById("packBarOk").addEventListener("click", () => {
+  const sel = state.components.filter(c => c.sel);
+  if (!sel.length) { alert("No marcaste ningún componente todavía."); return; }
+  openPackModal(sel);
+});
+document.getElementById("packBarCancel").addEventListener("click", () => {
+  for (const c of state.components) delete c.sel;
+  setTool("select");
+  save();
+});
+
+function buildCircuit(builder) {
+  state.components = [];
+  state.wires = [];
+  state.nextId = 1;
+  gateOuts.clear();
+  const wire = (a, ta, b, tb) => state.wires.push({ id: state.nextId++, a: { c: a.id, t: ta }, b: { c: b.id, t: tb } });
+  builder(addComp, wire);
+  state.powerOn = true;
+  powerBtn.textContent = "⏻ FUENTE ON";
+  powerBtn.className = "on";
+  save();
+}
+
+/* ============================================================
+   PERSISTENCIA
+   ============================================================ */
+function save() {
+  localStorage.setItem("gateLab", JSON.stringify({
+    components: state.components, wires: state.wires,
+    powerOn: state.powerOn, nextId: state.nextId,
+    lib,
+    clockFreqs: Object.fromEntries(globalClockFreq),
+  }));
+}
+function load() {
+  const raw = localStorage.getItem("gateLab");
+  if (raw) {
+    try {
+      const d = JSON.parse(raw);
+      Object.assign(state, d);
+      // restaurar la biblioteca y registrar los tipos
+      if (d.lib) {
+        Object.assign(lib, d.lib);
+        for (const name in lib) registerPackedType(lib[name]);
+        for (const name in lib) addLibBtnToToolbar(name);
+      }
+      // restaurar frecuencias de relojes
+      if (d.clockFreqs) {
+        for (const id in d.clockFreqs) {
+          globalClockFreq.set(+id, d.clockFreqs[id]);
+          globalClockState.set(+id, false);
+          clockAcc.set(+id, 0);
+        }
+      }
+      ensureClockTimer();
+      return true;
+    } catch { /* corrupto → ejemplo */ }
+  }
+  return false;
+}
+
+/* ============================================================
+   ARRANQUE
+   ============================================================ */
+resize();
+if (!load()) {
+  // arranque limpio: un inversor de muestra para que no esté vacío
+  const a  = addComp("switch", -200, 0);
+  const no = addComp("not",     -80, 0);
+  const q  = addComp("out",      40, 0);
+  state.wires.push({ id: state.nextId++, a: { c: a.id, t: 0 }, b: { c: no.id, t: 0 } });
+  state.wires.push({ id: state.nextId++, a: { c: no.id, t: 1 }, b: { c: q.id, t: 0 } });
+  state.powerOn = true;
+  save();
+}
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
