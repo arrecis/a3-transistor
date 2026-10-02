@@ -1113,11 +1113,11 @@ const LESSONS = [
       const out = ors[0];
       const qv = () => { const r = simulate(); return r.values[r.netOf.get(out.id + ":2")]; };
       // The lesson doesn't fix a creation order for A/B/S: try every
-      // permutation of switch roles (like the s6 check does) until the
-      // mux behavior shows up in one of them.
+      // permutation of switch roles (like the s6 check does). Both items
+      // must come from the SAME role permutation: a real mux passes both
+      // tests under any fixed assignment. No carry-over between
+      // permutations; if none passes both, both items report false.
       const perms = [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
-      // Both items must come from the SAME role permutation: a real mux
-      // passes both tests under any fixed assignment.
       const ok = { sel0: false, sel1: false };
       for (const p of perms) {
         const a = sws[p[0]], b = sws[p[1]], s = sws[p[2]];
@@ -1129,9 +1129,10 @@ const LESSONS = [
         a.on = false; b.on = false; const r3 = qv();
         a.on = false; b.on = true;  const r4 = qv();
         sws.forEach(x => x.on = false);
-        ok.sel0 = ok.sel0 || (r1 === 0 && r2 === 1);
-        ok.sel1 = ok.sel1 || (r3 === 0 && r4 === 1);
-        if (ok.sel0 && ok.sel1) break;
+        // per permutation: both must hold in THIS permutation
+        const sel0 = r1 === 0 && r2 === 1;
+        const sel1 = r3 === 0 && r4 === 1;
+        if (sel0 && sel1) { ok.sel0 = ok.sel1 = true; break; }
       }
       return [
         { name: nameNeeds, ok: true },
