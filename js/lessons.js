@@ -1123,11 +1123,12 @@ const LESSONS = [
       if (!xo || !an) return [{ name: TXT(LL("Hay un XOR y un AND en el circuito", "There is an XOR and an AND in the circuit")), ok: false }];
       const tX = lessonTruthOf(xo, 2, 2);
       const tA = lessonTruthOf(an, 2, 2);
-      if (!tX || !tA) return [{ name: TXT(LL("Ambos cableados a 2 Entradas y Salidas", "Both wired to 2 Inputs and Outputs")), ok: false }];
-      const okS = tX.combos[0]===0 && tX.combos[1]===1 && tX.combos[2]===1 && tX.combos[3]===0;
-      const okC = tA.combos[0]===0 && tA.combos[1]===0 && tA.combos[2]===0 && tA.combos[3]===1;
+      if (!tX || !tA) return [{ name: TXT(LL("Ambos cableados a 2 Entradas", "Both wired to 2 Inputs")), ok: false }];
+      const sameInputs = new Set([...tX.switches, ...tA.switches].map(s => s.id)).size === 2;
+      const okS = sameInputs && tX.combos[0]===0 && tX.combos[1]===1 && tX.combos[2]===1 && tX.combos[3]===0;
+      const okC = sameInputs && tA.combos[0]===0 && tA.combos[1]===0 && tA.combos[2]===0 && tA.combos[3]===1;
       return [
-        { name: TXT(LL("Hay un XOR y un AND cableados", "An XOR and an AND are wired")), ok: true },
+        { name: TXT(LL("XOR y AND comparten las mismas 2 Entradas", "XOR and AND share the same 2 Inputs")), ok: sameInputs },
         { name: TXT(LL("S = XOR(A,B) — la suma", "S = XOR(A,B) — the sum")), ok: okS },
         { name: TXT(LL("C = AND(A,B) — el acarreo", "C = AND(A,B) — the carry")), ok: okC },
       ];
@@ -1200,20 +1201,35 @@ const LESSONS = [
       if (sws.length < 3 || xors.length < 2 || ands.length < 2 || ors.length < 1)
         return [{ name: nameNeeds, ok: false }];
       // full adder: S = parity of 3 inputs (we test all 8 combinations of
-      // the first 3 Inputs against the 2nd XOR's output)
+      // the 3 Inputs across all XORs and all ORs to find S and Cout)
       const results = [{ name: nameNeeds, ok: true }];
-      const swX = sws.slice(0, 3);
-      const allCombos = [];
+      const wiredSwitches = sws.filter(s => state.wires.some(w => w.a.c === s.id || w.b.c === s.id));
+      const swX = (wiredSwitches.length >= 3 ? wiredSwitches : sws).slice(0, 3);
+      const expectS = [0, 1, 1, 0, 1, 0, 0, 1];
+      const expectC = [0, 0, 0, 1, 0, 1, 1, 1];
+      const xorCombos = new Map(xors.map(x => [x.id, []]));
+      const orCombos = new Map(ors.map(o => [o.id, []]));
       for (let mask = 0; mask < 8; mask++) {
         swX.forEach((s, i) => s.on = !!(mask & (1 << i)));
         const r = simulate();
-        const net = r.netOf.get(xors[1].id + ":2");
-        allCombos.push(r.values[net]);
+        for (const x of xors) {
+          const net = r.netOf.get(x.id + ":2");
+          xorCombos.get(x.id).push(r.values[net]);
+        }
+        for (const o of ors) {
+          const net = r.netOf.get(o.id + ":2");
+          orCombos.get(o.id).push(r.values[net]);
+        }
       }
-      const expect = [0,1,1,0,1,0,0,1]; // parity for mask 0..7
-      const okParity = expect.every((v, i) => allCombos[i] === v);
+      sws.forEach(s => s.on = false);
+      const okParity = Array.from(xorCombos.values()).some(combos =>
+        expectS.every((v, i) => combos[i] === v)
+      );
+      const okCarry = Array.from(orCombos.values()).some(combos =>
+        expectC.every((v, i) => combos[i] === v)
+      );
       results.push({ name: TXT(LL("La suma S = A ⊕ B ⊕ Cin (paridad de 3)", "Sum S = A ⊕ B ⊕ Cin (3-input parity)")), ok: okParity });
-      swX.forEach(s => s.on = false);
+      results.push({ name: TXT(LL("El acarreo Cout (ANDs + OR)", "Carry Cout (ANDs + OR)")), ok: okCarry });
       return results;
     },
   },
@@ -1263,9 +1279,10 @@ const LESSONS = [
         results.push({ name: TXT(LL("3 pines de entrada, 2 de salida", "3 input pins, 2 output pins")),
           ok: def.inputs.length === 3 && def.outputs.length === 2 });
         results.push({
-          name: TXT(LL("El interior tiene 2 XOR y 2 AND", "The inside has 2 XORs and 2 ANDs")),
+          name: TXT(LL("El interior tiene 2 XOR, 2 AND y 1 OR", "The inside has 2 XORs, 2 ANDs and 1 OR")),
           ok: (def.components ?? []).filter(c => c.type === "xor").length >= 2
-            && (def.components ?? []).filter(c => c.type === "and").length >= 2,
+            && (def.components ?? []).filter(c => c.type === "and").length >= 2
+            && (def.components ?? []).filter(c => c.type === "or").length >= 1,
         });
       }
       return results;
@@ -1283,13 +1300,12 @@ const LESSONS = [
         <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>4× tu caja <b>FULLADDER</b> 🧩 (de la lección 15)</li>
-          <li>8× <b>Entrada</b> (tecla 2) — A0-A3, B0-B3</li>
-          <li>La Cin del bit 0 no se conecta a nada: en una CPU real ese acarreo entrante es 0 (no hay "uno llevado" antes de la primera columna)</li>
+          <li>9× <b>Entrada</b> (tecla 2) — A0-A3, B0-B3 y Cin (dejala en 0)</li>
           <li>4-5× <b>Salida</b> (tecla 3) — S0-S3 (y opcionalmente el Cout final)</li>
         </ul>
         <p><b>Conexión (la cascada):</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Bit 0: A0 y B0 a las entradas A/B del primer FULLADDER; su Cin queda sin conectar (vale 0) → su S0 a una Salida</li>
+          <li>Bit 0: A0 y B0 a las entradas A/B del primer FULLADDER; su Cin va a una Entrada en 0 (un pin sin conectar queda indeterminado en este simulador) → su S0 a una Salida</li>
           <li>El <b>Cout del bit 0 → Cin del bit 1</b>. El Cout del 1 → Cin del 2. El del 2 → Cin del 3</li>
           <li>Cada S de cada FULLADDER a su propia Salida</li>
         </ol>
@@ -1305,13 +1321,12 @@ const LESSONS = [
         <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>4× your <b>FULLADDER</b> box 🧩 (from lesson 15)</li>
-          <li>8× <b>Input</b> (key 2) — A0-A3, B0-B3</li>
-          <li>Bit 0's Cin stays unwired (it is 0 — real CPUs ground it: no carry exists before the first column)</li>
+          <li>9× <b>Input</b> (key 2) — A0-A3, B0-B3, and Cin (leave it at 0)</li>
           <li>4-5× <b>Output</b> (key 3) — S0-S3 (and optionally the final Cout)</li>
         </ul>
         <p><b>Wiring (the cascade):</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Bit 0: A0 and B0 into the first FULLADDER's A/B inputs; its Cin unwired (0) → its S0 to an Output</li>
+          <li>Bit 0: A0 and B0 into the first FULLADDER's A/B inputs; its Cin connects to an Input at 0 (an unconnected pin stays indeterminate in this simulator) → its S0 to an Output</li>
           <li>Bit 0's <b>Cout → bit 1's Cin</b>. Bit 1's Cout → bit 2's Cin. Bit 2's → bit 3's</li>
           <li>Each S to its own Output</li>
         </ol>
@@ -1333,15 +1348,22 @@ const LESSONS = [
           name: TXT(LL("Las 4 están cableadas", "All 4 are wired")),
           ok: fa.every(c => state.wires.some(w => w.a.c === c.id || w.b.c === c.id)),
         });
-        // cascade: some Cout (pin 4) connected to another's Cin (pin 2)
-        let cascade = false;
-        for (const a of fa)
-          for (const b of fa)
-            if (a !== b && state.wires.some(w =>
+        // cascade: at least 3 Cout (pin 4) connected to another's Cin (pin 2)
+        const r = simulate();
+        let cascadeCount = 0;
+        for (const a of fa) {
+          for (const b of fa) {
+            if (a !== b) {
+              const directWire = state.wires.some(w =>
                 (w.a.c === a.id && w.a.t === 4 && w.b.c === b.id && w.b.t === 2) ||
-                (w.b.c === a.id && w.b.t === 4 && w.a.c === b.id && w.a.t === 2)))
-              cascade = true;
-        results.push({ name: TXT(LL("Cascada: hay al menos un Cout→Cin entre cajas", "Cascade: at least one Cout→Cin between boxes")), ok: cascade });
+                (w.b.c === a.id && w.b.t === 4 && w.a.c === b.id && w.a.t === 2));
+              const sameNet = r.netOf.get(a.id + ":4") !== undefined &&
+                r.netOf.get(a.id + ":4") === r.netOf.get(b.id + ":2");
+              if (directWire || sameNet) cascadeCount++;
+            }
+          }
+        }
+        results.push({ name: TXT(LL("Cascada: al menos 3 conexiones Cout→Cin entre cajas", "Cascade: at least 3 Cout→Cin connections between boxes")), ok: cascadeCount >= 3 });
       }
       return results;
     },
@@ -1391,10 +1413,10 @@ const LESSONS = [
         results.push({ name: TXT(LL("9 pines de entrada (A×4, B×4, Cin)", "9 input pins (A×4, B×4, Cin)")), ok: def.inputs.length === 9 });
         results.push({ name: TXT(LL("5 pines de salida (S×4, Cout)", "5 output pins (S×4, Cout)")), ok: def.outputs.length === 5 });
         const inst = state.components.find(c => c.type === "ADD4");
-        if (inst) {
+        if (inst && state.wires.some(w => w.a.c === inst.id || w.b.c === inst.id)) {
           results.push({
             name: TXT(LL("Hay una instancia ADD4 colocada y cableada", "A placed ADD4 instance is wired")),
-            ok: state.wires.some(w => w.a.c === inst.id || w.b.c === inst.id),
+            ok: true,
           });
         }
       }
@@ -1472,9 +1494,10 @@ const LESSONS = [
         ok: add4.length === 1 && mux2.length >= 4 && ands.length >= 4,
       });
       if (add4.length && mux2.length >= 4) {
+        const keyComps = [add4[0], ...mux2.slice(0, 4), ...(ands.length >= 4 ? ands.slice(0, 4) : ands)];
         results.push({
           name: TXT(LL("Todo cableado", "Everything wired")),
-          ok: state.wires.some(w => w.a.c === add4[0].id || w.b.c === add4[0].id),
+          ok: ands.length >= 4 && keyComps.every(c => state.wires.some(w => w.a.c === c.id || w.b.c === c.id)),
         });
       }
       return results;
@@ -1647,9 +1670,9 @@ const LESSONS = [
         You need: 1 address Input (A0) and its NOT (generating negated-A0), 2 ANDs (deciding
         which cell activates), and 2 DFFs as cells. Wire each cell's output to an indicator:
         only the addressed cell responds.</p>
-        <p style="color:var(--dim); font-size:12px;"><i>Hand-building RAM doesn't scale: a 16-word × 4-bit RAM
+        <p style="color:var(--dim); font-size:12px;">💡 Hand-building RAM doesn't scale: a 16-word × 4-bit RAM
         would need 64 DFFs and a 4-line decoder. That's why next lesson brings the <b>RAM16
-        chip</b>: an engine box with everything inside and a hex view.</i></p>`,
+        chip</b>: an engine box with everything inside and a hex view.</p>`,
     },
     check() {
       const dff = state.components.filter(c => c.type === "DFF");
@@ -1712,7 +1735,7 @@ const LESSONS = [
       results.push({ name: TXT(LL("Hay una RAM16 colocada", "There is a placed RAM16")), ok: ram.length >= 1 });
       if (ram.length >= 1) {
         const data = ramData.get(ram[0].id);
-        results.push({ name: TXT(L("Con datos escritos (escribí en la vista hex)", "With data written (type in the hex view)")),
+        results.push({ name: TXT(LL("Con datos escritos (escribí en la vista hex)", "With data written (type in the hex view)")),
           ok: data ? data.some(v => v !== 0) : false });
       }
       return results;
