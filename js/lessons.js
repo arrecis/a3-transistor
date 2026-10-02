@@ -2094,8 +2094,8 @@ const LESSONS = [
       es: `
         <p>En una computadora las instrucciones y direcciones se guardan como números binarios
         compactos. Pero para ejecutar una acción necesitás que un solo cable específico se encienda.
-        El <b>decodificador</b> es ese traductor: toma $N$ bits de entrada y enciende
-        <b>exactamente una</b> de sus $2^N$ salidas.</p>
+        El <b>decodificador</b> es ese traductor: toma N bits de entrada y enciende
+        <b>exactamente una</b> de sus 2<sup>N</sup> salidas.</p>
         <p><b>Analogía:</b> es como el conserje de un hotel con un casillero de llaves numeradas:
         si le pedís el número 2, enciende únicamente la luz de la habitación 2 y deja las demás apagadas.</p>
         <p><b>La idea lógica (para 2 bits: A0 y A1):</b></p>
@@ -2128,8 +2128,8 @@ const LESSONS = [
       en: `
         <p>In a computer, instructions and addresses are stored as compact binary numbers.
         Yet to perform an action, you need one specific control line to activate.
-        A <b>decoder</b> is this translator: it takes $N$ input bits and activates
-        <b>exactly one</b> of its $2^N$ outputs.</p>
+        A <b>decoder</b> is this translator: it takes N input bits and activates
+        <b>exactly one</b> of its 2<sup>N</sup> outputs.</p>
         <p><b>Analogy:</b> like a hotel concierge at a numbered key rack: ask for room 2,
         and only the light for key 2 turns on while all others stay dark.</p>
         <p><b>The logic (for 2 bits: A0 and A1):</b></p>
@@ -2350,16 +2350,16 @@ const LESSONS = [
           <li><b>T2</b>: Ejecutar la operación (Execute)</li>
         </ul>
         <p>Para generar estas fases usamos un <b>contador de anillo</b> (<i>ring counter</i>):
-        un único bit <code>1</code> que circula cíclicamente $T_0 \rightarrow T_1 \rightarrow T_2 \rightarrow T_0$.</p>
+        un único bit <code>1</code> que circula cíclicamente T<sub>0</sub> → T<sub>1</sub> → T<sub>2</sub> → T<sub>0</sub>.</p>
         <p><b>El problema del arranque y el milagro del RESET:</b><br>
         Al encender la computadora, todos los flip-flops arrancan en estado desconocido
         (cables grises con valor <code>-1</code>). Si conectamos un lazo directo, el circuito
         nunca arranca porque <code>-1</code> retroalimentado sigue siendo <code>-1</code>.</p>
         <p>La línea <b>RESET</b> rompe ese bloqueo gracias a las compuertas:</p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>$D_{T0} = \text{RESET} + T_2$: con $\text{RESET}=1$, la compuerta OR calcula $\text{OR}(1, -1) = 1$. ¡Garantiza un 1 limpio en T0!</li>
-          <li>$D_{T1} = \neg\text{RESET} \cdot T_0$: con $\text{RESET}=1$ ($\neg\text{RESET}=0$), la compuerta AND calcula $\text{AND}(0, -1) = 0$.</li>
-          <li>$D_{T2} = \neg\text{RESET} \cdot T_1$: calcula $\text{AND}(0, -1) = 0$.</li>
+          <li>D<sub>T0</sub> = RESET + T<sub>2</sub>: con RESET=1, la compuerta OR calcula OR(1, -1) = 1. ¡Garantiza un 1 limpio en T0!</li>
+          <li>D<sub>T1</sub> = ¬RESET · T<sub>0</sub>: con RESET=1 (¬RESET=0), la compuerta AND calcula AND(0, -1) = 0.</li>
+          <li>D<sub>T2</sub> = ¬RESET · T<sub>1</sub>: calcula AND(0, -1) = 0.</li>
         </ul>
         <p>¡Un solo pulso de reloj con RESET=1 inicializa el contador en <code>100</code>!</p>
         <p><b>Componentes que necesitás:</b></p>
@@ -2382,7 +2382,7 @@ const LESSONS = [
         </ol>
         <p><b>El experimento:</b><br>
         1. Con <code>RESET = 1</code>, dale un pulso al reloj: T0 se pone en 1 y T1, T2 en 0.<br>
-        2. Bajá <code>RESET = 0</code> y dale pulsos: verás el 1 viajar $T_0 \rightarrow T_1 \rightarrow T_2 \rightarrow T_0 \dots$</p>
+        2. Bajá <code>RESET = 0</code> y dale pulsos: verás el 1 viajar T<sub>0</sub> → T<sub>1</sub> → T<sub>2</sub> → T<sub>0</sub>...</p>
         <p style="color:var(--dim); font-size:12px;">💡 Empaquetalo como <b>RING3</b>:<br>
         📦 Empaquetar (P) → Nombralo <b>RING3</b>.<br>
         Pines de entrada: RESET, CLK (en orden de click).<br>
@@ -2397,15 +2397,15 @@ const LESSONS = [
           <li><b>T2</b>: Execute the operation (Execute)</li>
         </ul>
         <p>To generate these phases we use a <b>ring counter</b>:
-        a single <code>1</code> bit that circles $T_0 \rightarrow T_1 \rightarrow T_2 \rightarrow T_0$.</p>
+        a single <code>1</code> bit that circles T<sub>0</sub> → T<sub>1</sub> → T<sub>2</sub> → T<sub>0</sub>.</p>
         <p><b>Startup problem and the power of RESET:</b><br>
         At power-on, all flip-flops start in an unknown state (gray wires with value <code>-1</code>).
         If directly looped, the circuit never starts because feeding back <code>-1</code> remains <code>-1</code>.</p>
         <p>The <b>RESET</b> line breaks this deadlock thanks to boolean absorption:</p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>$D_{T0} = \text{RESET} + T_2$: with $\text{RESET}=1$, the OR gate computes $\text{OR}(1, -1) = 1$. A clean 1 is guaranteed into T0!</li>
-          <li>$D_{T1} = \neg\text{RESET} \cdot T_0$: with $\text{RESET}=1$ ($\neg\text{RESET}=0$), the AND gate computes $\text{AND}(0, -1) = 0$.</li>
-          <li>$D_{T2} = \neg\text{RESET} \cdot T_1$: computes $\text{AND}(0, -1) = 0$.</li>
+          <li>D<sub>T0</sub> = RESET + T<sub>2</sub>: with RESET=1, the OR gate computes OR(1, -1) = 1. A clean 1 is guaranteed into T0!</li>
+          <li>D<sub>T1</sub> = ¬RESET · T<sub>0</sub>: with RESET=1 (¬RESET=0), the AND gate computes AND(0, -1) = 0.</li>
+          <li>D<sub>T2</sub> = ¬RESET · T<sub>1</sub>: computes AND(0, -1) = 0.</li>
         </ul>
         <p>A single clock pulse with RESET=1 cleanly sets the counter to <code>100</code>!</p>
         <p><b>Components you need:</b></p>
@@ -2428,7 +2428,7 @@ const LESSONS = [
         </ol>
         <p><b>The experiment:</b><br>
         1. With <code>RESET = 1</code>, pulse the clock: T0 turns on (1) and T1, T2 turn off (0).<br>
-        2. Set <code>RESET = 0</code> and pulse the clock: watch the 1 step $T_0 \rightarrow T_1 \rightarrow T_2 \rightarrow T_0 \dots$</p>
+        2. Set <code>RESET = 0</code> and pulse the clock: watch the 1 step T<sub>0</sub> → T<sub>1</sub> → T<sub>2</sub> → T<sub>0</sub>...</p>
         <p style="color:var(--dim); font-size:12px;">💡 Pack it as <b>RING3</b>:<br>
         📦 Pack (P) → Name it <b>RING3</b>.<br>
         Input pins: RESET, CLK (in click order).<br>
@@ -2557,6 +2557,723 @@ const LESSONS = [
       }
 
       return results;
+    },
+  },
+  {
+    id: "s25",
+    title: LL("25. Registro con LOAD y la etapa de búsqueda (Fetch)", "25. Register with LOAD and the Fetch stage"),
+    theory: {
+      es: `
+        <p>En las lecciones anteriores construimos la memoria (<b>RAM16</b>), el contador de pasos (<b>RING3</b>)
+        y el decodificador de instrucciones (<b>DEC3</b>). Pero hay un detalle crucial:
+        la RAM tiene <b>un solo puerto de salida</b> (Q<sub>0</sub>..Q<sub>3</sub>).
+        ¿Cómo hacemos para que la CPU guarde el código de la operación en un registro (<b>OP</b>)
+        y el dato o dirección en otro registro (<b>ARG</b>)?</p>
+        <p><b>La analogía de la caja fuerte:</b><br>
+        Un registro con <b>LOAD</b> es como una caja fuerte con botón de depósito: aunque haya
+        paquetes en la puerta (las entradas de datos D<sub>0</sub>..D<sub>3</sub>), la caja solo abre y absorbe
+        el paquete nuevo si pulsás el botón <code>LOAD=1</code> en el instante en que gira
+        la cerradura (el pulso de reloj <code>CLK</code>). Si <code>LOAD=0</code>, la cerradura gira pero
+        la caja retiene exactamente lo que ya tenía dentro, ignorando lo que pase afuera.</p>
+        <p><b>La etapa de búsqueda (Fetch):</b><br>
+        En nuestro procesador, una instrucción ocupa <b>2 celdas consecutivas</b> de la RAM:</p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>En el paso <b>T0</b>: el Program Counter (PC) apunta a la primera celda. El registro <b>OP</b>
+          tiene su LOAD=T<sub>0</sub> activo, así que captura la instrucción mientras el PC avanza a la siguiente celda.</li>
+          <li>En el paso <b>T1</b>: el PC apunta a la segunda celda. El registro <b>ARG</b>
+          tiene su LOAD=T<sub>1</sub> activo, así que captura el argumento mientras el PC vuelve a avanzar.</li>
+          <li>En el paso <b>T2</b>: ¡ambos registros mantienen sus valores fijos para que la Unidad de Control ejecute la orden!</li>
+        </ul>
+        <p><b>Parte 1: Construir y empaquetar REG4</b></p>
+        <p><b>Componentes que necesitás:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>4× tu caja <b>DFF</b> 🧩 (de la lección 9)</li>
+          <li>4× tu caja <b>MUX2</b> 🧩 (de la lección 12)</li>
+          <li>6× <b>Entrada</b> (tecla 2): D<sub>0</sub>, D<sub>1</sub>, D<sub>2</sub>, D<sub>3</sub>, LOAD y CLK</li>
+          <li>4× <b>Salida</b> (tecla 3): Q<sub>0</sub>, Q<sub>1</sub>, Q<sub>2</sub>, Q<sub>3</sub></li>
+        </ul>
+        <p><b>Conexión de REG4:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Para cada bit i de 0 a 3, colocá un <code>MUX2</code> frente al pin 0 (D) de su <code>DFF</code>.</li>
+          <li>Pin 0 (A) del MUX recibe la salida Q (pin 2) del propio DFF (para retener el valor cuando LOAD=0).</li>
+          <li>Pin 1 (B) del MUX recibe el dato nuevo de entrada D<sub>i</sub>.</li>
+          <li>Pin 2 (S) del MUX se conecta a la línea común <b>LOAD</b>.</li>
+          <li>Pin 3 (salida) del MUX va al pin 0 (D) del DFF.</li>
+          <li>Conectá el pin 1 (reloj) de los 4 DFFs a la línea común <b>CLK</b>.</li>
+          <li>Conectá el pin 2 (Q) de cada DFF a su Salida correspondiente (Q<sub>0</sub>..Q<sub>3</sub>).</li>
+        </ol>
+        <p style="color:var(--dim); font-size:12px;">💡 Empaquetalo como <b>REG4</b>:<br>
+        📦 Empaquetar (P) → Nombralo <b>REG4</b>.<br>
+        Pines de entrada: D0, D1, D2, D3, LOAD, CLK (en ese orden exacto de click).<br>
+        Pines de salida: Q0, Q1, Q2, Q3.<br>
+        Esta caja de 4 bits será el ladrillo fundamental de todos los registros de tu CPU.</p>
+        <p><b>Parte 2: La etapa de Fetch</b></p>
+        <p>Conectá dos cajas <code>REG4</code> bautizadas <b>OP</b> y <b>ARG</b>:</p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>Las entradas D<sub>0</sub>..D<sub>3</sub> de ambos registros se conectan en paralelo a las salidas Q<sub>0</sub>..Q<sub>3</sub> de la <b>RAM16</b>.</li>
+          <li>El pin <code>LOAD</code> de OP se conecta a la fase T<sub>0</sub> de tu <b>RING3</b>.</li>
+          <li>El pin <code>LOAD</code> de ARG se conecta a la fase T<sub>1</sub> de tu <b>RING3</b>.</li>
+          <li>Las direcciones A<sub>0</sub>..A<sub>3</sub> de la RAM las maneja el <b>PC</b> (con CS=1 y WE=0).</li>
+        </ul>
+        <p><b>El experimento:</b><br>
+        1. Escribí en la RAM en la dirección 0 el valor <code>1</code> y en la dirección 1 el valor <code>5</code>.<br>
+        2. Con <code>RESET=1</code>, dale un pulso de reloj.<br>
+        3. Bajá <code>RESET=0</code>: en el pulso 1 (T<sub>0</sub>), OP captura <code>1</code>. En el pulso 2 (T<sub>1</sub>), ARG captura <code>5</code>. En el pulso 3 (T<sub>2</sub>), ambos retienen su valor.</p>`,
+      en: `
+        <p>In previous lessons we built memory (<b>RAM16</b>), the step counter (<b>RING3</b>),
+        and the instruction decoder (<b>DEC3</b>). But there is a crucial challenge:
+        RAM has <b>only one data output port</b> (Q<sub>0</sub>..Q<sub>3</sub>).
+        How can the CPU store the operation opcode in one register (<b>OP</b>)
+        and the data/address in another register (<b>ARG</b>)?</p>
+        <p><b>The safe deposit box analogy:</b><br>
+        A register with <b>LOAD</b> is like a deposit safe box: even if packages sit outside
+        the door (data inputs D<sub>0</sub>..D<sub>3</sub>), the safe only opens and stores the new package if
+        you press the <code>LOAD=1</code> button at the exact instant the lock turns (clock pulse <code>CLK</code>).
+        If <code>LOAD=0</code>, the lock turns but the safe retains its contents, completely ignoring what is outside.</p>
+        <p><b>The Fetch Stage:</b><br>
+        In our CPU, every instruction spans <b>2 consecutive RAM cells</b>:</p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>In step <b>T0</b>: the Program Counter (PC) points to the first cell. Register <b>OP</b>
+          has its LOAD=T<sub>0</sub> active, capturing the opcode while the PC advances to the next cell.</li>
+          <li>In step <b>T1</b>: the PC points to the second cell. Register <b>ARG</b>
+          has its LOAD=T<sub>1</sub> active, capturing the argument while the PC advances again.</li>
+          <li>In step <b>T2</b>: both registers hold their values steady so the Control Unit can execute the instruction!</li>
+        </ul>
+        <p><b>Part 1: Build and pack REG4</b></p>
+        <p><b>Components you need:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>4× your <b>DFF</b> box 🧩 (from lesson 9)</li>
+          <li>4× your <b>MUX2</b> box 🧩 (from lesson 12)</li>
+          <li>6× <b>Input</b> (key 2): D<sub>0</sub>, D<sub>1</sub>, D<sub>2</sub>, D<sub>3</sub>, LOAD, and CLK</li>
+          <li>4× <b>Output</b> (key 3): Q<sub>0</sub>, Q<sub>1</sub>, Q<sub>2</sub>, Q<sub>3</sub></li>
+        </ul>
+        <p><b>REG4 Wiring:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>For each bit i from 0 to 3, place a <code>MUX2</code> in front of pin 0 (D) of its <code>DFF</code>.</li>
+          <li>Pin 0 (A) of the MUX connects to output Q (pin 2) of the same DFF (to hold when LOAD=0).</li>
+          <li>Pin 1 (B) of the MUX connects to input data D<sub>i</sub>.</li>
+          <li>Pin 2 (S) of the MUX connects to the common <b>LOAD</b> line.</li>
+          <li>Pin 3 (output) of the MUX connects to pin 0 (D) of the DFF.</li>
+          <li>Connect pin 1 (clock) of all 4 DFFs to the common <b>CLK</b> line.</li>
+          <li>Connect pin 2 (Q) of each DFF to its respective Output (Q<sub>0</sub>..Q<sub>3</sub>).</li>
+        </ol>
+        <p style="color:var(--dim); font-size:12px;">💡 Pack it as <b>REG4</b>:<br>
+        📦 Pack (P) → Name it <b>REG4</b>.<br>
+        Input pins: D0, D1, D2, D3, LOAD, CLK (in exact click order).<br>
+        Output pins: Q0, Q1, Q2, Q3.<br>
+        This 4-bit register is the building block for all CPU registers.</p>
+        <p><b>Part 2: The Fetch Stage</b></p>
+        <p>Connect two <code>REG4</code> boxes named <b>OP</b> and <b>ARG</b>:</p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>Inputs D<sub>0</sub>..D<sub>3</sub> of both registers connect in parallel to RAM16 outputs Q<sub>0</sub>..Q<sub>3</sub>.</li>
+          <li>The <code>LOAD</code> pin of OP connects to phase T<sub>0</sub> of your <b>RING3</b>.</li>
+          <li>The <code>LOAD</code> pin of ARG connects to phase T<sub>1</sub> of your <b>RING3</b>.</li>
+          <li>RAM addresses A<sub>0</sub>..A<sub>3</sub> are driven by the <b>PC</b> (with CS=1 and WE=0).</li>
+        </ul>
+        <p><b>The experiment:</b><br>
+        1. Write value <code>1</code> at RAM address 0, and value <code>5</code> at address 1.<br>
+        2. With <code>RESET=1</code>, pulse the clock.<br>
+        3. Lower <code>RESET=0</code>: on pulse 1 (T<sub>0</sub>), OP latches <code>1</code>. On pulse 2 (T<sub>1</sub>), ARG latches <code>5</code>. On pulse 3 (T<sub>2</sub>), both hold their values.</p>`,
+    },
+    check() {
+      const results = [];
+      const hasRegBox = !!lib["REG4"];
+      const dffs = state.components.filter(c => c.type === "DFF");
+      const ramComp = state.components.find(c => c.type === "ram");
+
+      // 1. Verificar caja empaquetada REG4 si existe
+      function testPackedReg4() {
+        const def = lib["REG4"];
+        if (!def || def.inputs.length !== 6 || def.outputs.length !== 4) return false;
+        if (typeof registerPackedType === "function" && !TYPE_DEFS["REG4"]) {
+          registerPackedType(def);
+        }
+
+        const savedComponents = state.components;
+        const savedWires = state.wires;
+        const savedNextId = state.nextId;
+        const savedGateOuts = new Map(gateOuts);
+
+        let ok = false;
+        try {
+          state.components = [];
+          state.wires = [];
+          state.nextId = 1;
+          gateOuts.clear();
+
+          const reg = { id: state.nextId++, type: "REG4", x: 0, y: 0, rot: 0, on: false };
+          state.components.push(reg);
+
+          const dSws = [];
+          for (let i = 0; i < 4; i++) {
+            const sw = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+            state.components.push(sw);
+            state.wires.push({ id: state.nextId++, a: { c: sw.id, t: 0 }, b: { c: reg.id, t: i } });
+            dSws.push(sw);
+          }
+
+          const loadSw = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+          state.components.push(loadSw);
+          state.wires.push({ id: state.nextId++, a: { c: loadSw.id, t: 0 }, b: { c: reg.id, t: 4 } });
+
+          const clkSw = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+          state.components.push(clkSw);
+          state.wires.push({ id: state.nextId++, a: { c: clkSw.id, t: 0 }, b: { c: reg.id, t: 5 } });
+
+          const outs = [];
+          for (let j = 0; j < 4; j++) {
+            const o = { id: state.nextId++, type: "out", x: 0, y: 0, rot: 0, on: false };
+            state.components.push(o);
+            state.wires.push({ id: state.nextId++, a: { c: reg.id, t: 6 + j }, b: { c: o.id, t: 0 } });
+            outs.push(o);
+          }
+
+          const pulse = () => {
+            clkSw.on = true; simulate();
+            clkSw.on = false; return simulate();
+          };
+
+          const readVal = r => {
+            let v = 0;
+            for (let i = 0; i < 4; i++) {
+              const net = r.netOf.get(outs[i].id + ":0");
+              const val = net !== undefined ? r.values[net] : -1;
+              if (val === 1) v |= (1 << i);
+              else if (val !== 0) return -1;
+            }
+            return v;
+          };
+
+          // Carga 5 (0101) con LOAD=1
+          loadSw.on = true;
+          for (let i = 0; i < 4; i++) dSws[i].on = !!((5 >> i) & 1);
+          pulse();
+          const v1 = readVal(simulate());
+
+          // Retiene con LOAD=0 y cambio de entradas a 9 (1001)
+          loadSw.on = false;
+          for (let i = 0; i < 4; i++) dSws[i].on = !!((9 >> i) & 1);
+          pulse();
+          const v2 = readVal(simulate());
+
+          if (v1 === 5 && v2 === 5) ok = true;
+        } catch (e) {
+          ok = false;
+        } finally {
+          state.components = savedComponents;
+          state.wires = savedWires;
+          state.nextId = savedNextId;
+          gateOuts.clear();
+          for (const [k, v] of savedGateOuts) gateOuts.set(k, v);
+          simulate();
+        }
+        return ok;
+      }
+
+      if (hasRegBox) {
+        results.push({
+          name: TXT(LL("Caja REG4: 6 entradas (D0-D3, LOAD, CLK) y 4 salidas (Q0-Q3)", "REG4 box: 6 inputs (D0-D3, LOAD, CLK) and 4 outputs (Q0-Q3)")),
+          ok: lib["REG4"].inputs.length === 6 && lib["REG4"].outputs.length === 4,
+        });
+        results.push({
+          name: TXT(LL("Caja REG4: LOAD=1 captura dato y LOAD=0 retiene", "REG4 box: LOAD=1 captures and LOAD=0 holds")),
+          ok: testPackedReg4(),
+        });
+      } else if (dffs.length >= 4) {
+        const { netOf } = buildNets();
+        let clkComp = null;
+        for (const d of dffs) {
+          const netClk = netOf.get(d.id + ":1");
+          if (netClk === undefined) continue;
+          clkComp = state.components.find(c =>
+            (c.type === "switch" || c.type === "clock") &&
+            netOf.get(c.id + ":0") === netClk
+          );
+          if (clkComp) break;
+        }
+        results.push({
+          name: TXT(LL("Circuito REG4: al menos 4 DFFs y compuertas/multiplexores", "REG4 circuit: at least 4 DFFs and gates/multiplexers")),
+          ok: dffs.length >= 4 && !!clkComp,
+        });
+      } else if (!ramComp) {
+        results.push({
+          name: TXT(LL("Caja REG4 o circuito de registro de 4 bits", "REG4 box or 4-bit register circuit")),
+          ok: false,
+        });
+      }
+
+      // 2. Si la RAM está en el canvas, verificar la etapa Fetch
+      if (ramComp) {
+        const { netOf } = buildNets();
+        const sws = state.components.filter(c => c.type === "switch");
+        const clocks = state.components.filter(c => c.type === "clock");
+        const ring = state.components.find(c => c.type === "RING3");
+
+        let clkComp = clocks[0] ?? null;
+        if (!clkComp) {
+          if (ring) {
+            const netRingClk = netOf.get(ring.id + ":1");
+            clkComp = sws.find(s => netOf.get(s.id + ":0") === netRingClk);
+          }
+          if (!clkComp) {
+            for (const d of dffs) {
+              const netDffClk = netOf.get(d.id + ":1");
+              clkComp = sws.find(s => netOf.get(s.id + ":0") === netDffClk);
+              if (clkComp) break;
+            }
+          }
+          if (!clkComp) clkComp = sws[0];
+        }
+
+        let rstComp = null;
+        if (ring) {
+          const netRingRst = netOf.get(ring.id + ":0");
+          rstComp = sws.find(s => netOf.get(s.id + ":0") === netRingRst);
+        }
+        if (!rstComp) {
+          rstComp = sws.find(s => s !== clkComp);
+        }
+
+        if (clkComp && rstComp) {
+          const swClk = clkComp.type === "switch" ? clkComp : null;
+          const clock = clkComp.type === "clock" ? clkComp : null;
+          const clockPrev = clock ? (globalClockState.get(clock.id) ?? false) : false;
+          const clkSet = v => {
+            if (swClk) swClk.on = v;
+            else if (clock) globalClockState.set(clock.id, v);
+          };
+          const pulse = () => {
+            clkSet(true); simulate();
+            clkSet(false); return simulate();
+          };
+
+          const savedSw = sws.map(s => s.on);
+          const savedGateOuts = new Map(gateOuts);
+          const origRam = new Uint8Array(ramData.get(ramComp.id) ?? 16);
+
+          let okFetch = false;
+          try {
+            const testProg = new Uint8Array(16);
+            testProg[0] = 1; testProg[1] = 5; testProg[2] = 2; testProg[3] = 3;
+            ramData.set(ramComp.id, testProg);
+
+            const reg4s = state.components.filter(c => c.type === "REG4");
+            let opBox = null, argBox = null;
+            if (ring && reg4s.length >= 2) {
+              const netT0 = netOf.get(ring.id + ":2");
+              const netT1 = netOf.get(ring.id + ":3");
+              opBox = reg4s.find(r => netOf.get(r.id + ":4") === netT0);
+              argBox = reg4s.find(r => netOf.get(r.id + ":4") === netT1);
+            }
+            if (!opBox && reg4s.length >= 2) {
+              opBox = reg4s[0]; argBox = reg4s[1];
+            }
+
+            const readBoxNibble = (r, box) => {
+              if (!box) return -1;
+              let v = 0;
+              for (let i = 0; i < 4; i++) {
+                const net = r.netOf.get(box.id + ":" + (6 + i));
+                const b = net !== undefined ? r.values[net] : -1;
+                if (b === 1) v |= (1 << i);
+                else if (b !== 0) return -1;
+              }
+              return v;
+            };
+
+            gateOuts.clear();
+            rstComp.on = true; simulate();
+            pulse();
+            rstComp.on = false; simulate();
+
+            pulse();
+            const r1 = simulate();
+            const op1 = readBoxNibble(r1, opBox);
+
+            pulse();
+            const r2 = simulate();
+            const arg2 = readBoxNibble(r2, argBox);
+
+            if (op1 === 1 && arg2 === 5) {
+              okFetch = true;
+            }
+          } catch (e) {
+            okFetch = false;
+          } finally {
+            ramData.set(ramComp.id, origRam);
+            sws.forEach((s, i) => s.on = savedSw[i]);
+            if (clock) globalClockState.set(clock.id, clockPrev);
+            gateOuts.clear();
+            for (const [k, v] of savedGateOuts) gateOuts.set(k, v);
+            simulate();
+          }
+
+          results.push({
+            name: TXT(LL("Etapa Fetch: en T0 OP captura RAM[0] y en T1 ARG captura RAM[1]", "Fetch stage: at T0 OP captures RAM[0] and at T1 ARG captures RAM[1]")),
+            ok: okFetch,
+          });
+        } else {
+          results.push({
+            name: TXT(LL("Etapa Fetch: en T0 OP captura RAM[0] y en T1 ARG captura RAM[1]", "Fetch stage: at T0 OP captures RAM[0] and at T1 ARG captures RAM[1]")),
+            ok: false,
+          });
+        }
+      }
+
+      return results;
+    },
+  },
+  {
+    id: "s26",
+    title: LL("26. Unidad de control", "26. Control Unit"),
+    theory: {
+      es: `
+        <p>Una computadora no ejecuta todas sus piezas al mismo tiempo: necesita un
+        <b>director de orquesta</b> que coordine qué instrumento toca en cada instante.
+        Ese bloque central es la <b>Unidad de Control</b>.</p>
+        <p><b>La analogía de la mesa de mezclas teatral:</b><br>
+        Pensá en la mesa de control de un teatro. El contador de pasos (<b>T0, T1, T2</b>)
+        marca qué escena se está representando, y el registro de instrucción (<b>OP</b>)
+        indica qué obra o qué actor está en el escenario. Según la escena y el actor, el
+        operador de luces abre el micrófono del actor correcto (señales <code>LOAD</code>)
+        y apunta el reflector adecuado (señales <code>SEL</code>). Si el actor no tiene parlamento
+        en esa escena, su micrófono permanece en silencio.</p>
+        <p><b>¿Por qué es indispensable en la CPU?</b><br>
+        Sin la Unidad de Control, los registros no sabrían cuándo capturar información ni qué
+        datos escuchar; la memoria no sabría si debe leerse o escribirse; y el procesador no
+        podría distinguir entre sumar dos números (ADD), guardar en memoria, o saltar a otra parte (JMP).</p>
+        <p><b>Las 7 señales de control de nuestra CPU:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li><b>PC_LOAD</b> = T<sub>0</sub> + T<sub>1</sub> + (T<sub>2</sub> · JMP): avanza el Program Counter en la búsqueda de instrucción (T0) y argumento (T1), o carga una nueva dirección de salto en T2 si la instrucción es JMP.</li>
+          <li><b>JMP_SEL</b> = T<sub>2</sub> · JMP: conmuta el selector del PC para que tome la dirección del salto (desde ARG) en vez de la siguiente dirección secuencial (PC+1).</li>
+          <li><b>A_LOAD</b> = T<sub>2</sub> · (LDA + ADD + AND): habilita la escritura en el Acumulador A durante T2 para guardar un valor inmediato (LDA) o el resultado de la ALU (ADD, AND).</li>
+          <li><b>A_SEL</b> = ADD + AND: selecciona qué entra a A; en 0 toma ARG (para LDA) y en 1 toma el resultado de la ALU (para ADD y AND).</li>
+          <li><b>B_LOAD</b> = T<sub>2</sub> · LDB: habilita la escritura en el registro B durante T2 para capturar el segundo operando.</li>
+          <li><b>OUT_LOAD</b> = T<sub>2</sub> · OUT: copia el valor actual del Acumulador A al registro de salida visual OUT durante T2.</li>
+          <li><b>HALT_SET</b> = T<sub>2</sub> · HALT: activa el flip-flop de parada que detiene el reloj maestro de la CPU al terminar el programa.</li>
+        </ul>
+        <p><b>Matriz de control (Paso × Instrucción):</b></p>
+        <table style="border-collapse:collapse;margin:8px 0;font-family:monospace;font-size:11px;width:100%;">
+          <tr style="background:rgba(255,255,255,0.05);text-align:center;font-weight:600;">
+            <td style="border:1px solid var(--border);padding:2px 4px;">Paso</td>
+            <td style="border:1px solid var(--border);padding:2px 4px;">Instrucción</td>
+            <td style="border:1px solid var(--border);padding:2px 4px;">PC_LOAD</td>
+            <td style="border:1px solid var(--border);padding:2px 4px;">JMP_SEL</td>
+            <td style="border:1px solid var(--border);padding:2px 4px;">A_LOAD</td>
+            <td style="border:1px solid var(--border);padding:2px 4px;">A_SEL</td>
+            <td style="border:1px solid var(--border);padding:2px 4px;">B_LOAD</td>
+            <td style="border:1px solid var(--border);padding:2px 4px;">OUT_LOAD</td>
+            <td style="border:1px solid var(--border);padding:2px 4px;">HALT_SET</td>
+          </tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T0</td><td style="border:1px solid var(--border);padding:2px 4px;">(Fetch OP)</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T1</td><td style="border:1px solid var(--border);padding:2px 4px;">(Fetch ARG)</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T2</td><td style="border:1px solid var(--border);padding:2px 4px;">NOP (000)</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T2</td><td style="border:1px solid var(--border);padding:2px 4px;">LDA (001)</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T2</td><td style="border:1px solid var(--border);padding:2px 4px;">LDB (010)</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T2</td><td style="border:1px solid var(--border);padding:2px 4px;">ADD (011)</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T2</td><td style="border:1px solid var(--border);padding:2px 4px;">AND (100)</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T2</td><td style="border:1px solid var(--border);padding:2px 4px;">OUT (101)</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T2</td><td style="border:1px solid var(--border);padding:2px 4px;">JMP (110)</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T2</td><td style="border:1px solid var(--border);padding:2px 4px;">HALT (111)</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td></tr>
+        </table>
+        <p><b>Componentes que necesitás:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>1× tu caja <b>DEC3</b> 🧩 (de la lección 23)</li>
+          <li>5× <b>AND</b> (tecla 6)</li>
+          <li>4× <b>OR</b> (tecla 7)</li>
+          <li>6× <b>Entrada</b> (tecla 2): OP0, OP1, OP2 (código OP) y T0, T1, T2 (paso)</li>
+          <li>7× <b>Salida</b> (tecla 3): PC_LOAD, JMP_SEL, A_LOAD, A_SEL, B_LOAD, OUT_LOAD, HALT_SET</li>
+        </ul>
+        <p><b>Conexión paso a paso:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Conectá las Entradas OP0, OP1, OP2 a los pines de entrada A0, A1, A2 de la caja <code>DEC3</code>. Recordá que sus salidas son Y0 (NOP), Y1 (LDA), Y2 (LDB), Y3 (ADD), Y4 (AND), Y5 (OUT), Y6 (JMP) e Y7 (HALT).</li>
+          <li><b>PC_LOAD y JMP_SEL:</b> colocá una AND para calcular <code>T2 · JMP</code> (conectá T2 y la salida Y6 del DEC3). Su salida va a la Salida <code>JMP_SEL</code>. Colocá una OR entre T1 y <code>T2 · JMP</code>, y otra OR entre T0 y el resultado anterior: conectá su salida a <code>PC_LOAD</code>.</li>
+          <li><b>A_LOAD y A_SEL:</b> colocá una OR entre Y3 (ADD) y Y4 (AND); conectá su salida a <code>A_SEL</code>. Colocá otra OR entre Y1 (LDA) y la salida de <code>A_SEL</code>. Luego colocá una AND entre T2 y esa OR: conectá su salida a <code>A_LOAD</code>.</li>
+          <li><b>B_LOAD:</b> colocá una AND entre T2 y la salida Y2 (LDB) del DEC3; conectá su salida a <code>B_LOAD</code>.</li>
+          <li><b>OUT_LOAD:</b> colocá una AND entre T2 y la salida Y5 (OUT) del DEC3; conectá su salida a <code>OUT_LOAD</code>.</li>
+          <li><b>HALT_SET:</b> colocá una AND entre T2 y la salida Y7 (HALT) del DEC3; conectá su salida a <code>HALT_SET</code>.</li>
+        </ol>
+        <p><b>El experimento:</b><br>
+        1. Encendé solo <code>T0 = 1</code>: verás que únicamente se enciende <code>PC_LOAD</code>.<br>
+        2. Encendé solo <code>T1 = 1</code>: verás que también se enciende <code>PC_LOAD</code>.<br>
+        3. Encendé <code>T2 = 1</code> (dejá T0 y T1 en 0) y probá diferentes combinaciones en OP0-OP2:<br>
+        - OP = 001 (LDA): se activa <code>A_LOAD</code> con <code>A_SEL = 0</code>.<br>
+        - OP = 011 (ADD): se activan <code>A_LOAD</code> y <code>A_SEL = 1</code>.<br>
+        - OP = 110 (JMP): se activan <code>PC_LOAD</code> y <code>JMP_SEL</code>.<br>
+        - OP = 111 (HALT): se activa únicamente <code>HALT_SET</code>.</p>`,
+      en: `
+        <p>A computer does not activate every part at once: it needs an
+        <b>orchestra conductor</b> to coordinate which instrument plays at each exact moment.
+        That central block is the <b>Control Unit</b>.</p>
+        <p><b>The theater mixing console analogy:</b><br>
+        Think of the sound and lighting booth in a theater. The step counter (<b>T0, T1, T2</b>)
+        marks which scene is taking place, and the instruction register (<b>OP</b>) indicates
+        which actor or play is on stage. Depending on the scene and actor, the operator opens
+        the microphone for the right actor (<code>LOAD</code> signals) and aims the spotlight
+        (<code>SEL</code> signals). If an actor has no lines in that scene, their microphone stays muted.</p>
+        <p><b>Why is it essential in the CPU?</b><br>
+        Without the Control Unit, registers would not know when to capture data nor which bus to listen to;
+        memory would not know whether to read or write; and the processor could not distinguish between
+        adding two numbers (ADD), storing a byte, or jumping to another code address (JMP).</p>
+        <p><b>The 7 control signals in our CPU:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li><b>PC_LOAD</b> = T<sub>0</sub> + T<sub>1</sub> + (T<sub>2</sub> · JMP): advances the Program Counter during instruction fetch (T0) and argument fetch (T1), or loads a jump target during T2 if the opcode is JMP.</li>
+          <li><b>JMP_SEL</b> = T<sub>2</sub> · JMP: switches the PC input multiplexer to load the target address from ARG instead of the next sequential address (PC+1).</li>
+          <li><b>A_LOAD</b> = T<sub>2</sub> · (LDA + ADD + AND): enables write into Accumulator A during T2 to store either an immediate value (LDA) or the ALU result (ADD, AND).</li>
+          <li><b>A_SEL</b> = ADD + AND: selects the Accumulator A input source; 0 takes ARG (for LDA) and 1 takes the ALU result (for ADD and AND).</li>
+          <li><b>B_LOAD</b> = T<sub>2</sub> · LDB: enables write into register B during T2 to capture the second operand.</li>
+          <li><b>OUT_LOAD</b> = T<sub>2</sub> · OUT: copies the current value of Accumulator A into visual register OUT during T2.</li>
+          <li><b>HALT_SET</b> = T<sub>2</sub> · HALT: sets the halt latch to shut down the CPU master clock when execution finishes.</li>
+        </ul>
+        <p><b>Control Matrix (Step × Instruction):</b></p>
+        <table style="border-collapse:collapse;margin:8px 0;font-family:monospace;font-size:11px;width:100%;">
+          <tr style="background:rgba(255,255,255,0.05);text-align:center;font-weight:600;">
+            <td style="border:1px solid var(--border);padding:2px 4px;">Step</td>
+            <td style="border:1px solid var(--border);padding:2px 4px;">Instruction</td>
+            <td style="border:1px solid var(--border);padding:2px 4px;">PC_LOAD</td>
+            <td style="border:1px solid var(--border);padding:2px 4px;">JMP_SEL</td>
+            <td style="border:1px solid var(--border);padding:2px 4px;">A_LOAD</td>
+            <td style="border:1px solid var(--border);padding:2px 4px;">A_SEL</td>
+            <td style="border:1px solid var(--border);padding:2px 4px;">B_LOAD</td>
+            <td style="border:1px solid var(--border);padding:2px 4px;">OUT_LOAD</td>
+            <td style="border:1px solid var(--border);padding:2px 4px;">HALT_SET</td>
+          </tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T0</td><td style="border:1px solid var(--border);padding:2px 4px;">(Fetch OP)</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T1</td><td style="border:1px solid var(--border);padding:2px 4px;">(Fetch ARG)</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T2</td><td style="border:1px solid var(--border);padding:2px 4px;">NOP (000)</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T2</td><td style="border:1px solid var(--border);padding:2px 4px;">LDA (001)</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T2</td><td style="border:1px solid var(--border);padding:2px 4px;">LDB (010)</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T2</td><td style="border:1px solid var(--border);padding:2px 4px;">ADD (011)</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T2</td><td style="border:1px solid var(--border);padding:2px 4px;">AND (100)</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T2</td><td style="border:1px solid var(--border);padding:2px 4px;">OUT (101)</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T2</td><td style="border:1px solid var(--border);padding:2px 4px;">JMP (110)</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td></tr>
+          <tr style="text-align:center;"><td style="border:1px solid var(--border);padding:2px 4px;">T2</td><td style="border:1px solid var(--border);padding:2px 4px;">HALT (111)</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;">0</td><td style="border:1px solid var(--border);padding:2px 4px;color:#9ade3f;font-weight:bold;">1</td></tr>
+        </table>
+        <p><b>Components you need:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>1× your <b>DEC3</b> box 🧩 (from lesson 23)</li>
+          <li>5× <b>AND</b> (key 6)</li>
+          <li>4× <b>OR</b> (key 7)</li>
+          <li>6× <b>Input</b> (key 2): OP0, OP1, OP2 (opcode) and T0, T1, T2 (timing phase)</li>
+          <li>7× <b>Output</b> (key 3): PC_LOAD, JMP_SEL, A_LOAD, A_SEL, B_LOAD, OUT_LOAD, HALT_SET</li>
+        </ul>
+        <p><b>Step-by-step wiring:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Connect Inputs OP0, OP1, OP2 to pins A0, A1, A2 of the <code>DEC3</code> box. Recall its outputs are Y0 (NOP), Y1 (LDA), Y2 (LDB), Y3 (ADD), Y4 (AND), Y5 (OUT), Y6 (JMP), and Y7 (HALT).</li>
+          <li><b>PC_LOAD and JMP_SEL:</b> place an AND gate for <code>T2 · JMP</code> (connect T2 and DEC3 output Y6). Its output goes to Output <code>JMP_SEL</code>. Place an OR gate between T1 and <code>T2 · JMP</code>, and another OR gate between T0 and that OR: connect its output to <code>PC_LOAD</code>.</li>
+          <li><b>A_LOAD and A_SEL:</b> place an OR gate between Y3 (ADD) and Y4 (AND); connect its output to <code>A_SEL</code>. Place another OR gate between Y1 (LDA) and the output of <code>A_SEL</code>. Place an AND gate between T2 and that OR: connect its output to <code>A_LOAD</code>.</li>
+          <li><b>B_LOAD:</b> place an AND gate between T2 and DEC3 output Y2 (LDB); connect its output to <code>B_LOAD</code>.</li>
+          <li><b>OUT_LOAD:</b> place an AND gate between T2 and DEC3 output Y5 (OUT); connect its output to <code>OUT_LOAD</code>.</li>
+          <li><b>HALT_SET:</b> place an AND gate between T2 and DEC3 output Y7 (HALT); connect its output to <code>HALT_SET</code>.</li>
+        </ol>
+        <p><b>The experiment:</b><br>
+        1. Turn on only <code>T0 = 1</code>: verify that only <code>PC_LOAD</code> turns on.<br>
+        2. Turn on only <code>T1 = 1</code>: verify that only <code>PC_LOAD</code> turns on.<br>
+        3. Turn on <code>T2 = 1</code> (leave T0 and T1 at 0) and test different codes on OP0-OP2:<br>
+        - OP = 001 (LDA): <code>A_LOAD</code> turns on with <code>A_SEL = 0</code>.<br>
+        - OP = 011 (ADD): both <code>A_LOAD</code> and <code>A_SEL = 1</code> turn on.<br>
+        - OP = 110 (JMP): both <code>PC_LOAD</code> and <code>JMP_SEL</code> turn on.<br>
+        - OP = 111 (HALT): only <code>HALT_SET</code> turns on.</p>`,
+    },
+    check() {
+      const sws = state.components.filter(c => c.type === "switch");
+      const outs = state.components.filter(c => c.type === "out");
+      const dec = state.components.find(c => c.type === "DEC3");
+
+      const nameComps = TXT(LL(
+        "Circuito: DEC3, al menos 6 Entradas y 7 Salidas de control",
+        "Circuit: DEC3, at least 6 Inputs and 7 control Outputs"
+      ));
+
+      if (!dec || sws.length < 6 || outs.length < 7) {
+        return [
+          { name: nameComps, ok: false },
+          { name: TXT(LL("PC_LOAD y JMP_SEL: activos en Fetch (T0, T1) y en salto (T2·JMP)", "PC_LOAD and JMP_SEL: active during Fetch (T0, T1) and jump (T2·JMP)")), ok: false },
+          { name: TXT(LL("A_LOAD y A_SEL: carga condicional en LDA, ADD, AND; selector en ADD y AND", "A_LOAD and A_SEL: conditional load on LDA, ADD, AND; select on ADD and AND")), ok: false },
+          { name: TXT(LL("B_LOAD, OUT_LOAD y HALT_SET: activos en T2 según la instrucción", "B_LOAD, OUT_LOAD, and HALT_SET: active in T2 according to instruction")), ok: false },
+        ];
+      }
+
+      const { netOf } = buildNets();
+
+      const getPerms = arr => {
+        if (arr.length <= 1) return [arr];
+        const res = [];
+        for (let i = 0; i < arr.length; i++) {
+          const rest = [...arr.slice(0, i), ...arr.slice(i + 1)];
+          for (const p of getPerms(rest)) res.push([arr[i], ...p]);
+        }
+        return res;
+      };
+
+      const getCombos = (arr, k, start = 0, cur = [], res = []) => {
+        if (cur.length === k) { res.push([...cur]); return res; }
+        for (let i = start; i < arr.length; i++) {
+          cur.push(arr[i]);
+          getCombos(arr, k, i + 1, cur, res);
+          cur.pop();
+        }
+        return res;
+      };
+
+      const decSws = [0, 1, 2].map(pin =>
+        sws.find(s => netOf.get(s.id + ":0") === netOf.get(dec.id + ":" + pin))
+      );
+      const decDirect = decSws[0] && decSws[1] && decSws[2] && (new Set(decSws)).size === 3;
+
+      const rem = decDirect ? sws.filter(s => !decSws.includes(s)) : sws;
+      const candidateTSets = getCombos(rem, 3);
+
+      const testCases = [
+        { t: [1, 0, 0], op: 0 },
+        { t: [0, 1, 0], op: 0 },
+        { t: [0, 0, 1], op: 0 },
+        { t: [0, 0, 1], op: 1 },
+        { t: [0, 0, 1], op: 2 },
+        { t: [0, 0, 1], op: 3 },
+        { t: [0, 0, 1], op: 4 },
+        { t: [0, 0, 1], op: 5 },
+        { t: [0, 0, 1], op: 6 },
+        { t: [0, 0, 1], op: 7 },
+      ];
+
+      const EXPECTED = {
+        PC_LOAD:  [1, 1, 0, 0, 0, 0, 0, 0, 1, 0],
+        JMP_SEL:  [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+        A_LOAD:   [0, 0, 0, 1, 0, 1, 1, 0, 0, 0],
+        A_SEL:    [0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+        B_LOAD:   [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+        OUT_LOAD: [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+        HALT_SET: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+      };
+      const SIGNAL_NAMES = Object.keys(EXPECTED);
+
+      const savedSw = sws.map(s => s.on);
+      const savedGateOuts = new Map(gateOuts);
+
+      let bestMatchedSignals = new Set();
+      let bestScore = -1;
+
+      try {
+        const validTTriplets = [];
+        for (const cSet of candidateTSets) {
+          for (const tCand of getPerms(cSet)) {
+            sws.forEach(s => s.on = false);
+            tCand[0].on = true;
+            let r0 = simulate();
+            const act0 = outs.filter(o => r0.values[r0.netOf.get(o.id + ":0")] === 1);
+            if (act0.length === 0) continue;
+
+            tCand[0].on = false;
+            tCand[1].on = true;
+            let r1 = simulate();
+            const act1 = outs.filter(o => r1.values[r1.netOf.get(o.id + ":0")] === 1);
+            if (!act0.some(o => act1.includes(o))) continue;
+
+            tCand[1].on = false;
+            tCand[2].on = true;
+            let r2 = simulate();
+            const commonOuts = act0.filter(o => act1.includes(o));
+            const stillActive = commonOuts.some(o => r2.values[r2.netOf.get(o.id + ":0")] === 1);
+            if (stillActive) continue;
+
+            validTTriplets.push(tCand);
+          }
+        }
+
+        const candidatePairs = [];
+        if (decDirect) {
+          const opPerms = getPerms(decSws);
+          for (const tArr of validTTriplets) {
+            for (const opArr of opPerms) {
+              candidatePairs.push({ opArr, tArr });
+            }
+          }
+        } else {
+          for (const tArr of validTTriplets) {
+            const remForOp = sws.filter(s => !tArr.includes(s));
+            const opTriplets = getCombos(remForOp, 3);
+            for (const ot of opTriplets) {
+              for (const opArr of getPerms(ot)) {
+                candidatePairs.push({ opArr, tArr });
+              }
+            }
+          }
+        }
+
+        for (const { opArr, tArr } of candidatePairs) {
+          const outVectors = outs.map(() => []);
+          for (let k = 0; k < testCases.length; k++) {
+            const tc = testCases[k];
+            sws.forEach(s => s.on = false);
+            tArr[0].on = !!tc.t[0];
+            tArr[1].on = !!tc.t[1];
+            tArr[2].on = !!tc.t[2];
+            opArr[0].on = !!(tc.op & 1);
+            opArr[1].on = !!((tc.op >> 1) & 1);
+            opArr[2].on = !!((tc.op >> 2) & 1);
+            const simR = simulate();
+            for (let oi = 0; oi < outs.length; oi++) {
+              outVectors[oi].push(simR.values[simR.netOf.get(outs[oi].id + ":0")]);
+            }
+          }
+
+          const matchedSignals = new Set();
+          const claimedOuts = new Set();
+          for (const sig of SIGNAL_NAMES) {
+            const exp = EXPECTED[sig];
+            for (let oi = 0; oi < outs.length; oi++) {
+              if (claimedOuts.has(oi)) continue;
+              const matches = exp.every((val, idx) => outVectors[oi][idx] === val);
+              if (matches) {
+                claimedOuts.add(oi);
+                matchedSignals.add(sig);
+                break;
+              }
+            }
+          }
+
+          if (matchedSignals.size > bestScore) {
+            bestScore = matchedSignals.size;
+            bestMatchedSignals = matchedSignals;
+            if (bestScore === SIGNAL_NAMES.length) break;
+          }
+        }
+      } finally {
+        sws.forEach((s, i) => s.on = savedSw[i]);
+        gateOuts.clear();
+        for (const [k, v] of savedGateOuts) gateOuts.set(k, v);
+        simulate();
+      }
+
+      const okPcJmp = bestMatchedSignals.has("PC_LOAD") && bestMatchedSignals.has("JMP_SEL");
+      const okAcc = bestMatchedSignals.has("A_LOAD") && bestMatchedSignals.has("A_SEL");
+      const okRest = bestMatchedSignals.has("B_LOAD") && bestMatchedSignals.has("OUT_LOAD") && bestMatchedSignals.has("HALT_SET");
+
+      return [
+        { name: nameComps, ok: true },
+        {
+          name: TXT(LL(
+            "PC_LOAD y JMP_SEL: activos en Fetch (T0, T1) y en salto (T2·JMP)",
+            "PC_LOAD and JMP_SEL: active during Fetch (T0, T1) and jump (T2·JMP)"
+          )),
+          ok: okPcJmp,
+        },
+        {
+          name: TXT(LL(
+            "A_LOAD y A_SEL: carga condicional en LDA, ADD, AND; selector en ADD y AND",
+            "A_LOAD and A_SEL: conditional load on LDA, ADD, AND; select on ADD and AND"
+          )),
+          ok: okAcc,
+        },
+        {
+          name: TXT(LL(
+            "B_LOAD, OUT_LOAD y HALT_SET: activos en T2 según la instrucción",
+            "B_LOAD, OUT_LOAD, and HALT_SET: active in T2 according to instruction"
+          )),
+          ok: okRest,
+        },
+      ];
     },
   },
 ];

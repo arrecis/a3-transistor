@@ -528,6 +528,267 @@ expectCheck("s15 packed FULLADDER", 14, true);
   expect("pack: click order defines pin order", def.inStubs[0] === f.C.id, "inStubs=" + def.inStubs.join(","));
 }
 
+// s25 — REG4 & Fetch
+function packDFFBox() {
+  const f = flipFlop();
+  T.pack("DFF", [f.D, f.C], [f.out]);
+  T.clearCanvas();
+}
+function packMUX2Box() {
+  const a = T.add("switch"), b = T.add("switch"), s = T.add("switch");
+  const n = T.add("not"), a1 = T.add("and"), a2 = T.add("and"), o = T.add("or"), out = T.add("out");
+  T.w(s, 0, n, 0); T.w(a, 0, a1, 0); T.w(n, 1, a1, 1);
+  T.w(b, 0, a2, 0); T.w(s, 0, a2, 1);
+  T.w(a1, 2, o, 0); T.w(a2, 2, o, 1); T.w(o, 2, out, 0);
+  T.pack("MUX2", [a, b, s], [out]);
+  T.clearCanvas();
+}
+function packREG4Box({ swapPins = false } = {}) {
+  const load = T.add("switch"), clk = T.add("switch");
+  const D = [], outs = [];
+  for (let i = 0; i < 4; i++) {
+    const d = T.add("switch"), ff = T.add("DFF"), m = T.add("MUX2");
+    T.w(ff, 2, m, 0);
+    T.w(d, 0, m, 1);
+    T.w(load, 0, m, 2);
+    T.w(m, 3, ff, 0); T.w(clk, 0, ff, 1);
+    const o = T.add("out"); T.w(ff, 2, o, 0);
+    D.push(d); outs.push(o);
+  }
+  if (swapPins) {
+    T.pack("REG4", [...D, clk, load], outs);
+  } else {
+    T.pack("REG4", [...D, load, clk], outs);
+  }
+  T.clearCanvas();
+}
+
+{
+  T.reset(); packDFFBox(); packMUX2Box(); packREG4Box();
+  expectCheck("s25 REG4 empaquetado correctamente PASA", 24, true);
+}
+{
+  T.reset(); packDFFBox(); packMUX2Box(); packREG4Box({ swapPins: true });
+  expectCheck("s25 REG4 con pines LOAD/CLK invertidos FALLA", 24, false);
+}
+function packFullAdderBox() {
+  const f = fullAdder();
+  T.pack("FULLADDER", [f.A, f.B, f.Ci], [f.S, f.Co]);
+  T.clearCanvas();
+}
+function packADD4Box() {
+  packFullAdderBox();
+  const a = adder4();
+  T.pack("ADD4", [...a.A, ...a.B, a.Cin], [...a.S, a.Co]);
+  T.clearCanvas();
+}
+function packRING3Box() {
+  const r = T.add("switch"), c = T.add("switch");
+  const nR = T.add("not"); T.w(r, 0, nR, 0);
+  const f = [0, 1, 2].map(() => T.add("DFF"));
+  const d0 = T.add("or");  T.w(r, 0, d0, 0); T.w(f[2], 2, d0, 1); T.w(d0, 2, f[0], 0);
+  const d1 = T.add("and"); T.w(nR, 1, d1, 0); T.w(f[0], 2, d1, 1); T.w(d1, 2, f[1], 0);
+  const d2 = T.add("and"); T.w(nR, 1, d2, 0); T.w(f[1], 2, d2, 1); T.w(d2, 2, f[2], 0);
+  const outs = [];
+  for (let i = 0; i < 3; i++) {
+    T.w(c, 0, f[i], 1);
+    const o = T.add("out"); T.w(f[i], 2, o, 0); outs.push(o);
+  }
+  T.pack("RING3", [r, c], outs); T.clearCanvas();
+}
+function buildFetchStage({ miswire = false } = {}) {
+  const clkSw = T.add("switch");
+  const rstSw = T.add("switch");
+  const ram = T.add("ram");
+  const cs = T.add("switch"); cs.on = true;
+  const we = T.add("switch"); we.on = false;
+  T.w(cs, 0, ram, 9); T.w(we, 0, ram, 8);
+
+  const ring = T.add("RING3");
+  T.w(rstSw, 0, ring, 0); T.w(clkSw, 0, ring, 1);
+
+  const pcFf = [0, 1, 2, 3].map(() => T.add("DFF"));
+  const inc = T.add("ADD4");
+  const one = T.add("switch"); one.on = true;
+  const zero = T.add("switch"); zero.on = false;
+  T.w(one, 0, inc, 4);
+  T.w(zero, 0, inc, 5); T.w(zero, 0, inc, 6); T.w(zero, 0, inc, 7); T.w(zero, 0, inc, 8);
+
+  const mNext = [0, 1, 2, 3].map(() => T.add("MUX2"));
+  const mLoad = [0, 1, 2, 3].map(() => T.add("MUX2"));
+  const mRst  = [0, 1, 2, 3].map(() => T.add("MUX2"));
+
+  const pcLoad = T.add("or");
+  T.w(ring, 2, pcLoad, 0); T.w(ring, 3, pcLoad, 1);
+
+  for (let i = 0; i < 4; i++) {
+    T.w(pcFf[i], 2, inc, i);
+    T.w(pcFf[i], 2, mLoad[i], 0); T.w(inc, 9 + i, mLoad[i], 1); T.w(pcLoad, 2, mLoad[i], 2);
+    T.w(mLoad[i], 3, mRst[i], 0); T.w(zero, 0, mRst[i], 1); T.w(rstSw, 0, mRst[i], 2);
+    T.w(mRst[i], 3, pcFf[i], 0); T.w(clkSw, 0, pcFf[i], 1);
+    if (!miswire) {
+      T.w(pcFf[i], 2, ram, i);
+    }
+  }
+
+  const opReg = T.add("REG4");
+  const argReg = T.add("REG4");
+  for (let i = 0; i < 4; i++) {
+    T.w(ram, 10 + i, opReg, i);
+    T.w(ram, 10 + i, argReg, i);
+  }
+  T.w(ring, 2, opReg, 4);
+  T.w(ring, 3, argReg, 4);
+  T.w(clkSw, 0, opReg, 5);
+  T.w(clkSw, 0, argReg, 5);
+}
+{
+  T.reset(); packDFFBox(); packMUX2Box(); packREG4Box(); packADD4Box(); packRING3Box();
+  buildFetchStage({ miswire: false });
+  expectCheck("s25 circuito de Fetch correcto PASA", 24, true);
+}
+{
+  T.reset(); packDFFBox(); packMUX2Box(); packREG4Box(); packADD4Box(); packRING3Box();
+  buildFetchStage({ miswire: true });
+  expectCheck("s25 circuito de Fetch sin conectar PC a RAM FALLA", 24, false);
+}
+
+// s26 — Unidad de control
+function packDEC3Box() {
+  const d = dec3();
+  T.pack("DEC3", [d.A0, d.A1, d.A2], d.yOuts);
+  T.clearCanvas();
+}
+
+function buildControlUnit({ invertASel = false } = {}) {
+  const dec = T.add("DEC3");
+  const op0 = T.add("switch"), op1 = T.add("switch"), op2 = T.add("switch");
+  T.w(op0, 0, dec, 0);
+  T.w(op1, 0, dec, 1);
+  T.w(op2, 0, dec, 2);
+
+  const t0 = T.add("switch"), t1 = T.add("switch"), t2 = T.add("switch");
+
+  // T2·JMP (Y6)
+  const aTJ = T.add("and");
+  T.w(t2, 0, aTJ, 0);
+  T.w(dec, 9, aTJ, 1);
+
+  // PC_LOAD = T0 + T1 + T2·JMP
+  const oL1 = T.add("or");
+  T.w(t1, 0, oL1, 0);
+  T.w(aTJ, 2, oL1, 1);
+  const pcLoad = T.add("or");
+  T.w(t0, 0, pcLoad, 0);
+  T.w(oL1, 2, pcLoad, 1);
+
+  // A_SEL = ADD + AND (Y3, Y4)
+  const oAA = T.add("or");
+  T.w(dec, 6, oAA, 0);
+  T.w(dec, 7, oAA, 1);
+
+  // A_LOAD = T2 · (LDA + ADD + AND) (Y1)
+  const oLD = T.add("or");
+  T.w(dec, 4, oLD, 0);
+  T.w(oAA, 2, oLD, 1);
+  const aLd = T.add("and");
+  T.w(t2, 0, aLd, 0);
+  T.w(oLD, 2, aLd, 1);
+
+  // B_LOAD = T2 · LDB (Y2)
+  const bLd = T.add("and");
+  T.w(t2, 0, bLd, 0);
+  T.w(dec, 5, bLd, 1);
+
+  // OUT_LOAD = T2 · OUT (Y5)
+  const oLd = T.add("and");
+  T.w(t2, 0, oLd, 0);
+  T.w(dec, 8, oLd, 1);
+
+  // HALT_SET = T2 · HALT (Y7)
+  const aTH = T.add("and");
+  T.w(t2, 0, aTH, 0);
+  T.w(dec, 10, aTH, 1);
+
+  // 7 Salidas
+  const outPcLoad = T.add("out");
+  T.w(pcLoad, 2, outPcLoad, 0);
+
+  const outJmpSel = T.add("out");
+  T.w(aTJ, 2, outJmpSel, 0);
+
+  const outALoad = T.add("out");
+  T.w(aLd, 2, outALoad, 0);
+
+  const outASel = T.add("out");
+  if (invertASel) {
+    const notASel = T.add("not");
+    T.w(oAA, 2, notASel, 0);
+    T.w(notASel, 1, outASel, 0);
+  } else {
+    T.w(oAA, 2, outASel, 0);
+  }
+
+  const outBLoad = T.add("out");
+  T.w(bLd, 2, outBLoad, 0);
+
+  const outOutLoad = T.add("out");
+  T.w(oLd, 2, outOutLoad, 0);
+
+  const outHaltSet = T.add("out");
+  T.w(aTH, 2, outHaltSet, 0);
+}
+
+{
+  T.reset(); packDEC3Box();
+  buildControlUnit({ invertASel: false });
+  expectCheck("s26 Unidad de control correcta PASA", 25, true);
+}
+{
+  T.reset(); packDEC3Box();
+  buildControlUnit({ invertASel: true });
+  expectCheck("s26 Unidad de control con A_SEL invertido FALLA", 25, false);
+}
+
+// Test de contenido para TODAS las lecciones
+{
+  const lessons = vm.runInContext("LESSONS", ctx);
+  let contentOk = true;
+  let reason = "";
+  const latexRegex = /\$[A-Za-z\\]/;
+
+  for (let i = 0; i < lessons.length; i++) {
+    const L = lessons[i];
+    if (!L.theory) {
+      contentOk = false;
+      reason = `Lección ${L.id || i} (${i}) no tiene 'theory'`;
+      break;
+    }
+    if (!L.theory.es || typeof L.theory.es !== "string" || L.theory.es.trim().length === 0) {
+      contentOk = false;
+      reason = `Lección ${L.id || i} (${i}) tiene theory.es vacío o ausente`;
+      break;
+    }
+    if (!L.theory.en || typeof L.theory.en !== "string" || L.theory.en.trim().length === 0) {
+      contentOk = false;
+      reason = `Lección ${L.id || i} (${i}) tiene theory.en vacío o ausente`;
+      break;
+    }
+    if (latexRegex.test(L.theory.es)) {
+      contentOk = false;
+      reason = `Lección ${L.id || i} (${i}) theory.es contiene LaTeX`;
+      break;
+    }
+    if (latexRegex.test(L.theory.en)) {
+      contentOk = false;
+      reason = `Lección ${L.id || i} (${i}) theory.en contiene LaTeX`;
+      break;
+    }
+  }
+
+  expect("todas las lecciones tienen theory.es y theory.en válidos y sin LaTeX", contentOk, reason);
+}
+
 /* ---------- report ---------- */
 let failed = 0;
 for (const [label, ok, info] of results) {
