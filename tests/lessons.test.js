@@ -174,6 +174,31 @@ expectCheck("s15 packed FULLADDER", 14, true);
   T.pack("ADD4", [...a.A, ...a.B, a.Cin], [...a.S, a.Co]);
   expectCheck("s17 ADD4 packed as the lesson says", 16, true);
 }
+// regression: a package CONTAINING another package (ADD4 ⊃ FULLADDER)
+// must stay connected after flattening (pin pseudo-wires use the
+// prefixed id, not the bare one)
+{
+  packFullAdder();
+  const a = adder4();
+  T.pack("ADD4", [...a.A, ...a.B, a.Cin], [...a.S, a.Co]);  // pins: A0-A3, B0-B3, Cin | S0-S3, Cout
+  T.clearCanvas();
+  const inst = T.add("ADD4");
+  const A = [0, 1, 2, 3].map(() => T.add("switch"));
+  const B = [0, 1, 2, 3].map(() => T.add("switch"));
+  const Cin = T.add("switch");
+  const S = [0, 1, 2, 3].map(() => T.add("out"));
+  const Co = T.add("out");
+  for (let i = 0; i < 4; i++) {
+    T.w(A[i], 0, inst, i);        // A pin
+    T.w(B[i], 0, inst, 4 + i);    // B pin
+    T.w(inst, 9 + i, S[i], 0);    // S pin
+  }
+  T.w(Cin, 0, inst, 8);
+  T.w(inst, 13, Co, 0);
+  setNum(A, 5); setNum(B, 3);
+  const s = readNum(S), co = T.val(Co, 0);
+  expect("ADD4 instance (nested boxes) computes 5+3 = 8", s === 8 && co === 0, `S=${s} Cout=${co}`);
+}
 // why s16 needs a Cin Input: an unconnected pin stays indeterminate (-1)
 {
   packFullAdder();

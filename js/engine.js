@@ -142,9 +142,9 @@ function flattenCircuit() {
           });
         // join the i-th external pin with its corresponding internal stub
         def.inStubs.forEach((sid, i) =>
-          wires.push({ a: { c: String(c.id), t: i }, b: { c: cid + ":" + sid, t: 0 } }));
+          wires.push({ a: { c: cid, t: i }, b: { c: cid + ":" + sid, t: 0 } }));
         def.outStubs.forEach((oid, j) =>
-          wires.push({ a: { c: String(c.id), t: def.inputs.length + j }, b: { c: cid + ":" + oid, t: 0 } }));
+          wires.push({ a: { c: cid, t: def.inputs.length + j }, b: { c: cid + ":" + oid, t: 0 } }));
       } else if (c.type === "switch" && prefix !== null) {
         // Internal Input NOT exposed as a pin → constant with the frozen
         // value it had at packing time (e.g.: fixed Cin=0)
