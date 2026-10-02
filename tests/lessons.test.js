@@ -207,6 +207,129 @@ expectCheck("s15 packed FULLADDER", 14, true);
   const s0 = T.val(a.S[0], 0);
   expect("engine: unconnected Cin leaves S0 indeterminate", s0 === -1, "S0=" + s0);
 }
+// s19 — Program Counter (PC)
+{
+  // 1. Correct PC: 4 DFF + incrementer XOR/AND with Cin=1 + MUX per bit with JUMP and 4 destination Inputs
+  T.reset();
+  const f1 = flipFlop();
+  T.pack("DFF", [f1.D, f1.C], [f1.out]);
+  T.clearCanvas();
+
+  const dffs = [0, 1, 2, 3].map(() => T.add("DFF"));
+  const dest = [0, 1, 2, 3].map(() => T.add("switch"));
+  const JUMP = T.add("switch");
+  const CLK = T.add("switch");
+  const nJump = T.add("not");
+  T.w(JUMP, 0, nJump, 0);
+
+  dffs.forEach(d => T.w(CLK, 0, d, 1));
+
+  const xors = [0, 1, 2, 3].map(() => T.add("xor"));
+  const ands = [0, 1, 2, 3].map(() => T.add("and"));
+
+  // Incrementer (+1): Cin=1 from nJump (1 during counting when JUMP=0)
+  T.w(dffs[0], 2, xors[0], 0);
+  T.w(nJump, 1, xors[0], 1);
+  T.w(dffs[0], 2, ands[0], 0);
+  T.w(nJump, 1, ands[0], 1);
+
+  for (let i = 1; i < 4; i++) {
+    T.w(dffs[i], 2, xors[i], 0);
+    T.w(ands[i - 1], 2, xors[i], 1);
+    T.w(dffs[i], 2, ands[i], 0);
+    T.w(ands[i - 1], 2, ands[i], 1);
+  }
+
+  // MUX per bit: JUMP*dest + ¬JUMP*inc -> D
+  for (let i = 0; i < 4; i++) {
+    const aJ = T.add("and"), aI = T.add("and"), o = T.add("or");
+    T.w(dest[i], 0, aJ, 0);
+    T.w(JUMP, 0, aJ, 1);
+    T.w(xors[i], 2, aI, 0);
+    T.w(nJump, 1, aI, 1);
+    T.w(aJ, 2, o, 0);
+    T.w(aI, 2, o, 1);
+    T.w(o, 2, dffs[i], 0);
+  }
+
+  expectCheck("s19 correct PC", 18, true);
+
+  // 2. PC without MUX/JUMP (only DFF + incrementer): fails because startup indeterminate (-1) stays stuck
+  T.reset();
+  const f2 = flipFlop();
+  T.pack("DFF", [f2.D, f2.C], [f2.out]);
+  T.clearCanvas();
+
+  const badDffs = [0, 1, 2, 3].map(() => T.add("DFF"));
+  const badClk = T.add("switch");
+  const badCin = T.add("switch"); badCin.on = true;
+  badDffs.forEach(d => T.w(badClk, 0, d, 1));
+
+  const badXors = [0, 1, 2, 3].map(() => T.add("xor"));
+  const badAnds = [0, 1, 2, 3].map(() => T.add("and"));
+
+  T.w(badDffs[0], 2, badXors[0], 0);
+  T.w(badCin, 0, badXors[0], 1);
+  T.w(badDffs[0], 2, badAnds[0], 0);
+  T.w(badCin, 0, badAnds[0], 1);
+  T.w(badXors[0], 2, badDffs[0], 0);
+
+  for (let i = 1; i < 4; i++) {
+    T.w(badDffs[i], 2, badXors[i], 0);
+    T.w(badAnds[i - 1], 2, badXors[i], 1);
+    T.w(badDffs[i], 2, badAnds[i], 0);
+    T.w(badAnds[i - 1], 2, badAnds[i], 1);
+    T.w(badXors[i], 2, badDffs[i], 0);
+  }
+
+  expectCheck("s19 PC without MUX/JUMP fails", 18, false);
+
+  // 3. PC with Cin=1 from a constant Input: passes because check tries other inputs during count
+  T.reset();
+  const f3 = flipFlop();
+  T.pack("DFF", [f3.D, f3.C], [f3.out]);
+  T.clearCanvas();
+
+  const dffs3 = [0, 1, 2, 3].map(() => T.add("DFF"));
+  const dest3 = [0, 1, 2, 3].map(() => T.add("switch"));
+  const JUMP3 = T.add("switch");
+  const CLK3 = T.add("switch");
+  const Cin3 = T.add("switch"); Cin3.on = true;
+  const nJump3 = T.add("not");
+  T.w(JUMP3, 0, nJump3, 0);
+
+  dffs3.forEach(d => T.w(CLK3, 0, d, 1));
+
+  const xors3 = [0, 1, 2, 3].map(() => T.add("xor"));
+  const ands3 = [0, 1, 2, 3].map(() => T.add("and"));
+
+  // Incrementer (+1): Cin from constant Cin3 Input
+  T.w(dffs3[0], 2, xors3[0], 0);
+  T.w(Cin3, 0, xors3[0], 1);
+  T.w(dffs3[0], 2, ands3[0], 0);
+  T.w(Cin3, 0, ands3[0], 1);
+
+  for (let i = 1; i < 4; i++) {
+    T.w(dffs3[i], 2, xors3[i], 0);
+    T.w(ands3[i - 1], 2, xors3[i], 1);
+    T.w(dffs3[i], 2, ands3[i], 0);
+    T.w(ands3[i - 1], 2, ands3[i], 1);
+  }
+
+  // MUX per bit: JUMP*dest + ¬JUMP*inc -> D
+  for (let i = 0; i < 4; i++) {
+    const aJ = T.add("and"), aI = T.add("and"), o = T.add("or");
+    T.w(dest3[i], 0, aJ, 0);
+    T.w(JUMP3, 0, aJ, 1);
+    T.w(xors3[i], 2, aI, 0);
+    T.w(nJump3, 1, aI, 1);
+    T.w(aJ, 2, o, 0);
+    T.w(aI, 2, o, 1);
+    T.w(o, 2, dffs3[i], 0);
+  }
+
+  expectCheck("s19 correct PC (Cin=1 from a constant Input)", 18, true);
+}
 
 // s22 — RAM16 with data
 {

@@ -1664,51 +1664,86 @@ const LESSONS = [
         <i>el orden</i>: el <b>PC</b> (Program Counter, "contador de programa").</p>
         <p>Un programa es una lista de instrucciones guardadas en memoria, una por dirección:
         la 0, la 1, la 2... El PC es un registro especial que guarda <b>la dirección de la
-        próxima instrucción</b> a ejecutar. Como un dedo que recorre la lista: en cada ciclo
+        próxima instrucción</b> a ejecutar. Como un dedo que recorre una lista de tareas: en cada ciclo
         avanza uno — <i>salvo que haya un salto</i>, que lo manda a otra dirección.</p>
         <p style="font-family:monospace; font-size:12px; color:var(--dim)">
         El PC decide el próximo valor así:<br>
         D' = JUMP·destino + ¬JUMP·(PC+1)<br>
         (si JUMP=1: va al destino; si JUMP=0: avanza +1)<br>
         En cada flanco de CLK: PC ← D'</p>
+        <p><b>El problema del arranque y el RESET:</b></p>
+        <p>Imaginate un pizarrón al entrar a un aula: antes de escribir, no sabés qué quedó anotado
+        del día anterior; tenés que borrarlo para empezar limpio. En electrónica pasa exactamente
+        lo mismo: al encender la energía, cualquier memoria arranca en un <b>estado desconocido</b>
+        (en este simulador lo ves en los cables grises, que no tienen ni 0 ni 1 definido).
+        El incrementador (+1) usa compuertas XOR, y una compuerta XOR no puede calcular su salida
+        si no sabe qué valor tiene la entrada. Por eso el lazo Q → +1 → D se quedaría trabado en gris
+        para siempre: ¡el contador jamás arrancaría!</p>
+        <p>En cualquier CPU real esto se resuelve con una línea de <b>RESET</b> que fuerza el circuito
+        a cero al inicio. En nuestro circuito no necesitamos piezas extras: <b>¡el salto nos sirve de RESET!</b>
+        Si ponés <b>JUMP=1 con destino 0000</b> y das un pulso de reloj, el MUX fuerza un 0 limpio en cada
+        DFF (porque 0 AND cualquier cosa siempre da 0, resolviendo la incertidumbre). A partir de ese 0000 bien
+        definido, el PC ya puede contar sin problemas: 0001, 0010, 0011...</p>
         <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>4× tu caja <b>DFF</b> 🧩 — el registro de 4 bits del PC (uno por bit)</li>
-          <li>Un <b>sumador +1</b>: podés usar XOR+AND por bit (la suma es tan simple que siempre suma 1... podés usar 4 half adders con Cin=1 en el primero)</li>
-          <li>Los <b>MUXes de LOAD</b> en cada bit: eligen entre el PC+1 y la dirección de destino del salto</li>
-          <li>2× <b>Entrada</b> extra: JUMP (¿saltar?) y la dirección destino (por ahora fija)</li>
-          <li>1-4× <b>Salida</b> para ver el PC en vivo</li>
+          <li>Un <b>sumador +1</b>: 4× <b>XOR</b> (tecla 0) y 3-4× <b>AND</b> (tecla 6) en cascada (medio sumador por bit; el primer bit suma Cin=1, que podés tomar de la salida del NOT de ¬JUMP)</li>
+          <li>4× <b>MUX de LOAD</b> (uno por bit): podés usar 4× tu caja <b>MUX2</b> 🧩 o compuertas discretas (8× <b>AND</b>, 4× <b>OR</b>)</li>
+          <li>1× <b>NOT</b> (tecla 5) para generar ¬JUMP (compartido por los 4 bits del MUX)</li>
+          <li>5× <b>Entrada</b> (tecla 2): 1× JUMP (¿saltar?) y 4× dirección de destino (D0-D3, una por bit)</li>
+          <li>1× <b>Entrada</b> de CLK (tecla 2) o un <b>Reloj</b> (⏱, tecla 4)</li>
+          <li>4× <b>Salida</b> (tecla 3) para ver los 4 bits del PC en vivo</li>
         </ul>
-        <p><b>El experimento:</b> con JUMP=0 y el reloj conectado, mirá las salidas: el PC
-        avanza 1 en cada flanco — 0000→0001→0010→0011... Poné JUMP=1 con destino fijo:
-        salta a esa dirección y desde ahí sigue contando. Ese mecanismo de salto es lo que
-        permitirá a los programas tomar decisiones (loops, condiciones).</p>
-        <p>Con PC + ALU + RAM tenés los tres órganos principales de una CPU.</p>`,
+        <p><b>El experimento:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li><b>RESET</b>: poné JUMP=1 y las 4 Entradas de destino en 0. Dale un pulso de CLK (1 y luego 0): las 4 salidas Q se limpian y quedan en 0000.</li>
+          <li><b>Contar</b>: cambiá JUMP=0. En cada pulso de CLK, mirá el PC avanzar: 0001 → 0010 → 0011 → 0100...</li>
+          <li><b>Salto</b>: poné una dirección en el destino (por ejemplo 0101 = 5) y poné JUMP=1. Con un pulso de CLK el PC salta directo a 5. Volvé a JUMP=0 y continuará contando: 6, 7...</li>
+        </ol>
+        <p>Ese mecanismo de salto es lo que permitirá a los programas tomar decisiones (loops, condiciones).
+        Con PC + ALU + RAM tenés los tres órganos principales de una CPU.</p>`,
       en: `
         <p>You can compute (ALU) and remember (registers). Missing: the piece that keeps
         <i>the order</i>: the <b>PC</b> (Program Counter).</p>
         <p>A program is a list of instructions stored in memory, one per address: address 0,
         1, 2... The PC is a special register holding <b>the address of the next
-        instruction</b>. Like a finger walking the list: each cycle it advances one —
+        instruction</b>. Like a finger walking a to-do list: each cycle it advances one —
         <i>unless there is a jump</i>, which sends it to another address.</p>
         <p style="font-family:monospace; font-size:12px; color:var(--dim)">
         The PC decides its next value like this:<br>
         D' = JUMP·target + ¬JUMP·(PC+1)<br>
         (if JUMP=1: go to the target; if JUMP=0: advance +1)<br>
         On each CLK edge: PC ← D'</p>
+        <p><b>Startup and the RESET line:</b></p>
+        <p>Think of a classroom whiteboard: before you begin writing, you don't know what scribbles
+        were left from the previous class; you must erase it to start fresh. In electronics, the exact
+        same thing happens: upon power-up, any memory starts in an <b>unknown state</b> (in this
+        simulator you see it as gray wires, carrying neither 0 nor 1). The +1 incrementer uses XOR
+        gates, and an XOR gate cannot calculate an output if its input is unknown. Without help,
+        the Q → +1 → D loop would stay stuck in gray forever: the counter would never start!</p>
+        <p>In every real CPU, this is solved by a <b>RESET</b> line that forces all circuits to zero
+        at startup. In our PC, we don't need extra components: <b>our jump acts as RESET!</b>
+        Setting <b>JUMP=1 with target 0000</b> and giving one clock pulse forces a clean 0 into each
+        DFF (because 0 AND anything is always 0, resolving the uncertainty). Once established at a clean
+        0000, the PC can freely count without issue: 0001, 0010, 0011...</p>
         <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>4× your <b>DFF</b> box 🧩 — the PC's 4-bit register (one per bit)</li>
-          <li>A <b>+1 adder</b>: XOR+AND per bit works (a +1 counter — you can use 4 half-adders with Cin=1 on the first)</li>
-          <li>Per-bit <b>LOAD MUXes</b>: choosing between PC+1 and the jump target</li>
-          <li>2 extra <b>Inputs</b>: JUMP (jump or not?) and the target address (fixed for now)</li>
-          <li>1-4× <b>Output</b> to watch the PC live</li>
+          <li>A <b>+1 adder</b>: 4× <b>XOR</b> (key 0) and 3-4× <b>AND</b> (key 6) in cascade (half adder per bit; the first bit adds Cin=1, which you can take from the ¬JUMP NOT gate output)</li>
+          <li>4× <b>LOAD MUXes</b> (one per bit): you can use 4× your <b>MUX2</b> box 🧩 or discrete gates (8× <b>AND</b>, 4× <b>OR</b>)</li>
+          <li>1× <b>NOT</b> (key 5) to generate ¬JUMP (shared across all 4 MUX bits)</li>
+          <li>5× <b>Inputs</b> (key 2): 1× JUMP (jump or not?) and 4× target address (D0-D3, one per bit)</li>
+          <li>1× CLK <b>Input</b> (key 2) or a <b>Clock</b> (⏱, key 4)</li>
+          <li>4× <b>Outputs</b> (key 3) to watch the PC's 4 bits live</li>
         </ul>
-        <p><b>The experiment:</b> with JUMP=0 and the clock wired, watch the outputs: the PC
-        advances 1 per edge — 0000→0001→0010→0011... Set JUMP=1 with a fixed target: it
-        jumps there and keeps counting from there. That jump mechanism is what will let
-        programs make decisions (loops, conditions).</p>
-        <p>With PC + ALU + RAM you have the three main organs of a CPU.</p>`,
+        <p><b>The experiment:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li><b>RESET</b>: set JUMP=1 and the 4 target Inputs to 0. Give one CLK pulse (1 then 0): all 4 Q outputs clear to 0000.</li>
+          <li><b>Counting</b>: switch to JUMP=0. On each CLK pulse, watch the PC advance: 0001 → 0010 → 0011 → 0100...</li>
+          <li><b>Jump</b>: set a target address (for example 0101 = 5) and set JUMP=1. On a CLK pulse the PC jumps straight to 5. Switch back to JUMP=0 and it keeps counting: 6, 7...</li>
+        </ol>
+        <p>That jump mechanism is what will let programs make decisions (loops, conditions).
+        With PC + ALU + RAM you have the three main organs of a CPU.</p>`,
     },
     check() {
       const results = [];
@@ -1717,12 +1752,150 @@ const LESSONS = [
         name: TXT(LL("4 DFF en paralelo (el registro del PC)", "4 DFFs in parallel (the PC register)")),
         ok: dff.length >= 4,
       });
-      if (dff.length >= 4) {
+      if (dff.length < 4) {
         results.push({
-          name: TXT(LL("Todos conectados", "All wired")),
-          ok: dff.every(d => state.wires.some(w => w.a.c === d.id || w.b.c === d.id)),
+          name: TXT(LL("RESET: JUMP=1 a 0000 deja el PC en 0", "RESET: JUMP=1 to 0000 leaves PC at 0")),
+          ok: false,
         });
+        results.push({
+          name: TXT(LL("Con JUMP=0 el PC cuenta 1, 2, 3", "With JUMP=0 the PC counts 1, 2, 3")),
+          ok: false,
+        });
+        return results;
       }
+
+      const { netOf } = buildNets();
+      let clkComp = null;
+      for (const d of dff) {
+        const netClk = netOf.get(d.id + ":1");
+        if (netClk === undefined) continue;
+        clkComp = state.components.find(c =>
+          (c.type === "switch" || c.type === "clock") &&
+          netOf.get(c.id + ":0") === netClk
+        );
+        if (clkComp) break;
+      }
+      if (!clkComp) {
+        for (const d of dff) {
+          const w = state.wires.find(w => (w.a.c === d.id && w.a.t === 1) || (w.b.c === d.id && w.b.t === 1));
+          if (!w) continue;
+          const otherId = w.a.c === d.id ? w.b.c : w.a.c;
+          clkComp = state.components.find(c => c.id === otherId && (c.type === "switch" || c.type === "clock"));
+          if (clkComp) break;
+        }
+      }
+
+      const swClk = clkComp && clkComp.type === "switch" ? clkComp : null;
+      const clock = clkComp && clkComp.type === "clock" ? clkComp : null;
+
+      const clkNet = clkComp ? netOf.get(clkComp.id + ":0") : null;
+      const targetDffs = clkNet !== null
+        ? dff.filter(d => netOf.get(d.id + ":1") === clkNet)
+        : dff;
+      const fourDff = targetDffs.length >= 4 ? targetDffs.slice(0, 4) : dff.slice(0, 4);
+
+      const allSwitches = state.components.filter(c => c.type === "switch");
+      const candidateJumps = allSwitches.filter(s => s !== swClk);
+
+      const clockPrev = clock ? (globalClockState.get(clock.id) ?? false) : false;
+      const clkSet = v => {
+        if (swClk) swClk.on = v;
+        else if (clock) globalClockState.set(clock.id, v);
+      };
+      const pulse = () => {
+        clkSet(true);
+        simulate();
+        clkSet(false);
+        return simulate();
+      };
+
+      const getQ = (r, d) => r.values[r.netOf.get(d.id + ":2")];
+      const read4Q = r => fourDff.map(d => getQ(r, d));
+
+      const perms = [];
+      for (let i = 0; i < 4; i++)
+        for (let j = 0; j < 4; j++) {
+          if (j === i) continue;
+          for (let k = 0; k < 4; k++) {
+            if (k === i || k === j) continue;
+            for (let l = 0; l < 4; l++) {
+              if (l === i || l === j || l === k) continue;
+              perms.push([i, j, k, l]);
+            }
+          }
+        }
+      const valAt = (snap, p) => snap[p[0]] + 2 * snap[p[1]] + 4 * snap[p[2]] + 8 * snap[p[3]];
+
+      let okReset = false;
+      let okCount = false;
+      const savedGateOuts = new Map(gateOuts);
+
+      if (swClk || clock) {
+        for (const swJump of candidateJumps) {
+          gateOuts.clear();
+          for (const [k, v] of savedGateOuts) gateOuts.set(k, v);
+
+          allSwitches.forEach(s => s.on = false);
+          clkSet(false);
+          swJump.on = true;
+          simulate();
+
+          const simAfterReset = pulse();
+          const qReset = read4Q(simAfterReset);
+          if (qReset.every(v => v === 0)) {
+            okReset = true;
+            const postResetGateOuts = new Map(gateOuts);
+            const otherSwitches = candidateJumps.filter(s => s !== swJump);
+            const countCandidates = [null, ...otherSwitches];
+
+            for (const extraSw of countCandidates) {
+              gateOuts.clear();
+              for (const [k, v] of postResetGateOuts) gateOuts.set(k, v);
+
+              allSwitches.forEach(s => s.on = false);
+              if (extraSw) extraSw.on = true;
+              swJump.on = false;
+              clkSet(false);
+              simulate();
+
+              pulse();
+              const s1 = read4Q(simulate());
+              pulse();
+              const s2 = read4Q(simulate());
+              pulse();
+              const s3 = read4Q(simulate());
+
+              const validBits = [...s1, ...s2, ...s3].every(v => v === 0 || v === 1);
+              if (validBits) {
+                const counts123 = perms.some(p => valAt(s1, p) === 1 && valAt(s2, p) === 2 && valAt(s3, p) === 3);
+                if (counts123) {
+                  okCount = true;
+                  break;
+                }
+              }
+            }
+            if (okCount) break;
+          }
+        }
+      }
+
+      allSwitches.forEach(s => s.on = false);
+      if (clock) {
+        globalClockState.set(clock.id, clockPrev);
+        clockAcc.set(clock.id, 0);
+      }
+      gateOuts.clear();
+      for (const [k, v] of savedGateOuts) gateOuts.set(k, v);
+      simulate();
+
+      results.push({
+        name: TXT(LL("RESET: JUMP=1 a 0000 deja el PC en 0", "RESET: JUMP=1 to 0000 leaves PC at 0")),
+        ok: okReset,
+      });
+      results.push({
+        name: TXT(LL("Con JUMP=0 el PC cuenta 1, 2, 3", "With JUMP=0 the PC counts 1, 2, 3")),
+        ok: okCount,
+      });
       return results;
     },
   },
