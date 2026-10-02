@@ -1583,58 +1583,72 @@ const LESSONS = [
         <p>La <b>ALU</b> (Unidad Aritmético-Lógica) es donde la CPU "piensa": recibe dos
         números de 4 bits, un <b>código de operación</b> — u <b>opcode</b>: un número que
         indica <i>qué hacer</i> — y produce el resultado. Con 1 bit de opcode elegís entre
-        2 operaciones; con 2 bits, entre 4.</p>
+        2 operaciones: con OP=0 suma, con OP=1 hace AND.</p>
         <p><b>La idea central:</b> en lugar de decidir <i>qué circuito usar</i>, hacemos que
         A y B pasen por <i>todos</i> los circuitos a la vez (en paralelo) y usamos MUXes para
-        elegir cuál resultado se muestra. Acá, la versión simple con 2 operaciones:
+        elegir cuál resultado se muestra. Acá, la versión con 2 operaciones:
         <b>suma (tu ADD4)</b> y <b>AND bit a bit</b> (cada par de bits A·B por separado).</p>
         <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>1× tu caja <b>ADD4</b> 🧩 (de la lección 17)</li>
           <li>4× tu caja <b>MUX2</b> 🧩 (de la lección 12) — una por bit de resultado</li>
           <li>4× <b>AND</b> (tecla 6) — la operación AND bit a bit</li>
-          <li>2× <b>Entrada</b> para el opcode (tecla 2): OP0 y OP1</li>
-          <li>9× <b>Entrada</b> de datos: A0-A3, B0-B3, y Cin (dejala en 0)</li>
-          <li>4× <b>Salida</b> (tecla 3)</li>
+          <li>1× <b>Entrada</b> para el opcode (tecla 2): <b>OP</b></li>
+          <li>8× <b>Entrada</b> de datos: A0-A3 y B0-B3</li>
+          <li>1× <b>Entrada</b> fija en 0 para Cin del ADD4 (¡no se marca como pin al empaquetar!)</li>
+          <li>4× <b>Salida</b> (tecla 3): R0-R3</li>
         </ul>
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Todas las Entradas de A y B van <i>a la vez</i> al ADD4 <i>y</i> a los AND (cada AND recibe un par Ax, Bx)</li>
+          <li>La entrada Cin del ADD4 se conecta a la Entrada fija en 0</li>
           <li>La salida Sx del ADD4 → entrada A del MUX del bit x; la salida del AND de ese bit → entrada B del MUX</li>
-          <li>El selector S de <i>todos</i> los MUX = OP0 (con OP0=0 sale la suma, con OP0=1 sale el AND)</li>
+          <li>El selector S de <i>todos</i> los MUX = OP (con OP=0 sale la suma, con OP=1 sale el AND)</li>
+          <li>Las salidas de los 4 MUX van a las 4 Salidas (R0-R3)</li>
         </ol>
-        <p><b>El experimento:</b> cargá valores en A y B, y cambiá OP0: la salida alterna
+        <p><b>El experimento:</b> cargá valores en A y B, y cambiá OP: la salida alterna
         entre la <b>suma</b> y el <b>AND lógico</b>. Acabás de ver el núcleo de ejecución de
         una CPU real: los mismos datos, varias operaciones en paralelo, y un selector.</p>
-        <p style="color:var(--dim); font-size:12px;">💡 Cuando funcione, empaquetala como <b>ALU4</b>: es el corazón del bloque de ejecución de tu CPU.</p>`,
+        <p style="color:var(--dim); font-size:12px;">💡 Cuando funcione, empaquetala como <b>ALU4</b>:<br>
+        📦 Empaquetar (P) → Nombrala <b>ALU4</b>.<br>
+        Pines de entrada, <b>en este orden de click</b>: A0, A1, A2, A3, B0, B1, B2, B3, OP (la Entrada Cin fija en 0 no la selecciones como pin; queda adentro).<br>
+        Pines de salida, <b>en este orden</b>: R0, R1, R2, R3.<br>
+        Es el corazón del bloque de ejecución de tu CPU.</p>`,
       en: `
         <p>The <b>ALU</b> (Arithmetic Logic Unit) is where the CPU "thinks": it takes two
         4-bit numbers, an <b>operation code</b> — <b>opcode</b>: a number saying <i>what to
-        do</i> — and produces the result. With 1 opcode bit you choose between 2 operations;
-        with 2 bits, 4.</p>
+        do</i> — and produces the result. With 1 opcode bit you choose between 2 operations:
+        OP=0 adds, OP=1 performs bitwise AND.</p>
         <p><b>The core idea:</b> instead of deciding <i>which circuit to use</i>, let A and B
         pass through <i>all</i> circuits at once (in parallel), and use MUXes to pick which
-        result leaves. Here, the simple 2-operation version: <b>sum (your ADD4)</b> and
+        result leaves. Here, the version with 2 operations: <b>sum (your ADD4)</b> and
         <b>bitwise AND</b> (each A·B bit pair separately).</p>
         <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>1× your <b>ADD4</b> box (from lesson 17)</li>
           <li>4× your <b>MUX2</b> boxes (from lesson 12) — one per result bit</li>
           <li>4× <b>AND</b> (key 6) — the bitwise AND operation</li>
-          <li>2× <b>Input</b> for the opcode (OP0, OP1)</li>
-          <li>9× <b>Input</b> for data: A0-A3, B0-B3, and Cin (leave it at 0)</li>
-          <li>4× <b>Output</b> (key 3)</li>
+          <li>1× <b>Input</b> for the opcode (key 2): <b>OP</b></li>
+          <li>8× <b>Input</b> for data: A0-A3 and B0-B3</li>
+          <li>1× <b>Input</b> fixed at 0 for ADD4's Cin (do not select it as a pin when packing!)</li>
+          <li>4× <b>Output</b> (key 3): R0-R3</li>
         </ul>
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>All A and B Inputs go <i>at once</i> into the ADD4 <i>and</i> into the ANDs (each AND gets one Ax, Bx pair)</li>
+          <li>ADD4's Cin input connects to the constant 0 Input</li>
           <li>ADD4's Sx output → MUX x's A input; that bit's AND output → MUX x's B input</li>
-          <li>Every MUX's S selector = OP0 (OP0=0 outputs the sum, OP0=1 outputs the AND)</li>
+          <li>Every MUX's S selector = OP (OP=0 outputs the sum, OP=1 outputs the AND)</li>
+          <li>The 4 MUX outputs go to the 4 Outputs (R0-R3)</li>
         </ol>
-        <p><b>The experiment:</b> load A and B values and toggle OP0: the output alternates
+        <p><b>The experiment:</b> load A and B values and toggle OP: the output alternates
         between <b>sum</b> and <b>bitwise AND</b>. You just watched a real CPU's execution
         core: same data, several operations in parallel, one selector.</p>
-        <p style="color:var(--dim); font-size:12px;">💡 Pack this ALU when it works: your ALU box is the heart of the CPU's execute stage.</p>`,
+        <p style="color:var(--dim); font-size:12px;">💡 When it works, pack it as <b>ALU4</b>:<br>
+        📦 Pack (P) → Name it <b>ALU4</b>.<br>
+        Input pins, <b>in this click order</b>: A0, A1, A2, A3, B0, B1, B2, B3, OP (leave the constant Cin=0 Input inside without clicking it).<br>
+        Output pins, <b>in this order</b>: R0, R1, R2, R3.<br>
+        This is the heart of your CPU's execution stage.</p>`,
     },
     check() {
       const results = [];
@@ -1650,6 +1664,13 @@ const LESSONS = [
         results.push({
           name: TXT(LL("Todo cableado", "Everything wired")),
           ok: ands.length >= 4 && keyComps.every(c => state.wires.some(w => w.a.c === c.id || w.b.c === c.id)),
+        });
+      }
+      const def = lib["ALU4"];
+      if (def) {
+        results.push({
+          name: TXT(LL("Caja ALU4: 9 entradas (A×4, B×4, OP) y 4 salidas (R×4)", "ALU4 box: 9 inputs (A×4, B×4, OP) and 4 outputs (R×4)")),
+          ok: def.inputs.length === 9 && def.outputs.length === 4,
         });
       }
       return results;
@@ -2031,8 +2052,8 @@ const LESSONS = [
           <li>Cableá A0-A3 a Entradas y cambiá la dirección: la caja RAM muestra en vivo la <b>addr</b> y el <b>contenido</b> de esa celda, y el Q0-Q3 lo expone a sus salidas</li>
         </ol>
         <p style="color:var(--dim); font-size:12px;"><i>Ese panel hex es literalmente cómo se ve la memoria
-        de una computadora real mientras ejecuta — y a partir de la próxima lección, tus
-        programas van a vivir ahí dentro.</i></p>`,
+        de una computadora real mientras ejecuta — y en el bloque 4, cuando construyas el CPU,
+        tus programas van a vivir ahí dentro.</i></p>`,
       en: `
         <p>To run programs we need <i>addressable</i>, easy-to-use memory. The engine now
         gives you a special component: <b>🧠 RAM16</b> — 16 cells × 4 bits packed into one
@@ -2052,7 +2073,7 @@ const LESSONS = [
           <li>Wire A0-A3 to Inputs and change the address: the RAM box live-shows <b>addr</b> + <b>content</b>, and Q0-Q3 expose it</li>
         </ol>
         <p style="color:var(--dim); font-size:12px;"><i>That hex panel is literally how a real computer's memory looks
-        while running — and from next lesson on, your programs will live in there.</i></p>`,
+        while running — and in block 4, when you build the CPU, your programs will live in there.</i></p>`,
     },
     check() {
       const ram = state.components.filter(c => c.type === "ram");
@@ -2063,6 +2084,478 @@ const LESSONS = [
         results.push({ name: TXT(LL("Con datos escritos (escribí en la vista hex)", "With data written (type in the hex view)")),
           ok: data ? data.some(v => v !== 0) : false });
       }
+      return results;
+    },
+  },
+  {
+    id: "s23",
+    title: LL("23. Decodificador 2→4 y 3→8", "23. 2→4 and 3→8 Decoders"),
+    theory: {
+      es: `
+        <p>En una computadora las instrucciones y direcciones se guardan como números binarios
+        compactos. Pero para ejecutar una acción necesitás que un solo cable específico se encienda.
+        El <b>decodificador</b> es ese traductor: toma $N$ bits de entrada y enciende
+        <b>exactamente una</b> de sus $2^N$ salidas.</p>
+        <p><b>Analogía:</b> es como el conserje de un hotel con un casillero de llaves numeradas:
+        si le pedís el número 2, enciende únicamente la luz de la habitación 2 y deja las demás apagadas.</p>
+        <p><b>La idea lógica (para 2 bits: A0 y A1):</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li><b>Y0</b> = ¬A1 · ¬A0 (código 00 = 0)</li>
+          <li><b>Y1</b> = ¬A1 · A0 (código 01 = 1)</li>
+          <li><b>Y2</b> = A1 · ¬A0 (código 10 = 2)</li>
+          <li><b>Y3</b> = A1 · A0 (código 11 = 3)</li>
+        </ul>
+        <p><b>Componentes que necesitás para DEC2:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>2× <b>Entrada</b> (tecla 2): A0 y A1</li>
+          <li>2× <b>NOT</b> (tecla 5): para obtener ¬A0 y ¬A1</li>
+          <li>4× <b>AND</b> (tecla 6): una por salida</li>
+          <li>4× <b>Salida</b> (tecla 3): Y0 a Y3</li>
+        </ul>
+        <p><b>Conexión:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Conectá cada Entrada a un NOT para disponer de A0, ¬A0, A1 y ¬A1</li>
+          <li>Cableá cada compuerta AND con el par correspondiente (ejemplo: AND0 recibe ¬A1 y ¬A0)</li>
+          <li>Conectá la salida de cada AND a su Salida visual (Y0 a Y3)</li>
+        </ol>
+        <p><b>El experimento:</b> cambiá A0 y A1 probando las 4 combinaciones (00, 01, 10, 11).
+        Vas a ver cómo la luz activa viaja limpiamente de Y0 a Y3: nunca hay más de una encendida.</p>
+        <p style="color:var(--dim); font-size:12px;">💡 Empaquetala como <b>DEC2</b>:<br>
+        📦 Empaquetar (P) → Nombrala <b>DEC2</b>.<br>
+        Pines de entrada: A0, A1 (en orden de click).<br>
+        Pines de salida: Y0, Y1, Y2, Y3.<br>
+        (Para 3 bits a 8 salidas, agregás A2 y compuertas AND adicionales para empaquetar <b>DEC3</b> con entradas A0, A1, A2 y salidas Y0-Y7).</p>`,
+      en: `
+        <p>In a computer, instructions and addresses are stored as compact binary numbers.
+        Yet to perform an action, you need one specific control line to activate.
+        A <b>decoder</b> is this translator: it takes $N$ input bits and activates
+        <b>exactly one</b> of its $2^N$ outputs.</p>
+        <p><b>Analogy:</b> like a hotel concierge at a numbered key rack: ask for room 2,
+        and only the light for key 2 turns on while all others stay dark.</p>
+        <p><b>The logic (for 2 bits: A0 and A1):</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li><b>Y0</b> = ¬A1 · ¬A0 (code 00 = 0)</li>
+          <li><b>Y1</b> = ¬A1 · A0 (code 01 = 1)</li>
+          <li><b>Y2</b> = A1 · ¬A0 (code 10 = 2)</li>
+          <li><b>Y3</b> = A1 · A0 (code 11 = 3)</li>
+        </ul>
+        <p><b>Components you need for DEC2:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>2× <b>Input</b> (key 2): A0 and A1</li>
+          <li>2× <b>NOT</b> (key 5): for ¬A0 and ¬A1</li>
+          <li>4× <b>AND</b> (key 6): one per output</li>
+          <li>4× <b>Output</b> (key 3): Y0 through Y3</li>
+        </ul>
+        <p><b>Wiring:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Connect each Input to a NOT to obtain A0, ¬A0, A1, and ¬A1</li>
+          <li>Wire each AND gate with its corresponding pair (e.g. AND0 receives ¬A1 and ¬A0)</li>
+          <li>Connect each AND output to its visual Output (Y0 to Y3)</li>
+        </ol>
+        <p><b>The experiment:</b> test all 4 combinations on A0 and A1 (00, 01, 10, 11).
+        Watch the active light shift cleanly from Y0 to Y3: there is never more than one active.</p>
+        <p style="color:var(--dim); font-size:12px;">💡 Pack it as <b>DEC2</b>:<br>
+        📦 Pack (P) → Name it <b>DEC2</b>.<br>
+        Input pins: A0, A1 (in click order).<br>
+        Output pins: Y0, Y1, Y2, Y3.<br>
+        (For 3 bits to 8 outputs, add A2 and extra ANDs to pack <b>DEC3</b> with inputs A0, A1, A2 and outputs Y0-Y7).</p>`,
+    },
+    check() {
+      const sws = state.components.filter(c => c.type === "switch");
+      const outs = state.components.filter(c => c.type === "out");
+      const ands = state.components.filter(c => c.type === "and");
+
+      const is3 = (outs.length >= 8 || ands.length >= 8) && sws.length >= 3;
+      const is2 = !is3 && (outs.length >= 4 || ands.length >= 4) && sws.length >= 2;
+
+      const nameCircuit = TXT(LL("Circuito: 2 o 3 Entradas y 4 u 8 Salidas/AND", "Circuit: 2 or 3 Inputs and 4 or 8 Outputs/ANDs"));
+      if (!is3 && !is2 && !lib["DEC2"] && !lib["DEC3"]) {
+        return [{ name: nameCircuit, ok: false }];
+      }
+
+      function testDecoderBox(pkgName, nIn, nOut) {
+        const def = lib[pkgName];
+        if (!def) return false;
+        if (def.inputs.length !== nIn || def.outputs.length !== nOut) return false;
+        if (typeof registerPackedType === "function" && !TYPE_DEFS[pkgName]) {
+          registerPackedType(def);
+        }
+
+        const savedComponents = state.components;
+        const savedWires = state.wires;
+        const savedNextId = state.nextId;
+        const savedGateOuts = new Map(gateOuts);
+
+        let ok = true;
+        try {
+          state.components = [];
+          state.wires = [];
+          state.nextId = 1;
+          gateOuts.clear();
+
+          const box = { id: state.nextId++, type: pkgName, x: 0, y: 0, rot: 0, on: false };
+          state.components.push(box);
+
+          const bSws = [];
+          for (let i = 0; i < nIn; i++) {
+            const sw = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+            state.components.push(sw);
+            state.wires.push({ id: state.nextId++, a: { c: sw.id, t: 0 }, b: { c: box.id, t: i } });
+            bSws.push(sw);
+          }
+
+          const bOuts = [];
+          for (let j = 0; j < nOut; j++) {
+            const out = { id: state.nextId++, type: "out", x: 0, y: 0, rot: 0, on: false };
+            state.components.push(out);
+            state.wires.push({ id: state.nextId++, a: { c: box.id, t: nIn + j }, b: { c: out.id, t: 0 } });
+            bOuts.push(out);
+          }
+
+          for (let v = 0; v < nOut; v++) {
+            for (let bit = 0; bit < nIn; bit++) {
+              bSws[bit].on = !!((v >> bit) & 1);
+            }
+            const r = simulate();
+            const vals = bOuts.map(o => r.values[r.netOf.get(o.id + ":0")]);
+            const activeCount = vals.filter(x => x === 1).length;
+            if (activeCount !== 1 || vals[v] !== 1) {
+              ok = false;
+              break;
+            }
+          }
+        } catch (e) {
+          ok = false;
+        } finally {
+          state.components = savedComponents;
+          state.wires = savedWires;
+          state.nextId = savedNextId;
+          gateOuts.clear();
+          for (const [k, v] of savedGateOuts) gateOuts.set(k, v);
+          simulate();
+        }
+        return ok;
+      }
+
+      const results = [];
+
+      if (is3 || is2) {
+        const nIn = is3 ? 3 : 2;
+        const nOut = is3 ? 8 : 4;
+        const targetOuts = outs.length >= nOut ? outs.slice(0, nOut) : ands.slice(0, nOut);
+
+        const readOut = (r, node) =>
+          node.type === "out" ? r.values[r.netOf.get(node.id + ":0")] : r.values[r.netOf.get(node.id + ":2")];
+
+        const switchCombos = [];
+        if (sws.length === nIn) {
+          switchCombos.push(sws);
+        } else {
+          const getCombos = (arr, k, start = 0, current = []) => {
+            if (current.length === k) { switchCombos.push([...current]); return; }
+            for (let i = start; i < arr.length; i++) {
+              current.push(arr[i]);
+              getCombos(arr, k, i + 1, current);
+              current.pop();
+            }
+          };
+          getCombos(sws, nIn);
+        }
+
+        let okOneHot = false;
+        let okDistinct = false;
+        const savedSw = sws.map(s => s.on);
+
+        for (const combo of switchCombos) {
+          sws.forEach(s => { if (!combo.includes(s)) s.on = false; });
+          let comboOneHot = true;
+          const activeIndices = new Set();
+
+          for (let val = 0; val < nOut; val++) {
+            for (let bit = 0; bit < nIn; bit++) {
+              combo[bit].on = !!((val >> bit) & 1);
+            }
+            const r = simulate();
+            const outVals = targetOuts.map(o => readOut(r, o));
+            const active = [];
+            for (let i = 0; i < outVals.length; i++) {
+              if (outVals[i] === 1) active.push(i);
+              else if (outVals[i] === -1) comboOneHot = false;
+            }
+            if (active.length !== 1) {
+              comboOneHot = false;
+            } else {
+              activeIndices.add(active[0]);
+            }
+          }
+
+          if (comboOneHot) okOneHot = true;
+          if (comboOneHot && activeIndices.size === nOut) {
+            okDistinct = true;
+            break;
+          }
+        }
+
+        sws.forEach((s, i) => s.on = savedSw[i]);
+        simulate();
+
+        results.push({
+          name: TXT(LL(
+            is3 ? "Decodificador 3→8 (3 Entradas, 8 Salidas)" : "Decodificador 2→4 (2 Entradas, 4 Salidas)",
+            is3 ? "3→8 Decoder (3 Inputs, 8 Outputs)" : "2→4 Decoder (2 Inputs, 4 Outputs)"
+          )),
+          ok: true,
+        });
+        results.push({
+          name: TXT(LL("Exactamente una salida activa por combinación", "Exactly one active output per combination")),
+          ok: okOneHot,
+        });
+        results.push({
+          name: TXT(LL("Cada valor enciende una salida distinta (biyección)", "Each value activates a distinct output (bijection)")),
+          ok: okDistinct,
+        });
+      } else if (lib["DEC2"] || lib["DEC3"]) {
+        results.push({
+          name: TXT(LL("Decodificador empaquetado", "Decoder packed")),
+          ok: true,
+        });
+      }
+
+      if (lib["DEC2"]) {
+        results.push({
+          name: TXT(LL("Caja DEC2: la entrada v enciende Yv", "DEC2 box: input v activates Yv")),
+          ok: testDecoderBox("DEC2", 2, 4),
+        });
+      }
+      if (lib["DEC3"]) {
+        results.push({
+          name: TXT(LL("Caja DEC3: la entrada v enciende Yv", "DEC3 box: input v activates Yv")),
+          ok: testDecoderBox("DEC3", 3, 8),
+        });
+      }
+
+      return results;
+    },
+  },
+  {
+    id: "s24",
+    title: LL("24. Contador de pasos y RESET (RING3)", "24. Step counter and RESET (RING3)"),
+    theory: {
+      es: `
+        <p>Una computadora no puede hacer todo en un solo instante: necesita un compás rítmico
+        y ordenado. En nuestra CPU, cada instrucción se ejecuta en <b>3 pasos</b>:</p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li><b>T0</b>: Buscar la instrucción en la memoria (Fetch OP) y avanzar el PC</li>
+          <li><b>T1</b>: Buscar el argumento (Fetch ARG) y avanzar el PC</li>
+          <li><b>T2</b>: Ejecutar la operación (Execute)</li>
+        </ul>
+        <p>Para generar estas fases usamos un <b>contador de anillo</b> (<i>ring counter</i>):
+        un único bit <code>1</code> que circula cíclicamente $T_0 \rightarrow T_1 \rightarrow T_2 \rightarrow T_0$.</p>
+        <p><b>El problema del arranque y el milagro del RESET:</b><br>
+        Al encender la computadora, todos los flip-flops arrancan en estado desconocido
+        (cables grises con valor <code>-1</code>). Si conectamos un lazo directo, el circuito
+        nunca arranca porque <code>-1</code> retroalimentado sigue siendo <code>-1</code>.</p>
+        <p>La línea <b>RESET</b> rompe ese bloqueo gracias a las compuertas:</p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>$D_{T0} = \text{RESET} + T_2$: con $\text{RESET}=1$, la compuerta OR calcula $\text{OR}(1, -1) = 1$. ¡Garantiza un 1 limpio en T0!</li>
+          <li>$D_{T1} = \neg\text{RESET} \cdot T_0$: con $\text{RESET}=1$ ($\neg\text{RESET}=0$), la compuerta AND calcula $\text{AND}(0, -1) = 0$.</li>
+          <li>$D_{T2} = \neg\text{RESET} \cdot T_1$: calcula $\text{AND}(0, -1) = 0$.</li>
+        </ul>
+        <p>¡Un solo pulso de reloj con RESET=1 inicializa el contador en <code>100</code>!</p>
+        <p><b>Componentes que necesitás:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>3× tu caja <b>DFF</b> 🧩 (de la lección 9)</li>
+          <li>1× <b>OR</b> (tecla 7) — para inyectar RESET en T0</li>
+          <li>2× <b>AND</b> (tecla 6) — para condicionar T1 y T2 al RESET</li>
+          <li>1× <b>NOT</b> (tecla 5) — para obtener ¬RESET</li>
+          <li>2× <b>Entrada</b> (tecla 2): RESET y CLK (o un Reloj ⏱ tecla 4)</li>
+          <li>3× <b>Salida</b> (tecla 3): T0, T1, T2</li>
+        </ul>
+        <p><b>Conexión:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Conectá CLK al pin 1 (reloj) de los 3 DFF</li>
+          <li>Conectá RESET al NOT para tener ¬RESET</li>
+          <li>DFF0 (T0): su pin 0 (D) recibe la salida de la OR entre RESET y el pin 2 (Q) del DFF2 (T2)</li>
+          <li>DFF1 (T1): su pin 0 (D) recibe la salida de la AND entre ¬RESET y el pin 2 (Q) del DFF0 (T0)</li>
+          <li>DFF2 (T2): su pin 0 (D) recibe la salida de la AND entre ¬RESET y el pin 2 (Q) del DFF1 (T1)</li>
+          <li>Conectá el pin 2 (Q) de cada DFF a su Salida correspondiente (T0, T1, T2)</li>
+        </ol>
+        <p><b>El experimento:</b><br>
+        1. Con <code>RESET = 1</code>, dale un pulso al reloj: T0 se pone en 1 y T1, T2 en 0.<br>
+        2. Bajá <code>RESET = 0</code> y dale pulsos: verás el 1 viajar $T_0 \rightarrow T_1 \rightarrow T_2 \rightarrow T_0 \dots$</p>
+        <p style="color:var(--dim); font-size:12px;">💡 Empaquetalo como <b>RING3</b>:<br>
+        📦 Empaquetar (P) → Nombralo <b>RING3</b>.<br>
+        Pines de entrada: RESET, CLK (en orden de click).<br>
+        Pines de salida: T0, T1, T2.<br>
+        Este contador será el director de orquesta de tu CPU.</p>`,
+      en: `
+        <p>A computer cannot do everything in a single moment: it needs a rhythmic, orderly beat.
+        In our CPU, every instruction executes in <b>3 steps</b>:</p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li><b>T0</b>: Fetch the instruction from memory (Fetch OP) and advance the PC</li>
+          <li><b>T1</b>: Fetch the argument (Fetch ARG) and advance the PC</li>
+          <li><b>T2</b>: Execute the operation (Execute)</li>
+        </ul>
+        <p>To generate these phases we use a <b>ring counter</b>:
+        a single <code>1</code> bit that circles $T_0 \rightarrow T_1 \rightarrow T_2 \rightarrow T_0$.</p>
+        <p><b>Startup problem and the power of RESET:</b><br>
+        At power-on, all flip-flops start in an unknown state (gray wires with value <code>-1</code>).
+        If directly looped, the circuit never starts because feeding back <code>-1</code> remains <code>-1</code>.</p>
+        <p>The <b>RESET</b> line breaks this deadlock thanks to boolean absorption:</p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>$D_{T0} = \text{RESET} + T_2$: with $\text{RESET}=1$, the OR gate computes $\text{OR}(1, -1) = 1$. A clean 1 is guaranteed into T0!</li>
+          <li>$D_{T1} = \neg\text{RESET} \cdot T_0$: with $\text{RESET}=1$ ($\neg\text{RESET}=0$), the AND gate computes $\text{AND}(0, -1) = 0$.</li>
+          <li>$D_{T2} = \neg\text{RESET} \cdot T_1$: computes $\text{AND}(0, -1) = 0$.</li>
+        </ul>
+        <p>A single clock pulse with RESET=1 cleanly sets the counter to <code>100</code>!</p>
+        <p><b>Components you need:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>3× your <b>DFF</b> box 🧩 (from lesson 9)</li>
+          <li>1× <b>OR</b> (key 7) — injects RESET into T0</li>
+          <li>2× <b>AND</b> (key 6) — gates T1 and T2 with RESET</li>
+          <li>1× <b>NOT</b> (key 5) — yields ¬RESET</li>
+          <li>2× <b>Input</b> (key 2): RESET and CLK (or a Clock ⏱ key 4)</li>
+          <li>3× <b>Output</b> (key 3): T0, T1, T2</li>
+        </ul>
+        <p><b>Wiring:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Connect CLK to pin 1 (clock) of all 3 DFFs</li>
+          <li>Connect RESET to the NOT to get ¬RESET</li>
+          <li>DFF0 (T0): pin 0 (D) receives the OR of RESET and DFF2's pin 2 (Q, T2)</li>
+          <li>DFF1 (T1): pin 0 (D) receives the AND of ¬RESET and DFF0's pin 2 (Q, T0)</li>
+          <li>DFF2 (T2): pin 0 (D) receives the AND of ¬RESET and DFF1's pin 2 (Q, T1)</li>
+          <li>Connect pin 2 (Q) of each DFF to its visual Output (T0, T1, T2)</li>
+        </ol>
+        <p><b>The experiment:</b><br>
+        1. With <code>RESET = 1</code>, pulse the clock: T0 turns on (1) and T1, T2 turn off (0).<br>
+        2. Set <code>RESET = 0</code> and pulse the clock: watch the 1 step $T_0 \rightarrow T_1 \rightarrow T_2 \rightarrow T_0 \dots$</p>
+        <p style="color:var(--dim); font-size:12px;">💡 Pack it as <b>RING3</b>:<br>
+        📦 Pack (P) → Name it <b>RING3</b>.<br>
+        Input pins: RESET, CLK (in click order).<br>
+        Output pins: T0, T1, T2.<br>
+        This counter is the conductor of your CPU.</p>`,
+    },
+    check() {
+      const dff = state.components.filter(c => c.type === "DFF");
+      const nameComps = TXT(LL("Circuito: 3 DFF y compuertas de control", "Circuit: 3 DFFs and control gates"));
+      if (dff.length < 3) {
+        return [{ name: nameComps, ok: false }];
+      }
+
+      const { netOf } = buildNets();
+      let clkComp = null;
+      for (const d of dff) {
+        const netClk = netOf.get(d.id + ":1");
+        if (netClk === undefined) continue;
+        clkComp = state.components.find(c =>
+          (c.type === "switch" || c.type === "clock") &&
+          netOf.get(c.id + ":0") === netClk
+        );
+        if (clkComp) break;
+      }
+      if (!clkComp) {
+        for (const d of dff) {
+          const w = state.wires.find(w => (w.a.c === d.id && w.a.t === 1) || (w.b.c === d.id && w.b.t === 1));
+          if (!w) continue;
+          const otherId = w.a.c === d.id ? w.b.c : w.a.c;
+          clkComp = state.components.find(c => c.id === otherId && (c.type === "switch" || c.type === "clock"));
+          if (clkComp) break;
+        }
+      }
+
+      const nameClk = TXT(LL("Reloj conectado al pin CLK de los DFF", "Clock wired to DFF CLK pin"));
+      if (!clkComp) {
+        return [{ name: nameComps, ok: true }, { name: nameClk, ok: false }];
+      }
+
+      const swClk = clkComp.type === "switch" ? clkComp : null;
+      const clock = clkComp.type === "clock" ? clkComp : null;
+      const clockPrev = clock ? (globalClockState.get(clock.id) ?? false) : false;
+      const clkSet = v => {
+        if (swClk) swClk.on = v;
+        else if (clock) globalClockState.set(clock.id, v);
+      };
+      const pulse = () => {
+        clkSet(true);
+        simulate();
+        clkSet(false);
+        return simulate();
+      };
+
+      const sws = state.components.filter(c => c.type === "switch");
+      const candidateResets = sws.filter(s => s !== swClk);
+
+      const savedSw = sws.map(s => s.on);
+      const savedGateOuts = new Map(gateOuts);
+
+      const targetDffs = dff.slice(0, 3);
+      const read3Q = r => targetDffs.map(d => r.values[r.netOf.get(d.id + ":2")]);
+
+      let okReset = false;
+      let okCount = false;
+
+      for (const swReset of candidateResets) {
+        gateOuts.clear();
+        sws.forEach(s => s.on = false);
+        swReset.on = true;
+        clkSet(false);
+        simulate();
+
+        pulse();
+        const q0 = read3Q(simulate());
+
+        const t0Idx = q0.indexOf(1);
+        if (t0Idx === -1 || q0.filter(v => v === 0).length !== 2) {
+          continue;
+        }
+
+        okReset = true;
+
+        swReset.on = false;
+        clkSet(false);
+        simulate();
+
+        pulse();
+        const q1 = read3Q(simulate());
+        pulse();
+        const q2 = read3Q(simulate());
+        pulse();
+        const q3 = read3Q(simulate());
+
+        const idx1 = q1.indexOf(1);
+        const idx2 = q2.indexOf(1);
+        const idx3 = q3.indexOf(1);
+
+        const oneHot = q => q.filter(v => v === 1).length === 1 && q.filter(v => v === 0).length === 2;
+
+        if (oneHot(q1) && oneHot(q2) && oneHot(q3)) {
+          if (idx1 !== t0Idx && idx2 !== t0Idx && idx2 !== idx1 && idx3 === t0Idx) {
+            okCount = true;
+            break;
+          }
+        }
+      }
+
+      sws.forEach((s, i) => s.on = savedSw[i]);
+      if (clock) globalClockState.set(clock.id, clockPrev);
+      gateOuts.clear();
+      for (const [k, v] of savedGateOuts) gateOuts.set(k, v);
+      simulate();
+
+      const results = [
+        { name: nameComps, ok: true },
+        { name: nameClk, ok: true },
+        { name: TXT(LL("RESET: con RESET=1 un pulso inicializa T0=1, T1=0, T2=0", "RESET: with RESET=1 a pulse sets T0=1, T1=0, T2=0")), ok: okReset },
+        { name: TXT(LL("Con RESET=0 el contador cicla 3 pasos (T1 → T2 → T0)", "With RESET=0 counter cycles 3 steps (T1 → T2 → T0)")), ok: okCount },
+      ];
+
+      if (lib["RING3"]) {
+        results.push({
+          name: TXT(LL("Caja RING3: 2 entradas (RESET, CLK) y 3 salidas (T0-T2)", "RING3 box: 2 inputs (RESET, CLK) and 3 outputs (T0-T2)")),
+          ok: lib["RING3"].inputs.length === 2 && lib["RING3"].outputs.length === 3,
+        });
+      }
+
       return results;
     },
   },

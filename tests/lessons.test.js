@@ -102,6 +102,80 @@ function adder4({ cinSwitch = true } = {}) {
   const Co = T.add("out"); T.w(fa[3], 4, Co, 0);
   return { A, B, Cin, S, Co };
 }
+function dec2({ miswire = false, reverseOuts = false, multiActive = false } = {}) {
+  const A0 = T.add("switch"), A1 = T.add("switch");
+  const n0 = T.add("not"), n1 = T.add("not");
+  T.w(A0, 0, n0, 0); T.w(A1, 0, n1, 0);
+  const a0 = T.add("and"), a1 = T.add("and"), a2 = T.add("and"), a3 = T.add("and");
+
+  let y0, y1, y2, y3;
+  if (reverseOuts) {
+    y3 = T.add("out"); y2 = T.add("out"); y1 = T.add("out"); y0 = T.add("out");
+  } else {
+    y0 = T.add("out"); y1 = T.add("out"); y2 = T.add("out"); y3 = T.add("out");
+  }
+
+  T.w(n1, 1, a0, 0); T.w(n0, 1, a0, 1); T.w(a0, 2, y0, 0);
+  if (miswire) {
+    T.w(n1, 1, a1, 0); T.w(n0, 1, a1, 1); T.w(a1, 2, y1, 0);
+  } else {
+    T.w(n1, 1, a1, 0); T.w(A0, 0, a1, 1); T.w(a1, 2, y1, 0);
+  }
+  T.w(A1, 0, a2, 0); T.w(n0, 1, a2, 1); T.w(a2, 2, y2, 0);
+
+  if (multiActive) {
+    T.w(A1, 0, a3, 0); T.w(A0, 0, a3, 1);
+    T.w(a3, 2, y3, 0);
+    T.w(a3, 2, y2, 0);
+  } else {
+    T.w(A1, 0, a3, 0); T.w(A0, 0, a3, 1);
+    T.w(a3, 2, y3, 0);
+  }
+
+  return { A0, A1, y0, y1, y2, y3 };
+}
+function dec3() {
+  const A0 = T.add("switch"), A1 = T.add("switch"), A2 = T.add("switch");
+  const n0 = T.add("not"), n1 = T.add("not"), n2 = T.add("not");
+  T.w(A0, 0, n0, 0); T.w(A1, 0, n1, 0); T.w(A2, 0, n2, 0);
+  const a01 = [T.add("and"), T.add("and"), T.add("and"), T.add("and")];
+  T.w(n1, 1, a01[0], 0); T.w(n0, 1, a01[0], 1);
+  T.w(n1, 1, a01[1], 0); T.w(A0, 0, a01[1], 1);
+  T.w(A1, 0, a01[2], 0); T.w(n0, 1, a01[2], 1);
+  T.w(A1, 0, a01[3], 0); T.w(A0, 0, a01[3], 1);
+  const yOuts = [];
+  for (let i = 0; i < 8; i++) {
+    const a2_val = !!((i >> 2) & 1);
+    const lowAnd = a01[i & 3];
+    const finalAnd = T.add("and");
+    T.w(lowAnd, 2, finalAnd, 0);
+    T.w(a2_val ? A2 : n2, a2_val ? 0 : 1, finalAnd, 1);
+    const y = T.add("out");
+    T.w(finalAnd, 2, y, 0);
+    yOuts.push(y);
+  }
+  return { A0, A1, A2, yOuts };
+}
+function ring3({ withReset = true } = {}) {
+  const dff = [T.add("DFF"), T.add("DFF"), T.add("DFF")];
+  const CLK = T.add("switch");
+  dff.forEach(d => T.w(CLK, 0, d, 1));
+  if (withReset) {
+    const RESET = T.add("switch");
+    const nR = T.add("not");
+    T.w(RESET, 0, nR, 0);
+    const o0 = T.add("or"), a1 = T.add("and"), a2 = T.add("and");
+    T.w(RESET, 0, o0, 0); T.w(dff[2], 2, o0, 1); T.w(o0, 2, dff[0], 0);
+    T.w(nR, 1, a1, 0); T.w(dff[0], 2, a1, 1); T.w(a1, 2, dff[1], 0);
+    T.w(nR, 1, a2, 0); T.w(dff[1], 2, a2, 1); T.w(a2, 2, dff[2], 0);
+    return { dff, CLK, RESET };
+  } else {
+    T.w(dff[2], 2, dff[0], 0);
+    T.w(dff[0], 2, dff[1], 0);
+    T.w(dff[1], 2, dff[2], 0);
+    return { dff, CLK };
+  }
+}
 const setNum = (sws, n) => sws.forEach((s, i) => s.on = !!(n >> i & 1));
 const readNum = outs => outs.map((o, i) => { const v = T.val(o, 0); return v === -1 ? NaN : v << i; }).reduce((a, b) => a + b, 0);
 
@@ -335,6 +409,115 @@ expectCheck("s15 packed FULLADDER", 14, true);
 {
   T.reset(); const ram = T.add("ram"); T.val(ram, 0); T.ramData().get(ram.id)[3] = 7;
   expectCheck("s22 RAM16 with data written", 21, true);
+}
+
+// s23 — decoders (DEC2 and DEC3)
+{
+  T.reset(); dec2();
+  expectCheck("DEC2 correcto pasa", 22, true);
+}
+{
+  T.reset(); dec2({ miswire: true });
+  expectCheck("DEC2 con una salida mal cableada falla", 22, false);
+}
+{
+  T.reset(); dec2({ reverseOuts: true });
+  expectCheck("DEC2 correcto con Salidas creadas en orden inverso PASA", 22, true);
+}
+{
+  T.reset(); dec2({ multiActive: true });
+  expectCheck("un decodificador donde un valor enciende 2 salidas FALLA", 22, false);
+}
+{
+  T.reset();
+  const d = dec2();
+  T.pack("DEC2", [d.A0, d.A1], [d.y1, d.y0, d.y2, d.y3]); // Y1 before Y0
+  const checks = T.check(22);
+  const boxItem = checks.find(c => c.name.includes("Caja DEC2"));
+  expect("DEC2 empaquetada con pines de salida en orden incorrecto (Y1 antes que Y0) hace FALLAR el ítem de la caja",
+    boxItem && !boxItem.ok, checks.map(c => (c.ok ? "✓ " : "✗ ") + c.name).join(" | "));
+}
+{
+  T.reset(); dec3();
+  expectCheck("DEC3 correcto pasa", 22, true);
+}
+
+// s24 — step counter (RING3)
+{
+  T.reset();
+  const f = flipFlop(); T.pack("DFF", [f.D, f.C], [f.out]); T.clearCanvas();
+  ring3({ withReset: true });
+  expectCheck("RING3 correcto pasa", 23, true);
+}
+{
+  T.reset();
+  const f = flipFlop(); T.pack("DFF", [f.D, f.C], [f.out]); T.clearCanvas();
+  ring3({ withReset: false });
+  expectCheck("RING3 sin RESET (D_T0 = T2 solamente) falla", 23, false);
+}
+
+// s18 — ALU4 packed with brief pin order: A0-A3, B0-B3, OP | R0-R3
+{
+  packFullAdder();
+  const a = adder4();
+  T.pack("ADD4", [...a.A, ...a.B, a.Cin], [...a.S, a.Co]);
+  T.clearCanvas();
+
+  const mA = T.add("switch"), mB = T.add("switch"), mS = T.add("switch");
+  const mn = T.add("not"), ma1 = T.add("and"), ma2 = T.add("and"), mo = T.add("or"), mout = T.add("out");
+  T.w(mS, 0, mn, 0);
+  T.w(mA, 0, ma1, 0); T.w(mn, 1, ma1, 1);
+  T.w(mB, 0, ma2, 0); T.w(mS, 0, ma2, 1);
+  T.w(ma1, 2, mo, 0); T.w(ma2, 2, mo, 1);
+  T.w(mo, 2, mout, 0);
+  T.pack("MUX2", [mA, mB, mS], [mout]);
+  T.clearCanvas();
+
+  const add4 = T.add("ADD4");
+  const A = [0, 1, 2, 3].map(() => T.add("switch"));
+  const B = [0, 1, 2, 3].map(() => T.add("switch"));
+  const Cin = T.add("switch"); Cin.on = false;
+  const OP = T.add("switch");
+  const ands = [0, 1, 2, 3].map(() => T.add("and"));
+  const muxs = [0, 1, 2, 3].map(() => T.add("MUX2"));
+  const R = [0, 1, 2, 3].map(() => T.add("out"));
+
+  for (let i = 0; i < 4; i++) {
+    T.w(A[i], 0, add4, i);
+    T.w(A[i], 0, ands[i], 0);
+    T.w(B[i], 0, add4, 4 + i);
+    T.w(B[i], 0, ands[i], 1);
+    T.w(add4, 9 + i, muxs[i], 0);
+    T.w(ands[i], 2, muxs[i], 1);
+    T.w(OP, 0, muxs[i], 2);
+    T.w(muxs[i], 3, R[i], 0);
+  }
+  T.w(Cin, 0, add4, 8);
+
+  T.pack("ALU4", [...A, ...B, OP], R);
+  T.clearCanvas();
+
+  const alu = T.add("ALU4");
+  const inA = [0, 1, 2, 3].map(() => T.add("switch"));
+  const inB = [0, 1, 2, 3].map(() => T.add("switch"));
+  const inOP = T.add("switch");
+  const outR = [0, 1, 2, 3].map(() => T.add("out"));
+
+  for (let i = 0; i < 4; i++) {
+    T.w(inA[i], 0, alu, i);
+    T.w(inB[i], 0, alu, 4 + i);
+    T.w(alu, 9 + i, outR[i], 0);
+  }
+  T.w(inOP, 0, alu, 8);
+
+  setNum(inA, 6); setNum(inB, 3);
+  inOP.on = false; // OP=0: sum
+  const sumVal = readNum(outR);
+  inOP.on = true;  // OP=1: AND
+  const andVal = readNum(outR);
+
+  expect("ALU4 empaquetada con el orden del brief suma y hace AND correctamente (A=6,B=3: OP=0 → 9, OP=1 → 2)",
+    sumVal === 9 && andVal === 2, `sum=${sumVal} and=${andVal}`);
 }
 
 // pack — click order defines pin order
