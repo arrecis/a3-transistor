@@ -78,14 +78,15 @@ function clockTick() {
   for (const comp of state.components) {
     if (comp.type !== "clock") continue;
     const freq = globalClockFreq.get(comp.id) ?? 2;
-    // accumulate phase; a full cycle toggles 2 times
-    const acc = (clockAcc.get(comp.id) ?? 0) + dt * freq;
+    // freq = cycles per second (2 toggles per cycle). One toggle per
+    // tick max: the 12 Hz panel cap keeps the phase under 1 toggle per
+    // 40 ms tick (0.96), the remainder stays in acc.
+    let acc = (clockAcc.get(comp.id) ?? 0) + dt * freq * 2;
     if (acc >= 1) {
       globalClockState.set(comp.id, !globalClockState.get(comp.id));
-      clockAcc.set(comp.id, acc - 1);
-    } else {
-      clockAcc.set(comp.id, acc);
+      acc -= 1;
     }
+    clockAcc.set(comp.id, acc);
   }
 }
 
