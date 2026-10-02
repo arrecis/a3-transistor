@@ -577,5 +577,4 @@ out(`${results.length - failed}/${results.length} passed` + (failed ? ` · ${fai
 
 const text = L.join("\n") + "\n";
 console.log(text);
-fs.writeFileSync(path.join(dir, "tests", "cpu.out.latest.txt"), text);
 process.exit(failed ? 1 : 0);
