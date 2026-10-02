@@ -325,7 +325,7 @@ function openHexPanel(ramComp) {
   }
   rows.appendChild(table);
 
-  // button to fill with a sample program (LOAD/ADD/HALT)
+  // button to fill with a sample program ("Suma": LDA/LDB/ADD/OUT/HALT)
   const btnDemo = document.createElement("button");
   btnDemo.textContent = t("ramDemoBtn");
   btnDemo.style.cssText = "width:100%; margin-top:10px;";
@@ -338,14 +338,15 @@ function openHexPanel(ramComp) {
   panel.style.display = "flex";
 }
 
-/* Sample program in bytes (ISA placeholder): the exact meaning is
-   documented in the ISA lessons; for now it is a loading demo */
+/* Sample program in bytes — "Suma" (docs/cpu-brief.md): 2 cells per
+   instruction, OP at even address, ARG at the next one */
 function fillDemoProgram(data, inputs) {
   const demo = [
-    0x1, 0x5,   // 00: LOAD_A 5
-    0x2, 0x3,   // 02: LOAD_B 3
-    0xE, 0x0,   // 04: ADD A,B → A
-    0xF, 0x0,   // 06: HALT (placeholder)
+    0x1, 0x5,   // 00: LDA 5    A ← 5
+    0x2, 0x3,   // 02: LDB 3    B ← 3
+    0x3, 0x0,   // 04: ADD      A ← A + B
+    0x5, 0x0,   // 06: OUT      OUT ← A
+    0x7, 0x0,   // 08: HALT
   ];
   for (let i = 0; i < 16; i++) {
     data[i] = demo[i] ?? 0;
