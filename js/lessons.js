@@ -531,7 +531,7 @@ const LESSONS = [
         una compuerta que solo se abre cuando una señal de permiso lo autoriza. Esa señal de
         permiso se llama <b>reloj</b> (CLK, de clock) — y es la idea más importante de esta
         lección: <i>toda</i> la CPU va a marchar al ritmo de esa señal común.</p>
-        <p><b>El latch D</b> ("D" de <i>Data</i>, dato) hace eso con 4 compuertas: cuando
+        <p><b>El latch D</b> ("D" de <i>Data</i>, dato) hace eso con 5 compuertas: cuando
         CLK=1, la salida Q copia en vivo lo que pongas en D (está "transparente"); cuando
         CLK=0, Q se congela con el último valor que pasó.</p>
         <p><b>Componentes que necesitás:</b></p>
@@ -566,7 +566,7 @@ const LESSONS = [
         gate that only opens when a permission signal says so. That permission signal is the
         <b>clock</b> (CLK) — the most important idea of this lesson: <i>all</i> of the CPU
         will march to that one common signal's rhythm.</p>
-        <p><b>The D latch</b> ("D" for <i>Data</i>) does this with 4 gates: when CLK=1, the
+        <p><b>The D latch</b> ("D" for <i>Data</i>) does this with 5 gates: when CLK=1, the
         output Q copies live whatever you put on D (it is "transparent"); when CLK=0, Q
         freezes with the last value that passed.</p>
         <p><b>Components you need:</b></p>
@@ -604,22 +604,26 @@ const LESSONS = [
         return [{ name: nameNeeds, ok: false }];
       sws.forEach(s => s.on = false);
       function tryLatch() {
-        const data = sws[0], g = sws[1];
-        for (const qn of nors) {
-          for (const [dState, res] of [[false, 0], [true, 1]]) {
-            g.on = true; data.on = dState;
-            let r = simulate();
-            const transp = r.values[r.netOf.get(qn.id + ":2")];
-            g.on = false; data.on = !dState;
-            r = simulate();
-            const held = r.values[r.netOf.get(qn.id + ":2")];
-            data.on = false;
-            if (transp === res && held === res) return true;
+        // The lesson doesn't fix a creation order for D/CLK: try both
+        // role assignments (like the s6 check does).
+        const roles = [[sws[0], sws[1]], [sws[1], sws[0]]];
+        for (const [data, g] of roles) {
+          for (const qn of nors) {
+            for (const [dState, res] of [[false, 0], [true, 1]]) {
+              g.on = true; data.on = dState;
+              let r = simulate();
+              const transp = r.values[r.netOf.get(qn.id + ":2")];
+              g.on = false; data.on = !dState;
+              r = simulate();
+              const held = r.values[r.netOf.get(qn.id + ":2")];
+              if (transp === res && held === res) return true;
+            }
           }
         }
         return false;
       }
       const works = tryLatch();
+      sws.forEach(s => s.on = false);
       return [
         { name: nameNeeds, ok: true },
         { name: TXT(LL("CLK=1: Q sigue a D (transparente); CLK=0: Q se congela (memoria)", "CLK=1: Q follows D (transparent); CLK=0: Q freezes (memory)")), ok: works },
@@ -721,30 +725,55 @@ const LESSONS = [
         return [{ name: nameNeeds, ok: false }];
       const forQ = TXT(LL("Q copia D solo en el flanco de bajada de CLK", "Q copies D only on CLK's falling edge"));
       const forHold = TXT(LL("Con CLK=0, Q queda congelado aunque D cambie", "With CLK=0, Q stays frozen even if D changes"));
-      for (const qn of nors) {
-        let works = true;
-        for (const dState of [false, true]) {
-          sws.forEach(s => s.on = false);
-          sws[1].on = true;  // CLK=1
-          sws[0].on = dState; // D
-          simulate();
-          sws[1].on = false; // flanco de bajada
-          let r = simulate();
-          const qAfter = r.values[r.netOf.get(qn.id + ":2")];
-          if (qAfter !== (dState ? 1 : 0)) { works = false; break; }
-          sws[0].on = !dState;
-          r = simulate();
-          if (r.values[r.netOf.get(qn.id + ":2")] !== (dState ? 1 : 0)) { works = false; break; }
+      const forHoldH = TXT(LL("Con CLK=1, Q no sigue a D (sin transparencia)", "With CLK=1, Q doesn't follow D (not transparent)"));
+      // Edge behavior: with both latches clocked by CLK (no slave ¬CLK),
+      // Q follows D live while CLK=1 — so while the clock is high, flip D
+      // and check that Q does NOT move; on the falling edge Q takes the
+      // value; with CLK=0 a further D change must not move Q either.
+      // The lesson doesn't fix a creation order for D/CLK: test both
+      // role assignments (like the s6 check does).
+      const roles = [[sws[0], sws[1]], [sws[1], sws[0]]];
+      // A single (role, NOR) combination must pass ALL tests for BOTH
+      // dState values; the 3 report items all come from that combination
+      // (or stay false if none does). No partial credit.
+      const ok = { q: false, hold: false, holdH: false };
+      for (const [data, g] of roles) {
+        for (const qn of nors) {
+          if (ok.q && ok.hold && ok.holdH) break;
+          let passedTrue = false, passedFalse = false;
+          for (const dState of [true, false]) {
+            const qv = r => r.values[r.netOf.get(qn.id + ":2")];
+            sws.forEach(s => s.on = false);
+            g.on = true; data.on = !dState; // CLK=1, D opposite
+            simulate();
+            data.on = dState; // flip D with CLK=1: for a real FF, Q must NOT move
+            let r = simulate();
+            const notTransp = qv(r) === (dState ? 0 : 1); // Q still holds the old value
+            g.on = false; // falling edge: Q captures the last D
+            r = simulate();
+            const onEdge = qv(r) === (dState ? 1 : 0);
+            data.on = !dState; // CLK=0: change D, Q must hold
+            r = simulate();
+            const holdLo = qv(r) === (dState ? 1 : 0);
+            // reset both roles before the next attempt
+            sws.forEach(s => s.on = false);
+            if (notTransp && onEdge && holdLo) {
+              if (dState) passedTrue = true; else passedFalse = true;
+            }
+          }
+          // the whole combination must pass for BOTH dStates
+          if (passedTrue && passedFalse) {
+            // the 3 items come from this same combination
+            ok.q = ok.hold = ok.holdH = true;
+            break;
+          }
         }
-        if (works) return [
-          { name: nameNeeds, ok: true },
-          { name: forQ, ok: true },
-          { name: forHold, ok: true },
-        ];
       }
       return [
         { name: nameNeeds, ok: true },
-        { name: forQ, ok: false },
+        { name: forQ, ok: ok.q },
+        { name: forHold, ok: ok.hold },
+        { name: forHoldH, ok: ok.holdH },
       ];
     },
   },
@@ -754,7 +783,8 @@ const LESSONS = [
     title: LL("9. Empaquetar el Flip-Flop", "9. Packing the Flip-Flop"),
     theory: {
       es: `
-        <p>El flip-flop que armaste tiene ~15 compuertas. Ahora usá el superpoder del curso:
+        <p>El flip-flop que armaste tiene 10 compuertas (4 NOR + 4 AND + 2 NOT). Ahora usá
+        el superpoder del curso:
         <b>empaquetarlo</b> para que se convierta en una caja con 2 entradas y una salida.
         A partir de ahora, un flip-flop es una pieza más — igual que las compuertas, pero
         más poderosa: <i>recuerda un bit en cada flanco de reloj</i>.</p>
@@ -771,7 +801,8 @@ const LESSONS = [
         y verificá que sigue funcionando por flanco.</p>
         <p style="color:var(--dim); font-size:12px;">💡 Consejo: las Entradas que NO marques como pines quedan como constantes internas (congeladas al valor que tenían). Para el DFF, marcá D y CLK — son las únicas que deben cambiar.</p>`,
       en: `
-        <p>The flip-flop you built has ~15 gates. Now for the course's superpower:
+        <p>The flip-flop you built has 10 gates (4 NORs + 4 ANDs + 2 NOTs). Now for the
+        course's superpower:
         <b>pack it</b>. It becomes a box with 2 inputs and 1 output — from now on,
         a flip-flop is just a part — like gates, but more powerful: <i>it remembers one
         bit on every clock edge</i>.</p>
@@ -802,23 +833,32 @@ const LESSONS = [
         });
         const inst = state.components.find(c => c.type === "DFF");
         if (inst) {
-          const wD = state.wires.find(w => (w.a.c === inst.id && w.a.t === 0) || (w.b.c === inst.id && w.b.t === 0));
-          const wC = state.wires.find(w => (w.a.c === inst.id && w.a.t === 1) || (w.b.c === inst.id && w.b.t === 1));
-          if (wD && wC) {
-            const swD = state.components.find(c => c.type === "switch" && c.id === (wD.a.c === inst.id ? wD.b.c : wD.a.c));
-            const swC = state.components.find(c => c.type === "switch" && c.id === (wC.a.c === inst.id ? wC.b.c : wC.a.c));
-            if (swD && swC) {
-              swD.on = true; swC.on = false; simulate();
+          // makePackage assigns terminals by click order: the lesson never
+          // fixes which of D/CLK gets t:0, so try both pin assignments.
+          const wireTo = t => {
+            const w = state.wires.find(w =>
+              (w.a.c === inst.id && w.a.t === t) || (w.b.c === inst.id && w.b.t === t));
+            if (!w) return null;
+            const otherC = w.a.c === inst.id ? w.b.c : w.a.c;
+            return state.components.find(c => c.type === "switch" && c.id === otherC) ?? null;
+          };
+          const swT0 = wireTo(0), swT1 = wireTo(1);
+          if (swT0 && swT1) {
+            // pin 0 = D / pin 1 = CLK, and the swapped assignment
+            const roles = [[swT0, swT1], [swT1, swT0]];
+            let okEdge = false;
+            for (const [swD, swC] of roles) {
+              swC.on = false; swD.on = true; simulate();
               swC.on = true; simulate();
-              swC.on = false;
+              swC.on = false; // falling edge captures D=1
               const r = simulate();
-              const okEdge = r.values[r.netOf.get(inst.id + ":2")] === 1;
+              if (r.values[r.netOf.get(inst.id + ":2")] === 1) okEdge = true;
               swD.on = false;
-              results.push({
-                name: TXT(LL("La instancia DFF copia D en el flanco", "The DFF instance copies D on the edge")),
-                ok: okEdge,
-              });
             }
+            results.push({
+              name: TXT(LL("La instancia DFF copia D en el flanco", "The DFF instance copies D on the edge")),
+              ok: okEdge,
+            });
           }
         }
       }
@@ -852,7 +892,8 @@ const LESSONS = [
           <li>1× tu caja <b>DFF</b> 🧩 (de la lección 9)</li>
           <li>1× <b>Salida</b> (tecla 3)</li>
         </ul>
-        <p>Y compartidos entre todos los bits: 1× <b>Entrada</b> de CLK, 1× <b>Entrada</b> de LOAD
+        <p>Y compartidos entre todos los bits: 1× <b>NOT</b> (tecla 5) para ¬LOAD,
+        1× <b>Entrada</b> de CLK, 1× <b>Entrada</b> de LOAD
         (o un ⏱ reloj, tecla 4, si preferís que avance solo).</p>
         <p><b>Misión (mínimo 2 bits — podés hacer 4):</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
@@ -883,7 +924,8 @@ const LESSONS = [
           <li>1× your <b>DFF</b> box 🧩 (from lesson 9)</li>
           <li>1× <b>Output</b> (key 3)</li>
         </ul>
-        <p>Shared by all bits: 1× CLK <b>Input</b>, 1× LOAD <b>Input</b> (or a ⏱ clock, key 4).</p>
+        <p>Shared by all bits: 1× <b>NOT</b> (key 5) for ¬LOAD,
+        1× CLK <b>Input</b>, 1× LOAD <b>Input</b> (or a ⏱ clock, key 4).</p>
         <p><b>Mission (2 bits is enough — do 4 if you like):</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Add one LOAD Input and one CLK Input</li>
@@ -902,11 +944,105 @@ const LESSONS = [
         "Registro: al menos 2 cajas DFF en paralelo, sus mux de LOAD (OR) y Entradas de LOAD/CLK",
         "At least 2 DFF boxes in parallel, their LOAD muxes (ORs) and LOAD/CLK Inputs"));
       results.push({ name: nameNeeds, ok: dff.length >= 2 && ors.length >= 2 && sws.length >= 3 });
-      if (dff.length >= 1) {
+      if (dff.length >= 2) {
+        // Functional test on a DFF wired as: mux OR → pin D, switch
+        // (or clock) → pin CLK. The lesson doesn't fix a creation order
+        // for the inputs, so discover what feeds each mux input from the
+        // wiring instead of assuming indexes.
+        const wired = dff.filter(d =>
+          state.wires.some(w => (w.a.c === d.id && w.a.t === 0) || (w.b.c === d.id && w.b.t === 0)) &&
+          state.wires.some(w => (w.a.c === d.id && w.a.t === 1) || (w.b.c === d.id && w.b.t === 1)));
         results.push({
-          name: TXT(LL("Los DFF están conectados (hay cables a sus pines)", "The DFFs are wired (wires reach their pins)")),
-          ok: dff.every(d => state.wires.some(w => w.a.c === d.id || w.b.c === d.id)),
+          name: TXT(LL("Cada DFF tiene cable en sus pines D y CLK", "Each DFF has wires on its D and CLK pins")),
+          ok: wired.length === dff.length,
         });
+        const d = wired[0];
+        if (d) {
+          // what drives pin CLK: a switch or a clock component
+          const wC = state.wires.find(w => (w.a.c === d.id && w.a.t === 1) || (w.b.c === d.id && w.b.t === 1));
+          const clkC = state.components.find(c => c.id === (wC.a.c === d.id ? wC.b.c : wC.a.c));
+          const swClk = clkC && clkC.type === "switch" ? clkC : null;
+          const clock = clkC && clkC.type === "clock" ? clkC : null;
+          results.push({
+            name: TXT(LL("Hay un NOT para ¬LOAD (tecla 5)", "There is a NOT for ¬LOAD (key 5)")),
+            ok: lessonCount("not") >= 1,
+          });
+          // Gather the switches feeding the cell: walk one level back
+          // from the OR that drives pin D — through its ANDs (data,
+          // LOAD) — plus any switches wired straight into the OR. The
+          // AND fed by the DFF's own Q (feedback) contributes no switch,
+          // so it can't pollute the set.
+          if (swClk || clock) {
+            const qv = r => r.values[r.netOf.get(d.id + ":2")];
+            const feeders = new Set();   // switch ids feeding the cell
+            const andsAll = state.components.filter(c => c.type === "and");
+            const wD2 = state.wires.find(w => (w.a.c === d.id && w.a.t === 0) || (w.b.c === d.id && w.b.t === 0));
+            const orC = state.components.find(c => c.id === (wD2.a.c === d.id ? wD2.b.c : wD2.a.c) && c.type === "or");
+            if (orC) {
+              for (const and of andsAll) {
+                // ANDs whose OUTPUT reaches that OR
+                const toOr = state.wires.some(w =>
+                  (w.a.c === orC.id || w.b.c === orC.id) &&
+                  ((w.a.c === and.id && w.a.t === 2) || (w.b.c === and.id && w.b.t === 2)));
+                if (!toOr) continue;
+                for (const t of [0, 1]) {
+                  const w = state.wires.find(w => (w.a.c === and.id && w.a.t === t) || (w.b.c === and.id && w.b.t === t));
+                  if (!w) continue;
+                  const otherC = w.a.c === and.id ? w.b.c : w.a.c;
+                  const sw = state.components.find(c => c.id === otherC && c.type === "switch");
+                  if (sw) feeders.add(sw.id);
+                }
+              }
+              // also switches wired straight into the OR (simpler variants)
+              for (const t of [0, 1]) {
+                const w = state.wires.find(w => (w.a.c === orC.id && w.a.t === t) || (w.b.c === orC.id && w.b.t === t));
+                if (!w) continue;
+                const otherC = w.a.c === orC.id ? w.b.c : w.a.c;
+                const sw = state.components.find(c => c.id === otherC && c.type === "switch");
+                if (sw) feeders.add(sw.id);
+              }
+            }
+            const cellSws = sws.filter(s => feeders.has(s.id));
+            if (cellSws.length >= 2) {
+              // Simulate the cell with REAL edges: raise CLK then lower it
+              // (falling edge → DFF must load). Test 1 (load): LOAD=1 + D=1,
+              // edge → Q must be 1. Test 2 (hold): all switches off
+              // (LOAD=0, D=0), raise and lower CLK again → Q must STILL be
+              // 1 (it rewrites itself, not a new value). cellSws[0]/[1] can
+              // be (LOAD, D) or (D, LOAD) in either order: with both at 1
+              // the edge loads 1 either way, and with both at 0 the hold
+              // test works either way.
+              const clockPrev = clock ? (globalClockState.get(clock.id) ?? false) : false;
+              const clkSet = v => {
+                if (swClk) swClk.on = v;
+                else globalClockState.set(clock.id, v);
+              };
+              let okLoadHold = false;
+              for (const [sA, sB] of [[cellSws[0], cellSws[1]], [cellSws[1], cellSws[0]]]) {
+                sws.forEach(s => s.on = false);
+                clkSet(false);
+                sA.on = true; sB.on = true; // LOAD=1, D=1 (either order)
+                simulate();
+                clkSet(true);  // raise CLK
+                simulate();
+                clkSet(false); // falling edge: must load Q=1
+                const qLoad = qv(simulate());
+                sws.forEach(s => s.on = false); // LOAD=0, D=0
+                clkSet(true);  // raise CLK (LOAD=0: Q feeds back, no change)
+                simulate();
+                clkSet(false); // falling edge
+                const qHold = qv(simulate());
+                sws.forEach(s => s.on = false);
+                if (qLoad === 1 && qHold === 1) { okLoadHold = true; break; }
+              }
+              if (clock) { globalClockState.set(clock.id, clockPrev); clockAcc.set(clock.id, 0); }
+              results.push({
+                name: TXT(LL("LOAD=1 + flanco carga D; LOAD=0 lo mantiene", "LOAD=1 + edge loads D; LOAD=0 holds it")),
+                ok: okLoadHold,
+              });
+            }
+          }
+        }
       }
       return results;
     },
@@ -919,7 +1055,7 @@ const LESSONS = [
         <p>Un <b>multiplexor (MUX)</b> es el "desvío ferroviario" de las señales: tiene 2
         entradas de datos (A y B), 1 entrada de <b>selección</b> (S), y 1 salida. Si S=0,
         la salida copia a A; si S=1, copia a B. Un solo bit decide por qué camino va la señal.</p>
-        ${lt(["A", "B", "S", "OUT"], [[0,0,0,0],[1,0,0,1],[0,1,1,1],[1,1,1,1],[1,0,1,0]])}
+        ${lt(["A", "B", "S", "OUT"], [[0,0,0,0],[0,0,1,0],[0,1,0,0],[0,1,1,1],[1,0,0,1],[1,0,1,0],[1,1,0,1],[1,1,1,1]])}
         <p style="color:var(--dim); font-size:12px;"><i>La fórmula es OUT = A·¬S + B·S, pero no hace falta
         memorizarla: bastan 2 AND, 1 NOT y 1 OR. Es la pieza que "elige", y la CPU la usa
         constantemente: qué registro entra a la ALU, qué operación hacer, qué memoria leer.</i></p>
@@ -941,7 +1077,9 @@ const LESSONS = [
         no pasa nada). Con S=1, copia a B e ignora a A. El selector manda.</p>`,
       en: `
         <p>A <b>multiplexer (MUX)</b> is a railway switch for signals: 2 data inputs (A and
-        B), 1 <b>select</b> input (S), 1 output. If S=0 the output copies A; if S=1, B.</p>
+        B), 1 <b>select</b> input (S), 1 output. If S=0 the output copies A; if S=1, B.
+        One single bit decides which way the signal goes.</p>
+        ${lt(["A", "B", "S", "OUT"], [[0,0,0,0],[0,0,1,0],[0,1,0,0],[0,1,1,1],[1,0,0,1],[1,0,1,0],[1,1,0,1],[1,1,1,1]])}
         <p style="color:var(--dim); font-size:12px;"><i>The formula is OUT = A·¬S + B·S, but you don't need to
         memorize it: it takes 2 ANDs, 1 NOT and 1 OR. It is the "chooser" piece, and the CPU
         uses it constantly: which register enters the ALU, which operation to perform, which
@@ -974,18 +1112,32 @@ const LESSONS = [
         return [{ name: nameNeeds, ok: false }];
       const out = ors[0];
       const qv = () => { const r = simulate(); return r.values[r.netOf.get(out.id + ":2")]; };
-      const swA = sws[0], swB = sws[1], swS = sws[2];
-      swS.on = false;
-      swA.on = false; swB.on = true;  const r1 = qv();
-      swA.on = true;  swB.on = false; const r2 = qv();
-      swS.on = true;
-      swA.on = false; swB.on = false; const r3 = qv();
-      swA.on = false; swB.on = true;  const r4 = qv();
-      swA.on = false; swB.on = false; swS.on = false;
+      // The lesson doesn't fix a creation order for A/B/S: try every
+      // permutation of switch roles (like the s6 check does). Both items
+      // must come from the SAME role permutation: a real mux passes both
+      // tests under any fixed assignment. No carry-over between
+      // permutations; if none passes both, both items report false.
+      const perms = [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
+      const ok = { sel0: false, sel1: false };
+      for (const p of perms) {
+        const a = sws[p[0]], b = sws[p[1]], s = sws[p[2]];
+        sws.forEach(x => x.on = false);
+        s.on = false;
+        a.on = false; b.on = true;  const r1 = qv();
+        a.on = true;  b.on = false; const r2 = qv();
+        s.on = true;
+        a.on = false; b.on = false; const r3 = qv();
+        a.on = false; b.on = true;  const r4 = qv();
+        sws.forEach(x => x.on = false);
+        // per permutation: both must hold in THIS permutation
+        const sel0 = r1 === 0 && r2 === 1;
+        const sel1 = r3 === 0 && r4 === 1;
+        if (sel0 && sel1) { ok.sel0 = ok.sel1 = true; break; }
+      }
       return [
         { name: nameNeeds, ok: true },
-        { name: TXT(LL("S=0 → la salida copia A", "S=0 → output copies A")), ok: r1 === 0 && r2 === 1 },
-        { name: TXT(LL("S=1 → la salida copia B", "S=1 → output copies B")), ok: r3 === 0 && r4 === 1 },
+        { name: TXT(LL("S=0 → la salida copia A", "S=0 → output copies A")), ok: ok.sel0 },
+        { name: TXT(LL("S=1 → la salida copia B", "S=1 → output copies B")), ok: ok.sel1 },
       ];
     },
   },
