@@ -750,6 +750,154 @@ function buildControlUnit({ invertASel = false } = {}) {
   expectCheck("s26 Unidad de control con A_SEL invertido FALLA", 25, false);
 }
 
+// s27 & s28 — Tu primer CPU / JMP y HALT
+function packALU4Box() {
+  const A = [0, 1, 2, 3].map(() => T.add("switch"));
+  const B = [0, 1, 2, 3].map(() => T.add("switch"));
+  const OP = T.add("switch");
+  const add = T.add("ADD4");
+  const cin0 = T.add("switch"); cin0.on = false;
+  T.w(cin0, 0, add, 8);
+  const outs = [];
+  for (let i = 0; i < 4; i++) {
+    T.w(A[i], 0, add, i); T.w(B[i], 0, add, 4 + i);
+    const an = T.add("and"); T.w(A[i], 0, an, 0); T.w(B[i], 0, an, 1);
+    const m = T.add("MUX2");
+    T.w(add, 9 + i, m, 0); T.w(an, 2, m, 1); T.w(OP, 0, m, 2);
+    const o = T.add("out"); T.w(m, 3, o, 0); outs.push(o);
+  }
+  T.pack("ALU4", [...A, ...B, OP], outs); T.clearCanvas();
+}
+
+function packAllCpuBoxes() {
+  packDFFBox();
+  packMUX2Box();
+  packFullAdderBox();
+  packADD4Box();
+  packALU4Box();
+  packDEC3Box();
+  packREG4Box();
+  packRING3Box();
+}
+
+function buildFullCpuFixture({ withoutPcRam = false, withoutHalt = false } = {}) {
+  const clkSw = T.add("switch");
+  const rstSw = T.add("switch");
+  const ram = T.add("ram");
+  const cs = T.add("switch"); cs.on = true;
+  const we = T.add("switch"); we.on = false;
+  T.w(cs, 0, ram, 9); T.w(we, 0, ram, 8);
+
+  // H y CPU_CLK = CLK·(¬H + RESET)
+  const hFf = T.add("DFF");
+  const nH = T.add("not"); T.w(hFf, 2, nH, 0);
+  const oCk = T.add("or"); T.w(nH, 1, oCk, 0); T.w(rstSw, 0, oCk, 1);
+  const cpuClk = T.add("and"); T.w(clkSw, 0, cpuClk, 0); T.w(oCk, 2, cpuClk, 1);
+
+  // anillo, registros y sumador PC+1
+  const ring = T.add("RING3");
+  T.w(rstSw, 0, ring, 0); T.w(cpuClk, 2, ring, 1);
+  const pcFf = [0, 1, 2, 3].map(() => T.add("DFF"));
+  const opReg = T.add("REG4"), argReg = T.add("REG4");
+  const aReg = T.add("REG4"), bReg = T.add("REG4"), outReg = T.add("REG4");
+  const alu = T.add("ALU4");
+  const inc = T.add("ADD4");
+
+  // muxes
+  const mNext = [0, 1, 2, 3].map(() => T.add("MUX2"));
+  const mLoad = [0, 1, 2, 3].map(() => T.add("MUX2"));
+  const mRst  = [0, 1, 2, 3].map(() => T.add("MUX2"));
+  const mAlu  = [0, 1, 2, 3].map(() => T.add("MUX2"));
+
+  const dec = T.add("DEC3");
+
+  const one = T.add("switch"); one.on = true;
+  const z1 = T.add("switch"), z2 = T.add("switch"), z3 = T.add("switch");
+  const zC = T.add("switch");
+  const zero = T.add("switch");
+
+  // unidad de control
+  const aTJ   = T.add("and");
+  const oL0   = T.add("or");
+  const oL1   = T.add("or");
+  const pcLoad= T.add("or");
+  const oAA   = T.add("or");
+  const oLD   = T.add("or");
+  const aLd   = T.add("and");
+  const bLd   = T.add("and");
+  const oLd   = T.add("and");
+  const aTH   = T.add("and");
+  const nR    = T.add("not");
+  const oH    = T.add("or");
+  const dH    = T.add("and");
+  const outPins = [0, 1, 2, 3].map(() => T.add("out"));
+
+  T.w(z1, 0, inc, 5); T.w(z2, 0, inc, 6); T.w(z3, 0, inc, 7); T.w(zC, 0, inc, 8);
+  T.w(one, 0, inc, 4);
+  for (let i = 0; i < 4; i++) {
+    T.w(pcFf[i], 2, inc, i);
+    T.w(inc, 9 + i, mNext[i], 0); T.w(argReg, 6 + i, mNext[i], 1); T.w(aTJ, 2, mNext[i], 2);
+    T.w(pcFf[i], 2, mLoad[i], 0); T.w(mNext[i], 3, mLoad[i], 1); T.w(pcLoad, 2, mLoad[i], 2);
+    T.w(mLoad[i], 3, mRst[i], 0); T.w(zero, 0, mRst[i], 1); T.w(rstSw, 0, mRst[i], 2);
+    T.w(mRst[i], 3, pcFf[i], 0); T.w(cpuClk, 2, pcFf[i], 1);
+    if (!withoutPcRam) {
+      T.w(pcFf[i], 2, ram, i);
+    }
+    T.w(ram, 10 + i, opReg, i);
+    T.w(ram, 10 + i, argReg, i);
+    T.w(argReg, 6 + i, mAlu[i], 0); T.w(alu, 9 + i, mAlu[i], 1); T.w(oAA, 2, mAlu[i], 2);
+    T.w(mAlu[i], 3, aReg, i);
+    T.w(argReg, 6 + i, bReg, i);
+    T.w(aReg, 6 + i, alu, i); T.w(bReg, 6 + i, alu, 4 + i);
+    T.w(aReg, 6 + i, outReg, i);
+    T.w(outReg, 6 + i, outPins[i], 0);
+  }
+  for (let i = 0; i < 3; i++) T.w(opReg, 6 + i, dec, i);
+  T.w(ring, 2, opReg, 4);
+  T.w(ring, 3, argReg, 4);
+  T.w(aLd, 2, aReg, 4); T.w(bLd, 2, bReg, 4); T.w(oLd, 2, outReg, 4);
+  for (const reg of [opReg, argReg, aReg, bReg, outReg]) T.w(cpuClk, 2, reg, 5);
+
+  T.w(ring, 4, aTJ, 0); T.w(dec, 9, aTJ, 1);
+  T.w(ring, 2, oL0, 0); T.w(ring, 3, oL1, 0); T.w(aTJ, 2, oL1, 1);
+  T.w(ring, 2, pcLoad, 0); T.w(oL1, 2, pcLoad, 1);
+  T.w(dec, 6, oAA, 0); T.w(dec, 7, oAA, 1);
+  T.w(dec, 4, oLD, 0); T.w(oAA, 2, oLD, 1);
+  T.w(ring, 4, aLd, 0); T.w(oLD, 2, aLd, 1);
+  T.w(ring, 4, bLd, 0); T.w(dec, 5, bLd, 1);
+  T.w(ring, 4, oLd, 0); T.w(dec, 8, oLd, 1);
+  T.w(dec, 7, alu, 8);
+  T.w(ring, 4, aTH, 0); T.w(dec, 10, aTH, 1);
+  T.w(rstSw, 0, nR, 0);
+  T.w(hFf, 2, oH, 0); T.w(aTH, 2, oH, 1);
+  T.w(nR, 1, dH, 0); T.w(oH, 2, dH, 1);
+  if (!withoutHalt) {
+    T.w(dH, 2, hFf, 0);
+  }
+  T.w(clkSw, 0, hFf, 1);
+}
+
+{
+  T.reset(); packAllCpuBoxes();
+  buildFullCpuFixture({ withoutPcRam: false, withoutHalt: false });
+  expectCheck("s27 Tu primer CPU correcta PASA", 26, true);
+}
+{
+  T.reset(); packAllCpuBoxes();
+  buildFullCpuFixture({ withoutPcRam: true, withoutHalt: false });
+  expectCheck("s27 sin cable PC a RAM FALLA", 26, false);
+}
+{
+  T.reset(); packAllCpuBoxes();
+  buildFullCpuFixture({ withoutPcRam: false, withoutHalt: false });
+  expectCheck("s28 JMP y HALT correcto PASA", 27, true);
+}
+{
+  T.reset(); packAllCpuBoxes();
+  buildFullCpuFixture({ withoutPcRam: false, withoutHalt: true });
+  expectCheck("s28 sin HALT (H nunca se activa) FALLA en la parte de HALT", 27, false);
+}
+
 // Test de contenido para TODAS las lecciones
 {
   const lessons = vm.runInContext("LESSONS", ctx);

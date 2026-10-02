@@ -2373,12 +2373,12 @@ const LESSONS = [
         </ul>
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Conectá CLK al pin 1 (reloj) de los 3 DFF</li>
-          <li>Conectá RESET al NOT para tener ¬RESET</li>
-          <li>DFF0 (T0): su pin 0 (D) recibe la salida de la OR entre RESET y el pin 2 (Q) del DFF2 (T2)</li>
-          <li>DFF1 (T1): su pin 0 (D) recibe la salida de la AND entre ¬RESET y el pin 2 (Q) del DFF0 (T0)</li>
-          <li>DFF2 (T2): su pin 0 (D) recibe la salida de la AND entre ¬RESET y el pin 2 (Q) del DFF1 (T1)</li>
-          <li>Conectá el pin 2 (Q) de cada DFF a su Salida correspondiente (T0, T1, T2)</li>
+          <li>Conectá CLK a la entrada de reloj (CLK) de los 3 DFF</li>
+          <li>Conectá RESET a la entrada del NOT para tener ¬RESET</li>
+          <li>DFF0 (T0): su entrada D recibe la salida de la OR entre RESET y la salida Q del DFF2 (T2)</li>
+          <li>DFF1 (T1): su entrada D recibe la salida de la AND entre ¬RESET y la salida Q del DFF0 (T0)</li>
+          <li>DFF2 (T2): su entrada D recibe la salida de la AND entre ¬RESET y la salida Q del DFF1 (T1)</li>
+          <li>Conectá la salida Q de cada DFF a su Salida correspondiente (T0, T1, T2)</li>
         </ol>
         <p><b>El experimento:</b><br>
         1. Con <code>RESET = 1</code>, dale un pulso al reloj: T0 se pone en 1 y T1, T2 en 0.<br>
@@ -2419,12 +2419,12 @@ const LESSONS = [
         </ul>
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Connect CLK to pin 1 (clock) of all 3 DFFs</li>
-          <li>Connect RESET to the NOT to get ¬RESET</li>
-          <li>DFF0 (T0): pin 0 (D) receives the OR of RESET and DFF2's pin 2 (Q, T2)</li>
-          <li>DFF1 (T1): pin 0 (D) receives the AND of ¬RESET and DFF0's pin 2 (Q, T0)</li>
-          <li>DFF2 (T2): pin 0 (D) receives the AND of ¬RESET and DFF1's pin 2 (Q, T1)</li>
-          <li>Connect pin 2 (Q) of each DFF to its visual Output (T0, T1, T2)</li>
+          <li>Connect CLK to the clock input (CLK) of all 3 DFFs</li>
+          <li>Connect RESET to the NOT input to get ¬RESET</li>
+          <li>DFF0 (T0): input D receives the output of the OR between RESET and output Q of DFF2 (T2)</li>
+          <li>DFF1 (T1): input D receives the output of the AND between ¬RESET and output Q of DFF0 (T0)</li>
+          <li>DFF2 (T2): input D receives the output of the AND between ¬RESET and output Q of DFF1 (T1)</li>
+          <li>Connect output Q of each DFF to its respective visual Output (T0, T1, T2)</li>
         </ol>
         <p><b>The experiment:</b><br>
         1. With <code>RESET = 1</code>, pulse the clock: T0 turns on (1) and T1, T2 turn off (0).<br>
@@ -2594,13 +2594,13 @@ const LESSONS = [
         </ul>
         <p><b>Conexión de REG4:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Para cada bit i de 0 a 3, colocá un <code>MUX2</code> frente al pin 0 (D) de su <code>DFF</code>.</li>
-          <li>Pin 0 (A) del MUX recibe la salida Q (pin 2) del propio DFF (para retener el valor cuando LOAD=0).</li>
-          <li>Pin 1 (B) del MUX recibe el dato nuevo de entrada D<sub>i</sub>.</li>
-          <li>Pin 2 (S) del MUX se conecta a la línea común <b>LOAD</b>.</li>
-          <li>Pin 3 (salida) del MUX va al pin 0 (D) del DFF.</li>
-          <li>Conectá el pin 1 (reloj) de los 4 DFFs a la línea común <b>CLK</b>.</li>
-          <li>Conectá el pin 2 (Q) de cada DFF a su Salida correspondiente (Q<sub>0</sub>..Q<sub>3</sub>).</li>
+          <li>Para cada bit i de 0 a 3, colocá un <code>MUX2</code> frente a la entrada D de su <code>DFF</code>.</li>
+          <li>La entrada A del MUX recibe la salida Q del propio DFF (para retener el valor cuando LOAD=0).</li>
+          <li>La entrada B del MUX recibe el dato nuevo de entrada D<sub>i</sub>.</li>
+          <li>La entrada S del MUX se conecta a la línea común <b>LOAD</b>.</li>
+          <li>La salida del MUX va a la entrada D del DFF.</li>
+          <li>Conectá la entrada de reloj (CLK) de los 4 DFFs a la línea común <b>CLK</b>.</li>
+          <li>Conectá la salida Q de cada DFF a su Salida correspondiente (Q<sub>0</sub>..Q<sub>3</sub>).</li>
         </ol>
         <p style="color:var(--dim); font-size:12px;">💡 Empaquetalo como <b>REG4</b>:<br>
         📦 Empaquetar (P) → Nombralo <b>REG4</b>.<br>
@@ -2649,13 +2649,13 @@ const LESSONS = [
         </ul>
         <p><b>REG4 Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>For each bit i from 0 to 3, place a <code>MUX2</code> in front of pin 0 (D) of its <code>DFF</code>.</li>
-          <li>Pin 0 (A) of the MUX connects to output Q (pin 2) of the same DFF (to hold when LOAD=0).</li>
-          <li>Pin 1 (B) of the MUX connects to input data D<sub>i</sub>.</li>
-          <li>Pin 2 (S) of the MUX connects to the common <b>LOAD</b> line.</li>
-          <li>Pin 3 (output) of the MUX connects to pin 0 (D) of the DFF.</li>
-          <li>Connect pin 1 (clock) of all 4 DFFs to the common <b>CLK</b> line.</li>
-          <li>Connect pin 2 (Q) of each DFF to its respective Output (Q<sub>0</sub>..Q<sub>3</sub>).</li>
+          <li>For each bit i from 0 to 3, place a <code>MUX2</code> in front of input D of its <code>DFF</code>.</li>
+          <li>Input A of the MUX connects to output Q of the same DFF (to hold the value when LOAD=0).</li>
+          <li>Input B of the MUX connects to input data D<sub>i</sub>.</li>
+          <li>Input S of the MUX connects to the common <b>LOAD</b> line.</li>
+          <li>The output of the MUX connects to input D of the DFF.</li>
+          <li>Connect the clock input (CLK) of all 4 DFFs to the common <b>CLK</b> line.</li>
+          <li>Connect output Q of each DFF to its respective Output (Q<sub>0</sub>..Q<sub>3</sub>).</li>
         </ol>
         <p style="color:var(--dim); font-size:12px;">💡 Pack it as <b>REG4</b>:<br>
         📦 Pack (P) → Name it <b>REG4</b>.<br>
@@ -3273,6 +3273,578 @@ const LESSONS = [
           )),
           ok: okRest,
         },
+      ];
+    },
+  },
+  {
+    id: "s27",
+    title: LL("27. Tu primer CPU", "27. Your First CPU"),
+    desc: LL(
+      "Uní todos los módulos construidos para ejecutar tu primer programa completo: Suma (5 + 3 = 8).",
+      "Connect all built modules to execute your first complete program: Sum (5 + 3 = 8)."
+    ),
+    theory: {
+      es: `
+        <p><b>¿Qué es?</b><br>
+        Es el momento en que se ensamblan el motor, las ruedas y la transmisión en el chasis del auto:
+        por primera vez, el vehículo arranca y rueda por sus propios medios sin empujarlo a mano.
+        Tu procesador ya no es una colección de partes sueltas, sino una computadora completa.</p>
+        <p><b>¿Por qué importa?</b><br>
+        Hasta ahora probaste cada pieza de forma aislada. Al unirlas, el circuito adquiere la capacidad
+        más asombrosa de la computación: ejecutar una secuencia de instrucciones grabada en memoria
+        automáticamente, paso a paso, al ritmo de un reloj.</p>
+        <p><b>Componentes que necesitás en el lienzo:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>1× <b>RAM16</b> 🧠 (de la lección 22) con CS=1 y WE=0</li>
+          <li>1× tu caja <b>RING3</b> 🧩 (de la lección 24)</li>
+          <li>1× tu caja <b>DEC3</b> 🧩 (de la lección 23)</li>
+          <li>5× tu caja <b>REG4</b> 🧩: <code>OP</code>, <code>ARG</code>, <code>A</code> (acumulador), <code>B</code> y <code>OUT</code></li>
+          <li>1× tu caja <b>ALU4</b> 🧩 (de la lección 18)</li>
+          <li>1× tu caja <b>ADD4</b> 🧩 (de la lección 17) para el incrementador PC+1</li>
+          <li>5× tu caja <b>DFF</b> 🧩: 4 para los bits del PC y 1 para la bandera de parada H</li>
+          <li>16× tu caja <b>MUX2</b> 🧩: 4 para PC_NEXT, 4 para PC_LOAD, 4 para el reset del PC y 4 para la entrada del acumulador A</li>
+          <li>Compuertas lógicas: AND (tecla 6), OR (tecla 7) y NOT (tecla 5) para la Unidad de Control y el reloj</li>
+          <li>1× <b>Entrada</b> RESET (tecla 2) y 1× Entrada CLK (tecla 2) o Reloj ⏱ (tecla 4)</li>
+          <li>4× <b>Salida</b> (tecla 3) conectadas a las salidas del registro OUT</li>
+        </ul>
+        <p><b>Guía de interconexión paso a paso:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li><b>Bandera de parada H y CPU_CLK:</b><br>
+          La entrada de reloj del DFF de parada H se conecta al reloj maestro <code>CLK</code> directo.<br>
+          Su entrada D recibe <code>¬RESET · (H + T2·HALT)</code>.<br>
+          El reloj controlado es <code>CPU_CLK = CLK · (¬H + RESET)</code> (un NOT para ¬H, un OR entre ¬H y RESET, y un AND con CLK).<br>
+          <code>CPU_CLK</code> alimenta la entrada de reloj de <code>RING3</code>, los 4 DFF del PC y los 5 registros <code>REG4</code>.</li>
+          <li><b>Program Counter (PC) y memoria RAM:</b><br>
+          4 DFF guardan la dirección actual. Sus salidas Q van a las entradas de dirección A<sub>0</sub>..A<sub>3</sub> de la <b>RAM16</b>
+          y a las entradas A del sumador <b>ADD4</b> (con B=0001 y Cin=0 para sumar +1).<br>
+          4 MUX2 eligen entre PC+1 (entrada A) y las salidas de <code>ARG</code> (entrada B) con selector S = <code>T2·JMP</code>.<br>
+          4 MUX2 eligen entre el PC actual (entrada A) y el nuevo valor (entrada B) con selector S = <code>PC_LOAD = T0 + T1 + T2·JMP</code>.<br>
+          4 MUX2 eligen entre el valor a cargar (entrada A) y 0 (entrada B) con selector S = <code>RESET</code>. Su salida va a la entrada D de los DFF del PC.</li>
+          <li><b>Etapa de Fetch:</b><br>
+          Las salidas de datos de la RAM16 van en paralelo a las entradas D de <code>OP</code> y <code>ARG</code>.<br>
+          La entrada LOAD de <code>OP</code> se conecta a la fase T0 de <code>RING3</code>.<br>
+          La entrada LOAD de <code>ARG</code> se conecta a la fase T1 de <code>RING3</code>.</li>
+          <li><b>Unidad de Control:</b><br>
+          Conectá las salidas Q<sub>0</sub>..Q<sub>2</sub> de <code>OP</code> a las entradas A0..A2 de la caja <b>DEC3</b>.<br>
+          Conectá compuertas para producir:
+          <code>PC_LOAD = T0 + T1 + T2·JMP</code>, <code>A_SEL = ADD + AND</code>,
+          <code>A_LOAD = T2 · (LDA + ADD + AND)</code>, <code>B_LOAD = T2 · LDB</code>,
+          <code>OUT_LOAD = T2 · OUT</code> y <code>HALT_SET = T2 · HALT</code>.</li>
+          <li><b>Ruta de datos y acumulador:</b><br>
+          Las salidas de <code>ARG</code> van a las entradas D del registro <code>B</code> (su entrada LOAD recibe <code>B_LOAD</code>).<br>
+          4 MUX2 eligen para el acumulador <code>A</code>: entrada A recibe <code>ARG</code> y entrada B recibe el resultado de la <b>ALU4</b>.
+          El selector S recibe <code>A_SEL</code>. Su salida va a las entradas D del registro <code>A</code> (su entrada LOAD recibe <code>A_LOAD</code>).<br>
+          Las salidas de <code>A</code> y <code>B</code> van a las entradas A y B de la <b>ALU4</b>. El selector de operación OP de la ALU4 recibe la señal <code>AND</code> del decodificador.<br>
+          Las salidas de <code>A</code> van a las entradas D del registro <code>OUT</code> (su entrada LOAD recibe <code>OUT_LOAD</code>).<br>
+          Las salidas de <code>OUT</code> van a las 4 Salidas visuales.</li>
+        </ol>
+        <p><b>El experimento:</b><br>
+        1. Cargá el programa <b>Suma</b> en la RAM: <code>1 5 2 3 3 0 5 0 7 0</code> (podés hacer click en "Cargar programa de ejemplo").<br>
+        2. Activá <code>RESET = 1</code>, dale un pulso de reloj y bajá <code>RESET = 0</code>.<br>
+        3. Encendé el reloj: en el pulso 12 las lámparas de salida mostrarán <b>8</b> (<code>1000</code>). En el pulso 15, la instrucción HALT detiene el reloj y el resultado queda fijo.</p>`,
+      en: `
+        <p><b>What is it?</b><br>
+        It is the moment when the engine, wheels, and transmission are mounted into the car chassis:
+        for the first time, the vehicle starts up and drives under its own power without being pushed by hand.
+        Your processor is no longer a collection of loose parts, but a complete computer.</p>
+        <p><b>Why does it matter?</b><br>
+        Until now you tested each part in isolation. Bringing them together gives the circuit
+        the most remarkable capability of computing: executing a sequence of instructions stored in memory
+        automatically, step by step, to the beat of a clock.</p>
+        <p><b>Components you need on the canvas:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>1× <b>RAM16</b> 🧠 (from lesson 22) with CS=1 and WE=0</li>
+          <li>1× your <b>RING3</b> box 🧩 (from lesson 24)</li>
+          <li>1× your <b>DEC3</b> box 🧩 (from lesson 23)</li>
+          <li>5× your <b>REG4</b> box 🧩: <code>OP</code>, <code>ARG</code>, <code>A</code> (accumulator), <code>B</code>, and <code>OUT</code></li>
+          <li>1× your <b>ALU4</b> box 🧩 (from lesson 18)</li>
+          <li>1× your <b>ADD4</b> box 🧩 (from lesson 17) for the PC+1 incrementer</li>
+          <li>5× your <b>DFF</b> box 🧩: 4 for PC bits and 1 for the H halt flag</li>
+          <li>16× your <b>MUX2</b> box 🧩: 4 for PC_NEXT, 4 for PC_LOAD, 4 for PC reset, and 4 for accumulator A input</li>
+          <li>Logic gates: AND (key 6), OR (key 7), and NOT (key 5) for the Control Unit and clock gating</li>
+          <li>1× RESET <b>Input</b> (key 2) and 1× CLK Input (key 2) or Clock ⏱ (key 4)</li>
+          <li>4× <b>Output</b> (key 3) connected to OUT register outputs</li>
+        </ul>
+        <p><b>Step-by-step wiring guide:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li><b>Halt flag H and CPU_CLK:</b><br>
+          The clock input of the H halt DFF connects directly to the master <code>CLK</code> line.<br>
+          Its D input receives <code>¬RESET · (H + T2·HALT)</code>.<br>
+          The gated clock is <code>CPU_CLK = CLK · (¬H + RESET)</code> (NOT for ¬H, OR between ¬H and RESET, AND with CLK).<br>
+          <code>CPU_CLK</code> drives the clock input of <code>RING3</code>, the 4 PC DFFs, and all 5 <code>REG4</code> registers.</li>
+          <li><b>Program Counter (PC) and RAM:</b><br>
+          4 DFFs hold the current address. Their Q outputs connect to address inputs A<sub>0</sub>..A<sub>3</sub> of <b>RAM16</b>
+          and to inputs A of the <b>ADD4</b> adder (with B=0001 and Cin=0 to compute PC+1).<br>
+          4 MUX2s select between PC+1 (input A) and <code>ARG</code> outputs (input B) with selector S = <code>T2·JMP</code>.<br>
+          4 MUX2s select between the current PC (input A) and the new value (input B) with selector S = <code>PC_LOAD = T0 + T1 + T2·JMP</code>.<br>
+          4 MUX2s select between the load value (input A) and 0 (input B) with selector S = <code>RESET</code>. Their output connects to input D of the PC DFFs.</li>
+          <li><b>Fetch Stage:</b><br>
+          RAM16 data outputs connect in parallel to data inputs D of <code>OP</code> and <code>ARG</code>.<br>
+          The LOAD input of <code>OP</code> connects to phase T0 of <code>RING3</code>.<br>
+          The LOAD input of <code>ARG</code> connects to phase T1 of <code>RING3</code>.</li>
+          <li><b>Control Unit:</b><br>
+          Connect outputs Q<sub>0</sub>..Q<sub>2</sub> of <code>OP</code> to inputs A0..A2 of <b>DEC3</b>.<br>
+          Wire logic gates to generate:
+          <code>PC_LOAD = T0 + T1 + T2·JMP</code>, <code>A_SEL = ADD + AND</code>,
+          <code>A_LOAD = T2 · (LDA + ADD + AND)</code>, <code>B_LOAD = T2 · LDB</code>,
+          <code>OUT_LOAD = T2 · OUT</code>, and <code>HALT_SET = T2 · HALT</code>.</li>
+          <li><b>Datapath and Accumulator:</b><br>
+          Outputs of <code>ARG</code> connect to inputs D of register <code>B</code> (its LOAD input receives <code>B_LOAD</code>).<br>
+          4 MUX2s select for accumulator <code>A</code>: input A receives <code>ARG</code> and input B receives the <b>ALU4</b> result.
+          Selector S receives <code>A_SEL</code>. Output connects to inputs D of register <code>A</code> (its LOAD input receives <code>A_LOAD</code>).<br>
+          Outputs of <code>A</code> and <code>B</code> connect to inputs A and B of <b>ALU4</b>. The ALU4 OP selector receives the <code>AND</code> signal from DEC3.<br>
+          Outputs of <code>A</code> connect to inputs D of register <code>OUT</code> (its LOAD input receives <code>OUT_LOAD</code>).<br>
+          Outputs of <code>OUT</code> connect to the 4 visual Outputs.</li>
+        </ol>
+        <p><b>The experiment:</b><br>
+        1. Load the <b>Sum</b> program into RAM: <code>1 5 2 3 3 0 5 0 7 0</code> (you can click "Load example program").<br>
+        2. Set <code>RESET = 1</code>, pulse the clock once, and return <code>RESET = 0</code>.<br>
+        3. Turn on the clock: on pulse 12 the output lamps display <b>8</b> (<code>1000</code>). On pulse 15, the HALT instruction stops the clock and the output freezes.</p>`,
+    },
+    check() {
+      const ramComp = state.components.find(c => c.type === "ram");
+      const outs = state.components.filter(c => c.type === "out");
+      const ring = state.components.find(c => c.type === "RING3");
+      const sws = state.components.filter(c => c.type === "switch");
+      const clocks = state.components.filter(c => c.type === "clock");
+
+      const nameComps = TXT(LL(
+        "Circuito: RAM16, registros y ruta de datos completa",
+        "Circuit: RAM16, registers and complete datapath"
+      ));
+      const nameSuma = TXT(LL(
+        "Programa Suma: tras 15 pulsos OUT = 8 (5 + 3)",
+        "Sum program: after 15 pulses OUT = 8 (5 + 3)"
+      ));
+      const nameHalt = TXT(LL(
+        "HALT: la CPU se detiene y OUT se mantiene en 8",
+        "HALT: CPU stops and OUT stays at 8"
+      ));
+
+      if (!ramComp || outs.length < 4 || sws.length < 2) {
+        return [
+          { name: nameComps, ok: false },
+          { name: nameSuma, ok: false },
+          { name: nameHalt, ok: false },
+        ];
+      }
+
+      const getPerms = arr => {
+        if (arr.length <= 1) return [arr];
+        const res = [];
+        for (let i = 0; i < arr.length; i++) {
+          const rest = [...arr.slice(0, i), ...arr.slice(i + 1)];
+          for (const p of getPerms(rest)) res.push([arr[i], ...p]);
+        }
+        return res;
+      };
+      const getCombos = (arr, k, start = 0, cur = [], res = []) => {
+        if (cur.length === k) { res.push([...cur]); return res; }
+        for (let i = start; i < arr.length; i++) {
+          cur.push(arr[i]);
+          getCombos(arr, k, i + 1, cur, res);
+          cur.pop();
+        }
+        return res;
+      };
+      const candidatePerms = [];
+      for (const set of getCombos(outs, 4)) {
+        for (const p of getPerms(set)) candidatePerms.push(p);
+      }
+
+      const readNibble = (r, p) => {
+        let v = 0;
+        for (let i = 0; i < 4; i++) {
+          const net = r.netOf.get(p[i].id + ":0");
+          const b = net !== undefined ? r.values[net] : -1;
+          if (b === 1) v |= (1 << i);
+          else if (b !== 0) return -1;
+        }
+        return v;
+      };
+
+      const savedSw = sws.map(s => ({ s, on: s.on }));
+      const savedClocks = clocks.map(ck => ({ ck, v: globalClockState.get(ck.id) ?? false }));
+      const savedGateOuts = new Map(gateOuts);
+      const origRam = new Uint8Array(ramData.get(ramComp.id) ?? 16);
+
+      const clkCandidates = [...clocks, ...sws];
+      const rstCandidates = sws;
+
+      let okSuma = false;
+      let okHalt = false;
+
+      try {
+        const sumaProg = new Uint8Array(16);
+        [1, 5, 2, 3, 3, 0, 5, 0, 7, 0].forEach((b, i) => sumaProg[i] = b);
+        ramData.set(ramComp.id, sumaProg);
+
+        candidateLoop:
+        for (const clkCand of clkCandidates) {
+          for (const rstCand of rstCandidates) {
+            if (clkCand === rstCand) continue;
+
+            savedSw.forEach(({ s, on }) => s.on = on);
+            savedClocks.forEach(({ ck, v }) => globalClockState.set(ck.id, v));
+            gateOuts.clear();
+
+            const setClk = v => {
+              if (clkCand.type === "clock") globalClockState.set(clkCand.id, v);
+              else clkCand.on = v;
+            };
+            const setRst = v => {
+              rstCand.on = v;
+            };
+            const doPulse = () => {
+              setClk(true); simulate();
+              setClk(false); return simulate();
+            };
+            const doReset = () => {
+              setRst(true); simulate();
+              doPulse();
+              setRst(false); return simulate();
+            };
+
+            const rReset = doReset();
+            if (ring) {
+              const t0Val = rReset.values[rReset.netOf.get(ring.id + ":2")];
+              if (t0Val !== 1) continue;
+              const rStep = doPulse();
+              const t1Val = rStep.values[rStep.netOf.get(ring.id + ":3")];
+              if (t1Val !== 1) continue;
+              doReset();
+            }
+
+            let r15 = null;
+            for (let k = 0; k < 15; k++) {
+              r15 = doPulse();
+            }
+
+            let bestPerm = null;
+            for (const p of candidatePerms) {
+              if (readNibble(r15, p) === 8) {
+                bestPerm = p;
+                break;
+              }
+            }
+            if (!bestPerm) continue;
+
+            okSuma = true;
+
+            let haltValid = true;
+            for (let k = 0; k < 10; k++) {
+              const rMore = doPulse();
+              if (readNibble(rMore, bestPerm) !== 8) {
+                haltValid = false;
+                break;
+              }
+            }
+            if (haltValid) {
+              okHalt = true;
+            }
+            break candidateLoop;
+          }
+        }
+      } catch (e) {
+        okSuma = false;
+        okHalt = false;
+      } finally {
+        ramData.set(ramComp.id, origRam);
+        savedSw.forEach(({ s, on }) => s.on = on);
+        savedClocks.forEach(({ ck, v }) => globalClockState.set(ck.id, v));
+        gateOuts.clear();
+        for (const [k, v] of savedGateOuts) gateOuts.set(k, v);
+        simulate();
+      }
+
+      return [
+        { name: nameComps, ok: true },
+        { name: nameSuma, ok: okSuma },
+        { name: nameHalt, ok: okHalt },
+      ];
+    },
+  },
+  {
+    id: "s28",
+    title: LL("28. Salto y Parada (JMP y HALT)", "28. Jump and Halt (JMP and HALT)"),
+    desc: LL(
+      "Programá un bucle infinito (Contador) con JMP, verificá la detención limpia con HALT y celebrá tu computadora completa.",
+      "Program an infinite loop (Counter) with JMP, verify clean stopping with HALT, and celebrate your complete computer."
+    ),
+    theory: {
+      es: `
+        <p><b>¿Qué es?</b><br>
+        Es el pedal de freno que apaga el motor al llegar a destino (<code>HALT</code>)
+        y la rotonda que te permite dar otra vuelta a la pista (<code>JMP</code>).
+        El procesador ya no está atrapado en un camino de ida: ahora puede decidir hacia dónde ir y cuándo parar.</p>
+        <p><b>¿Por qué importa?</b><br>
+        Sin saltos, un procesador sólo podría ejecutar una lista fija de órdenes y apagarse al final de la memoria.
+        Con <code>JMP</code>, una computadora puede repetir bucles indefinidamente, contar, esperar eventos y ejecutar
+        algoritmos de cualquier longitud. Y con <code>HALT</code>, se detiene de forma limpia sin desbordar la memoria.</p>
+        <p><b>El programa Contador en acción:</b><br>
+        Cargá en la RAM: <code>1 0 2 1 3 0 5 0 6 4</code></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>Direcciones 0, 1: <code>LDA 0</code> (inicializa el acumulador A con 0)</li>
+          <li>Direcciones 2, 3: <code>LDB 1</code> (carga el incremento 1 en el registro B)</li>
+          <li>Direcciones 4, 5: <code>ADD 0</code> (suma A + B y guarda el resultado en A)</li>
+          <li>Direcciones 6, 7: <code>OUT 0</code> (copia A al registro de salida OUT)</li>
+          <li>Direcciones 8, 9: <code>JMP 4</code> (¡salta de regreso a la dirección 4!)</li>
+        </ul>
+        <p>En la dirección 4 vuelve a sumar 1, vuelve a mostrarlo en OUT, y vuelve a saltar:
+        OUT contará <b>1, 2, 3, 4, 5... 15, 0, 1...</b> en un ciclo infinito.</p>
+        <p><b>Repaso del camino recorrido:</b><br>
+        Comenzamos en la lección 1 con un simple transistor y compuertas lógicas (NOT, AND, OR).
+        Construimos memoria a partir del retraso de señal (latches y DFF), empaquetamos registros (REG4),
+        sumadores (ADD4) y una unidad aritmético-lógica (ALU4).
+        Añadimos memoria direccionable (RAM16), un contador de pasos (RING3) y un decodificador de instrucciones (DEC3).
+        Ahora, con saltos y control de parada, tu creación es una computadora digital completa y funcional construida desde cero.</p>
+        <p><b>El experimento:</b><br>
+        1. Cargá el programa Contador: <code>1 0 2 1 3 0 5 0 6 4</code>.<br>
+        2. Con <code>RESET = 1</code>, dale un pulso de reloj y bajá <code>RESET = 0</code>.<br>
+        3. Encendé el reloj: observá cómo OUT cuenta 1, 2, 3... cíclicamente.<br>
+        4. Probá luego cargar el programa Suma (<code>1 5 2 3 3 0 5 0 7 0</code>): tras dar 8, HALT congela el reloj.
+        Al activar <code>RESET = 1</code>, la CPU se reinicia limpiamente desde la dirección 0.</p>`,
+      en: `
+        <p><b>What is it?</b><br>
+        It is the brake pedal that shuts off the engine upon reaching your destination (<code>HALT</code>)
+        and the roundabout that lets you take another lap around the track (<code>JMP</code>).
+        The processor is no longer confined to a one-way trip: it can now choose where to go and when to stop.</p>
+        <p><b>Why does it matter?</b><br>
+        Without jumps, a processor could only execute a fixed sequence of instructions and shut down at the end of memory.
+        With <code>JMP</code>, a computer can repeat loops indefinitely, count, wait for events, and run
+        algorithms of any length. And with <code>HALT</code>, it stops cleanly without overflowing memory.</p>
+        <p><b>The Counter program in action:</b><br>
+        Load into RAM: <code>1 0 2 1 3 0 5 0 6 4</code></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>Addresses 0, 1: <code>LDA 0</code> (initializes accumulator A with 0)</li>
+          <li>Addresses 2, 3: <code>LDB 1</code> (loads increment 1 into register B)</li>
+          <li>Addresses 4, 5: <code>ADD 0</code> (computes A + B and stores result in A)</li>
+          <li>Addresses 6, 7: <code>OUT 0</code> (copies A to register OUT)</li>
+          <li>Addresses 8, 9: <code>JMP 4</code> (jumps back to address 4!)</li>
+        </ul>
+        <p>At address 4 it adds 1 again, displays it on OUT, and jumps again:
+        OUT will count <b>1, 2, 3, 4, 5... 15, 0, 1...</b> in an infinite loop.</p>
+        <p><b>Retrospective of what we built:</b><br>
+        We started in lesson 1 with a single transistor and basic logic gates (NOT, AND, OR).
+        We built memory from feedback loops (latches and DFF), packaged registers (REG4),
+        adders (ADD4), and an arithmetic-logic unit (ALU4).
+        We added addressable memory (RAM16), a step sequencer (RING3), and an instruction decoder (DEC3).
+        Now, with jumps and halt control, your creation is a fully functional digital computer built entirely from scratch.</p>
+        <p><b>The experiment:</b><br>
+        1. Load the Counter program: <code>1 0 2 1 3 0 5 0 6 4</code>.<br>
+        2. With <code>RESET = 1</code>, pulse the clock once and return <code>RESET = 0</code>.<br>
+        3. Turn on the clock: watch OUT count 1, 2, 3... cyclically.<br>
+        4. Then load the Sum program (<code>1 5 2 3 3 0 5 0 7 0</code>): after reaching 8, HALT freezes the clock.
+        Activating <code>RESET = 1</code> cleanly restarts the CPU from address 0.</p>`,
+    },
+    check() {
+      const ramComp = state.components.find(c => c.type === "ram");
+      const outs = state.components.filter(c => c.type === "out");
+      const ring = state.components.find(c => c.type === "RING3");
+      const sws = state.components.filter(c => c.type === "switch");
+      const clocks = state.components.filter(c => c.type === "clock");
+
+      const nameComps = TXT(LL(
+        "Circuito: CPU completa con control de salto (JMP) y parada (HALT)",
+        "Circuit: complete CPU with jump control (JMP) and halt (HALT)"
+      ));
+      const nameContador = TXT(LL(
+        "Programa Contador: cuenta 1, 2, 3 en OUT mediante saltos (JMP)",
+        "Counter program: counts 1, 2, 3 on OUT via jumps (JMP)"
+      ));
+      const nameHalt = TXT(LL(
+        "HALT: la señal H detiene el reloj y congela el procesador",
+        "HALT: signal H stops the clock and freezes the processor"
+      ));
+      const nameReset = TXT(LL(
+        "RESET: reinicia el contador de programa y la ejecución",
+        "RESET: resets the program counter and execution"
+      ));
+
+      if (!ramComp || outs.length < 4 || sws.length < 2) {
+        return [
+          { name: nameComps, ok: false },
+          { name: nameContador, ok: false },
+          { name: nameHalt, ok: false },
+          { name: nameReset, ok: false },
+        ];
+      }
+
+      const getPerms = arr => {
+        if (arr.length <= 1) return [arr];
+        const res = [];
+        for (let i = 0; i < arr.length; i++) {
+          const rest = [...arr.slice(0, i), ...arr.slice(i + 1)];
+          for (const p of getPerms(rest)) res.push([arr[i], ...p]);
+        }
+        return res;
+      };
+      const getCombos = (arr, k, start = 0, cur = [], res = []) => {
+        if (cur.length === k) { res.push([...cur]); return res; }
+        for (let i = start; i < arr.length; i++) {
+          cur.push(arr[i]);
+          getCombos(arr, k, i + 1, cur, res);
+          cur.pop();
+        }
+        return res;
+      };
+      const candidatePerms = [];
+      for (const set of getCombos(outs, 4)) {
+        for (const p of getPerms(set)) candidatePerms.push(p);
+      }
+
+      const readNibble = (r, p) => {
+        let v = 0;
+        for (let i = 0; i < 4; i++) {
+          const net = r.netOf.get(p[i].id + ":0");
+          const b = net !== undefined ? r.values[net] : -1;
+          if (b === 1) v |= (1 << i);
+          else if (b !== 0) return -1;
+        }
+        return v;
+      };
+
+      const savedSw = sws.map(s => ({ s, on: s.on }));
+      const savedClocks = clocks.map(ck => ({ ck, v: globalClockState.get(ck.id) ?? false }));
+      const savedGateOuts = new Map(gateOuts);
+      const origRam = new Uint8Array(ramData.get(ramComp.id) ?? 16);
+
+      const clkCandidates = [...clocks, ...sws];
+      const rstCandidates = sws;
+
+      let okContador = false;
+      let okHalt = false;
+      let okReset = false;
+
+      try {
+        const countProg = new Uint8Array(16);
+        [1, 0, 2, 1, 3, 0, 5, 0, 6, 4].forEach((b, i) => countProg[i] = b);
+        ramData.set(ramComp.id, countProg);
+
+        candidateLoop:
+        for (const clkCand of clkCandidates) {
+          for (const rstCand of rstCandidates) {
+            if (clkCand === rstCand) continue;
+
+            savedSw.forEach(({ s, on }) => s.on = on);
+            savedClocks.forEach(({ ck, v }) => globalClockState.set(ck.id, v));
+            gateOuts.clear();
+
+            const setClk = v => {
+              if (clkCand.type === "clock") globalClockState.set(clkCand.id, v);
+              else clkCand.on = v;
+            };
+            const setRst = v => {
+              rstCand.on = v;
+            };
+            const doPulse = () => {
+              setClk(true); simulate();
+              setClk(false); return simulate();
+            };
+            const doReset = () => {
+              setRst(true); simulate();
+              doPulse();
+              setRst(false); return simulate();
+            };
+
+            const rReset = doReset();
+            if (ring) {
+              const t0Val = rReset.values[rReset.netOf.get(ring.id + ":2")];
+              if (t0Val !== 1) continue;
+              const rStep = doPulse();
+              const t1Val = rStep.values[rStep.netOf.get(ring.id + ":3")];
+              if (t1Val !== 1) continue;
+              doReset();
+            }
+
+            let r12 = null, r21 = null, r30 = null;
+            for (let p = 1; p <= 30; p++) {
+              const r = doPulse();
+              if (p === 12) r12 = r;
+              else if (p === 21) r21 = r;
+              else if (p === 30) r30 = r;
+            }
+
+            let bestPerm = null;
+            for (const p of candidatePerms) {
+              if (readNibble(r12, p) === 1 && readNibble(r21, p) === 2 && readNibble(r30, p) === 3) {
+                bestPerm = p;
+                break;
+              }
+            }
+            if (!bestPerm) continue;
+
+            okContador = true;
+
+            // 2. HALT test with Suma program
+            const sumaProg = new Uint8Array(16);
+            [1, 5, 2, 3, 3, 0, 5, 0, 7, 0].forEach((b, i) => sumaProg[i] = b);
+            ramData.set(ramComp.id, sumaProg);
+            gateOuts.clear();
+            doReset();
+
+            let r15 = null;
+            for (let k = 0; k < 15; k++) {
+              r15 = doPulse();
+            }
+            const out15 = readNibble(r15, bestPerm);
+
+            let ringFrozen = true;
+            if (ring) {
+              const tBefore = [2, 3, 4].map(pin => r15.values[r15.netOf.get(ring.id + ":" + pin)]);
+              for (let k = 0; k < 5; k++) {
+                const rPulse = doPulse();
+                const tCur = [2, 3, 4].map(pin => rPulse.values[rPulse.netOf.get(ring.id + ":" + pin)]);
+                if (tCur.some((v, i) => v !== tBefore[i])) {
+                  ringFrozen = false;
+                  break;
+                }
+              }
+            } else {
+              for (let k = 0; k < 5; k++) {
+                const rPulse = doPulse();
+                if (readNibble(rPulse, bestPerm) !== out15) {
+                  ringFrozen = false;
+                  break;
+                }
+              }
+            }
+
+            if (out15 === 8 && ringFrozen) {
+              okHalt = true;
+            }
+
+            // 3. RESET test
+            doReset();
+            let rRst12 = null;
+            for (let k = 0; k < 12; k++) {
+              rRst12 = doPulse();
+            }
+            if (readNibble(rRst12, bestPerm) === 8) {
+              okReset = true;
+            }
+
+            break candidateLoop;
+          }
+        }
+      } catch (e) {
+        okContador = false;
+        okHalt = false;
+        okReset = false;
+      } finally {
+        ramData.set(ramComp.id, origRam);
+        savedSw.forEach(({ s, on }) => s.on = on);
+        savedClocks.forEach(({ ck, v }) => globalClockState.set(ck.id, v));
+        gateOuts.clear();
+        for (const [k, v] of savedGateOuts) gateOuts.set(k, v);
+        simulate();
+      }
+
+      return [
+        { name: nameComps, ok: true },
+        { name: nameContador, ok: okContador },
+        { name: nameHalt, ok: okHalt },
+        { name: nameReset, ok: okReset },
       ];
     },
   },
