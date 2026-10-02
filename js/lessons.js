@@ -733,13 +733,15 @@ const LESSONS = [
       // The lesson doesn't fix a creation order for D/CLK: test both
       // role assignments (like the s6 check does).
       const roles = [[sws[0], sws[1]], [sws[1], sws[0]]];
+      // A single (role, NOR) combination must pass ALL tests for BOTH
+      // dState values; the 3 report items all come from that combination
+      // (or stay false if none does). No partial credit.
       const ok = { q: false, hold: false, holdH: false };
-      let okFound = false;
       for (const [data, g] of roles) {
         for (const qn of nors) {
-          if (okFound) break;
-          for (const dState of [false, true]) {
-            if (okFound) break;
+          if (ok.q && ok.hold && ok.holdH) break;
+          let passedTrue = false, passedFalse = false;
+          for (const dState of [true, false]) {
             const qv = r => r.values[r.netOf.get(qn.id + ":2")];
             sws.forEach(s => s.on = false);
             g.on = true; data.on = !dState; // CLK=1, D opposite
@@ -755,10 +757,15 @@ const LESSONS = [
             const holdLo = qv(r) === (dState ? 1 : 0);
             // reset both roles before the next attempt
             sws.forEach(s => s.on = false);
-            if (notTransp) ok.holdH = true;
-            if (onEdge && holdLo) ok.q = true;
-            if (onEdge && holdLo) ok.hold = true;
-            if (notTransp && onEdge && holdLo) okFound = true;
+            if (notTransp && onEdge && holdLo) {
+              if (dState) passedTrue = true; else passedFalse = true;
+            }
+          }
+          // the whole combination must pass for BOTH dStates
+          if (passedTrue && passedFalse) {
+            // the 3 items come from this same combination
+            ok.q = ok.hold = ok.holdH = true;
+            break;
           }
         }
       }
@@ -997,11 +1004,14 @@ const LESSONS = [
             }
             const cellSws = sws.filter(s => feeders.has(s.id));
             if (cellSws.length >= 2) {
-              // Simulate the cell: LOAD=1 + D=1 with CLK raised → a falling
-              // edge must load Q=1; then all switches off (LOAD=0, D=0) →
-              // Q must hold. cellSws[0]/[1] can be (LOAD, D) or (D, LOAD)
-              // in either order: with both at 1 the edge loads 1 either
-              // way, and with both at 0 the hold test works either way.
+              // Simulate the cell with REAL edges: raise CLK then lower it
+              // (falling edge → DFF must load). Test 1 (load): LOAD=1 + D=1,
+              // edge → Q must be 1. Test 2 (hold): all switches off
+              // (LOAD=0, D=0), raise and lower CLK again → Q must STILL be
+              // 1 (it rewrites itself, not a new value). cellSws[0]/[1] can
+              // be (LOAD, D) or (D, LOAD) in either order: with both at 1
+              // the edge loads 1 either way, and with both at 0 the hold
+              // test works either way.
               const clockPrev = clock ? (globalClockState.get(clock.id) ?? false) : false;
               const clkSet = v => {
                 if (swClk) swClk.on = v;
@@ -1013,9 +1023,14 @@ const LESSONS = [
                 clkSet(false);
                 sA.on = true; sB.on = true; // LOAD=1, D=1 (either order)
                 simulate();
+                clkSet(true);  // raise CLK
+                simulate();
                 clkSet(false); // falling edge: must load Q=1
                 const qLoad = qv(simulate());
-                sws.forEach(s => s.on = false); // LOAD=0, D=0: must hold
+                sws.forEach(s => s.on = false); // LOAD=0, D=0
+                clkSet(true);  // raise CLK (LOAD=0: Q feeds back, no change)
+                simulate();
+                clkSet(false); // falling edge
                 const qHold = qv(simulate());
                 sws.forEach(s => s.on = false);
                 if (qLoad === 1 && qHold === 1) { okLoadHold = true; break; }
@@ -1101,6 +1116,8 @@ const LESSONS = [
       // permutation of switch roles (like the s6 check does) until the
       // mux behavior shows up in one of them.
       const perms = [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
+      // Both items must come from the SAME role permutation: a real mux
+      // passes both tests under any fixed assignment.
       const ok = { sel0: false, sel1: false };
       for (const p of perms) {
         const a = sws[p[0]], b = sws[p[1]], s = sws[p[2]];
@@ -1112,8 +1129,9 @@ const LESSONS = [
         a.on = false; b.on = false; const r3 = qv();
         a.on = false; b.on = true;  const r4 = qv();
         sws.forEach(x => x.on = false);
-        if (r1 === 0 && r2 === 1) ok.sel0 = true;
-        if (r3 === 0 && r4 === 1) ok.sel1 = true;
+        ok.sel0 = ok.sel0 || (r1 === 0 && r2 === 1);
+        ok.sel1 = ok.sel1 || (r3 === 0 && r4 === 1);
+        if (ok.sel0 && ok.sel1) break;
       }
       return [
         { name: nameNeeds, ok: true },
