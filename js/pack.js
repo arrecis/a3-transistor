@@ -28,21 +28,41 @@ function makePackage(sel, name, inIdx, outIdx) {
   const pinInSel = new Set(inIdx);   // ids of switches chosen as input pins
   const pinOutSel = new Set(outIdx); // ids of outs chosen as output pins
 
+  const inPins = [];
+  const outPins = [];
+
   for (const c of sel) {
     const newId = idMap.get(c.id);
     if (c.type === "switch" && pinInSel.has(c.id)) {
       // input pin: registered as a stub, doesn't go into the internal circuit
-      def.inStubs.push(newId);
-      def.inputs.push(c.label || "IN" + (def.inputs.length + 1));
+      inPins.push({ oldId: c.id, newId, label: c.label });
       continue;
     }
     if (c.type === "out" && pinOutSel.has(c.id)) {
-      def.outStubs.push(newId);
-      def.outputs.push(c.label || "OUT" + (def.outputs.length + 1));
+      outPins.push({ oldId: c.id, newId, label: c.label });
       continue;
     }
     def.components.push({ id: newId, type: c.type, on: c.on });
   }
+
+  // order pins according to user's click order (inIdx / outIdx)
+  inPins.sort((a, b) => {
+    const ia = inIdx.indexOf(a.oldId), ib = inIdx.indexOf(b.oldId);
+    return (ia === -1 ? 999999 : ia) - (ib === -1 ? 999999 : ib);
+  });
+  outPins.sort((a, b) => {
+    const ja = outIdx.indexOf(a.oldId), jb = outIdx.indexOf(b.oldId);
+    return (ja === -1 ? 999999 : ja) - (jb === -1 ? 999999 : jb);
+  });
+
+  inPins.forEach((p, i) => {
+    def.inStubs.push(p.newId);
+    def.inputs.push(p.label || "IN" + (i + 1));
+  });
+  outPins.forEach((p, j) => {
+    def.outStubs.push(p.newId);
+    def.outputs.push(p.label || "OUT" + (j + 1));
+  });
 
   // internal wires: only between components that go inside (or to stubs)
   for (const w of state.wires) {
