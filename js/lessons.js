@@ -56,6 +56,16 @@ function lt(cols, rows) {
   }
   return h + "</table>";
 }
+/* Canvas layout guide: one numbered row per canvas column, left to right.
+   title and note are already in the lesson's language. */
+function lay(title, items, note) {
+  const badge = n => `<span style="flex:none;width:18px;height:18px;border-radius:50%;border:1px solid var(--accent);color:var(--accent);font-size:10.5px;display:inline-flex;align-items:center;justify-content:center;">${n}</span>`;
+  let h = `<p><b>${title}</b></p><ul style="list-style:none;padding:0;margin:6px 0;">`;
+  items.forEach((it, i) => { h += `<li style="display:flex;gap:8px;align-items:baseline;padding:3px 0;">${badge(i + 1)}<span>${it}</span></li>`; });
+  h += "</ul>";
+  if (note) h += `<p style="color:var(--dim);font-size:11.5px;margin-top:4px;">${note}</p>`;
+  return h;
+}
 const LL = (es, en) => ({ es, en });  // bilingual pair
 const TXT = (o) => o[i18nLang()] ?? o.es;
 
@@ -1320,6 +1330,13 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>2× <b>AND</b> (tecla 6) + 1× <b>OR</b> (tecla 7) — para Cout</li>
           <li>2× <b>Salida</b> (tecla 3)</li>
         </ul>
+        ${lay("Disposición en el canvas (de izquierda a derecha):", [
+          "Entradas <b>A</b>, <b>B</b> y <b>Cin</b>, una debajo de otra",
+          "<b>XOR1</b> arriba, <b>AND1</b> abajo",
+          "<b>XOR2</b> arriba, <b>AND2</b> abajo",
+          "<b>OR</b>, a la altura de AND2",
+          "Salidas <b>S</b> arriba, <b>Cout</b> abajo",
+        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>A y B → XOR1. La salida de XOR1 y Cin → XOR2. La salida de XOR2 es <b>S</b></li>
@@ -1345,6 +1362,13 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>2× <b>AND</b> (key 6) + 1× <b>OR</b> (key 7) — for Cout</li>
           <li>2× <b>Output</b> (key 3)</li>
         </ul>
+        ${lay("Layout on the canvas (left to right):", [
+          "Inputs <b>A</b>, <b>B</b> and <b>Cin</b>, stacked",
+          "<b>XOR1</b> on top, <b>AND1</b> below",
+          "<b>XOR2</b> on top, <b>AND2</b> below",
+          "<b>OR</b>, level with AND2",
+          "Outputs <b>S</b> on top, <b>Cout</b> below",
+        ], "Each number is a column. Wires always flow to the right.")}
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>A and B → XOR1. XOR1's output and Cin → XOR2. XOR2's output is <b>S</b></li>

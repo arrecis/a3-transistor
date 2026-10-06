@@ -937,6 +937,17 @@ function buildFullCpuFixture({ withoutPcRam = false, withoutHalt = false } = {})
   expect("todas las lecciones tienen theory.es y theory.en válidos y sin LaTeX", contentOk, reason);
 }
 
+// every lesson that lists components to build also has a canvas layout guide (lay())
+{
+  const LESSONS = vm.runInContext("LESSONS", ctx);
+  const missing = [];
+  for (const L of LESSONS) {
+    if (/Componentes que necesitás/.test(L.theory.es) && !/Disposición en el canvas/.test(L.theory.es)) missing.push(L.id + "(es)");
+    if (/Components you need/.test(L.theory.en) && !/Layout on the canvas/.test(L.theory.en)) missing.push(L.id + "(en)");
+  }
+  expect("lessons with a component list have a canvas layout guide", missing.length === 0, "missing: " + missing.join(", "));
+}
+
 /* ---------- report ---------- */
 let failed = 0;
 for (const [label, ok, info] of results) {
