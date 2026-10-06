@@ -658,14 +658,20 @@ const LESSONS = [
           <li>2× <b>Entrada</b> (tecla 2) — D y CLK</li>
           <li>4× <b>NOR</b> (tecla 9) — 2 para el maestro, 2 para el esclavo</li>
           <li>4× <b>AND</b> (tecla 6) — 2 por etapa</li>
-          <li>2× <b>NOT</b> (tecla 5) — uno para ¬D, y uno para <b>¬CLK del esclavo</b> (¡este es el truco!)</li>
+          <li>3× <b>NOT</b> (tecla 5) — uno dentro de cada latch (¬D en el maestro, ¬QM en el esclavo) y uno aparte para <b>¬CLK</b> (¡este es el truco!)</li>
           <li>1× <b>Salida</b> (tecla 3)</li>
         </ul>
+        <p>Cada mitad es un <b>latch</b> (el de la lección 7); las dos juntas forman el <b>flip-flop</b>.</p>
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li><b>Maestro:</b> exactamente el latch D de la lección 7. Su salida es QM (la Q del maestro)</li>
-          <li><b>Esclavo:</b> otro latch D idéntico, con dos diferencias: su "dato" es QM, y sus AND reciben <b>¬CLK</b> — el reloj pasado por el segundo NOT</li>
+          <li><b>Maestro</b> (latch 1): exactamente el latch D de la lección 7 — 1 NOT, 2 AND, 2 NOR. La Entrada D va a su NOT y a un AND; la Entrada CLK va a sus dos AND. La salida de su NOR "Q" la llamamos <b>QM</b> (la Q del maestro)</li>
+          <li><b>Esclavo</b> (latch 2): otra copia completa — su propio NOT, 2 AND y 2 NOR — con dos cambios: su dato no viene de una Entrada sino del cable <b>QM</b>, y sus dos AND no reciben CLK sino <b>¬CLK</b></li>
+          <li><b>¬CLK</b>: un tercer NOT, aparte de los dos latches. CLK entra a ese NOT y su salida va a los dos AND del esclavo. Así, cuando el maestro está abierto, el esclavo está cerrado</li>
+          <li>La salida de la NOR "Q" del esclavo va a la <b>Salida</b></li>
         </ol>
+        <pre style="font-size:11.5px; color:var(--dim); margin:6px 0;">D ──► [ latch maestro ] ──QM──► [ latch esclavo ] ──► Q
+          ▲                            ▲
+CLK ──────┴────► [NOT] ── ¬CLK ────────┘</pre>
         <p><b>El experimento:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Poné D=1 y subí CLK a 1: <i>no pasa nada</i> — el maestro escucha, pero el esclavo está congelado</li>
@@ -696,14 +702,20 @@ const LESSONS = [
           <li>2× <b>Input</b> (key 2) — D and CLK</li>
           <li>4× <b>NOR</b> (key 9) — 2 for the master, 2 for the slave</li>
           <li>4× <b>AND</b> (key 6) — 2 per stage</li>
-          <li>2× <b>NOT</b> (key 5) — one for ¬D, one for the <b>slave's ¬CLK</b> (this is the trick!)</li>
+          <li>3× <b>NOT</b> (key 5) — one inside each latch (¬D in the master, ¬QM in the slave) and a separate one for <b>¬CLK</b> (this is the trick!)</li>
           <li>1× <b>Output</b> (key 3)</li>
         </ul>
+        <p>Each half is a <b>latch</b> (the one from lesson 7); together they form the <b>flip-flop</b>.</p>
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li><b>Master:</b> exactly the D latch from lesson 7. Its output is QM (the master's Q)</li>
-          <li><b>Slave:</b> another identical D latch, with two differences: its "data" is QM, and its ANDs receive <b>¬CLK</b> — the clock passed through the second NOT</li>
+          <li><b>Master</b> (latch 1): exactly the D latch from lesson 7 — 1 NOT, 2 ANDs, 2 NORs. Input D goes to its NOT and to one AND; Input CLK goes to both of its ANDs. We call the output of its "Q" NOR <b>QM</b> (the master's Q)</li>
+          <li><b>Slave</b> (latch 2): another full copy — its own NOT, 2 ANDs and 2 NORs — with two changes: its data comes from the <b>QM</b> wire instead of an Input, and its two ANDs get <b>¬CLK</b> instead of CLK</li>
+          <li><b>¬CLK</b>: a third NOT, separate from both latches. CLK goes into that NOT and its output goes to the slave's two ANDs. So when the master is open, the slave is closed</li>
+          <li>The output of the slave's "Q" NOR goes to the <b>Output</b></li>
         </ol>
+        <pre style="font-size:11.5px; color:var(--dim); margin:6px 0;">D ──► [ master latch ] ──QM──► [ slave latch ] ──► Q
+          ▲                          ▲
+CLK ──────┴────► [NOT] ── ¬CLK ──────┘</pre>
         <p><b>The experiment:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Set D=1 and raise CLK to 1: <i>nothing happens</i> — the master listens, but the slave is frozen</li>
@@ -719,8 +731,8 @@ const LESSONS = [
       const ands = state.components.filter(c => c.type === "and");
       const nots = state.components.filter(c => c.type === "not");
       const nameNeeds = TXT(LL(
-        "Circuito: 4 NOR (2 por etapa), 4 AND, 2 NOT, 2 Entradas",
-        "Circuit: 4 NORs (2 per stage), 4 ANDs, 2 NOTs, 2 Inputs"));
+        "Circuito: 4 NOR (2 por etapa), 4 AND, 3 NOT, 2 Entradas",
+        "Circuit: 4 NORs (2 per stage), 4 ANDs, 3 NOTs, 2 Inputs"));
       if (nors.length < 4 || ands.length < 4 || nots.length < 2 || sws.length < 2)
         return [{ name: nameNeeds, ok: false }];
       const forQ = TXT(LL("Q copia D solo en el flanco de bajada de CLK", "Q copies D only on CLK's falling edge"));
@@ -783,7 +795,7 @@ const LESSONS = [
     title: LL("9. Empaquetar el Flip-Flop", "9. Packing the Flip-Flop"),
     theory: {
       es: `
-        <p>El flip-flop que armaste tiene 10 compuertas (4 NOR + 4 AND + 2 NOT). Ahora usá
+        <p>El flip-flop que armaste tiene 11 compuertas (4 NOR + 4 AND + 3 NOT). Ahora usá
         el superpoder del curso:
         <b>empaquetarlo</b> para que se convierta en una caja con 2 entradas y una salida.
         A partir de ahora, un flip-flop es una pieza más — igual que las compuertas, pero
@@ -801,7 +813,7 @@ const LESSONS = [
         y verificá que sigue funcionando por flanco.</p>
         <p style="color:var(--dim); font-size:12px;">💡 Consejo: las Entradas que NO marques como pines quedan como constantes internas (congeladas al valor que tenían). Para el DFF, marcá D y CLK — son las únicas que deben cambiar.</p>`,
       en: `
-        <p>The flip-flop you built has 10 gates (4 NORs + 4 ANDs + 2 NOTs). Now for the
+        <p>The flip-flop you built has 11 gates (4 NORs + 4 ANDs + 3 NOTs). Now for the
         course's superpower:
         <b>pack it</b>. It becomes a box with 2 inputs and 1 output — from now on,
         a flip-flop is just a part — like gates, but more powerful: <i>it remembers one
