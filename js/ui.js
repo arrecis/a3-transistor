@@ -50,6 +50,7 @@ document.getElementById("packBarCancel").addEventListener("click", () => {
   save();
 });
 
+document.getElementById("fitBtn").addEventListener("click", fitView);
 document.getElementById("clearBtn").addEventListener("click", () => {
   if (confirm("¿Borrar todo el circuito?")) {
     state.components = [];

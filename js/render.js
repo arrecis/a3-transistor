@@ -11,7 +11,7 @@ let hoverTerm = null, hoverComp = null, hoverWire = null;
 /* Camera: world offset relative to the screen + zoom.
    Pan with middle mouse button · zoom with the wheel (centered on the cursor). */
 const cam = { x: 0, y: 0, zoom: 1 };
-const ZOOM_MIN = 0.4, ZOOM_MAX = 2.5;
+const ZOOM_MIN = 0.15, ZOOM_MAX = 2.5;
 let panning = false, panStart = { x: 0, y: 0 };
 let dragSel = null; // drag of a marked selection: [{c, dx, dy}]
 
@@ -54,6 +54,26 @@ function zoomAt(px, py, factor) {
   cam.x = px - (px - cam.x) * k;
   cam.y = py - (py - cam.y) * k;
   cam.zoom = newZoom;
+}
+
+/* Fit view: zoom and center so every component is on screen
+   (close up for a few parts, far out for many). The open lesson
+   panel covers the left side, so only the space to its right counts. */
+function fitView() {
+  const w = cv.clientWidth, h = cv.clientHeight;
+  const panel = document.getElementById("lessonPanel");
+  const left = panel && panel.style.display !== "none" ? panel.offsetWidth : 0;
+  if (!state.components.length) { cam.zoom = 1; cam.x = left + (w - left) / 2; cam.y = h / 2; return; }
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const c of state.components) {
+    const pts = [{ x: c.x, y: c.y }, ...TYPE_DEFS[c.type].terms.map((_, i) => termPos(c, i))];
+    for (const p of pts) { x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); }
+  }
+  const pad = 60;  // world units around the parts (labels, terminals)
+  x0 -= pad; y0 -= pad; x1 += pad; y1 += pad;
+  cam.zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.min((w - left) / (x1 - x0), h / (y1 - y0))));
+  cam.x = left + (w - left - (x1 - x0) * cam.zoom) / 2 - x0 * cam.zoom;
+  cam.y = (h - (y1 - y0) * cam.zoom) / 2 - y0 * cam.zoom;
 }
 
 const NET_COLORS = { high: "#ffd75e", low: "#55617a", unknown: "#39425a", short: "#ff5d5d" };

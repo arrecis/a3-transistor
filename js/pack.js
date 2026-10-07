@@ -791,6 +791,7 @@ window.addEventListener("keydown", e => {
   const toolKeys = { "1": "select", "2": "switch", "3": "out", "4": "clock", "5": "not", "6": "and", "7": "or", "8": "nand", "9": "nor", "0": "xor", "u": "unpack", "p": "pack" };
   const k = e.key.toLowerCase();
   if (toolKeys[k] && !e.ctrlKey && !e.metaKey && !e.altKey) setTool(toolKeys[k]);
+  if (k === "f" && !e.ctrlKey && !e.metaKey && !e.altKey) fitView();
   if (k === "escape") wireDrag = null;
   if (k === "r" && hoverComp && state.tool === "select") { hoverComp.rot = (hoverComp.rot + 3) % 4; save(); }
   if (k === "delete" || k === "backspace" || k === "x") {
