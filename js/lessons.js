@@ -481,89 +481,57 @@ const LESSONS = [
     title: LL("6. Latch SR: la memoria", "6. SR Latch: memory"),
     theory: {
       es: `
-        <p>Todo lo que armaste hasta acá era <b>combinatorio</b> — término que solo significa:
-        la salida depende <i>únicamente</i> de la entrada actual. Cambiás la entrada, cambia la
-        salida. Soltás todo, y el circuito "se olvida" de todo. No hay forma de <i>guardar</i>
-        nada. Y una máquina sin memoria no puede hacer mucho: ni recordar un cálculo, ni
-        saber dónde está en un programa.</p>
-        <p>El salto conceptual más importante del curso es la <b>realimentación</b>
-        (feedback): conectar la salida de un circuito a su propia entrada. Suena raro — y es
-        exactamente eso lo que lo hace especial: el circuito empieza a influirse a sí mismo.</p>
-        <p><b>El latch SR</b> (Set = "poner en 1", Reset = "poner en 0") son dos compuertas NOR
-        con las salidas cruzadas hacia las entradas de la otra. Ese cruce hace que el circuito
-        <i>recuerde</i> el último comando que recibió:</p>
-        ${lt(["S (Set)", "R (Reset)", "Q (resultado)"], [["0","0","se mantiene el valor anterior"],["0","1","0 (reset)"],["1","0","1 (set)"],["1","1","✕ prohibido"]])}
-        <p>Leé la primera fila despacio: cuando S y R valen 0, la salida queda como estaba —
-        <i>aunque ya nadie la esté empujando</i>. Eso es <b>1 bit de memoria</b>: el bloque
-        fundamental de toda la memoria de una computadora.</p>
+        <p>Hasta ahora los circuitos no recordaban nada: al soltar las entradas, todo volvía a cero. El <b>latch SR</b> es la memoria más simple: funciona como un interruptor de luz con dos botones, uno para encender (<b>Set</b>) y otro para apagar (<b>Reset</b>). Al presionar Encender la luz queda prendida aunque sueltes el botón, y al presionar Apagar vuelve a cero. El secreto es el cruce: la salida de cada compuerta NOR alimenta la entrada de la otra, sosteniéndose mutuamente en un bucle cerrado.</p>
         <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>2× <b>Entrada</b> (tecla 2) — una será S (Set) y otra R (Reset)</li>
+          <li>2× <b>Entrada</b> (tecla 2) — R (Reset) y S (Set)</li>
           <li>2× <b>NOR</b> (tecla 9)</li>
-          <li>2× <b>Salida</b> (tecla 3) — para ver Q y su inverso Q̄</li>
+          <li>2× <b>Salida</b> (tecla 3) — Q y Q̄ (su inversa)</li>
         </ul>
-        ${lay('Disposición en el canvas (de izquierda a derecha):', [
-          'Entrada <b>R</b> (Reset) arriba (alimenta la NOR de arriba), Entrada <b>S</b> (Set) abajo',
-          '<b>NOR de arriba</b> (salida Q) arriba, <b>NOR de abajo</b> (salida Q̄) abajo',
-          '<b>Salida Q</b> arriba, <b>Salida Q̄</b> abajo'
-        ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
-        <p><b>Conexión — el cruce es la clave:</b></p>
+        ${lay("Disposición en el canvas (de izquierda a derecha):", [
+          "Entrada <b>R</b> (Reset) arriba, Entrada <b>S</b> (Set) abajo",
+          "<b>NOR de arriba</b> (salida Q) arriba, <b>NOR de abajo</b> (salida Q̄) abajo",
+          "Salidas <b>Q</b> arriba, <b>Q̄</b> abajo",
+        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
+        <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Entrada R → a una entrada de la NOR de arriba</li>
-          <li>Entrada S → a una entrada de la NOR de abajo</li>
-          <li>Salida de la NOR de arriba (llamala Q) → a la entrada <i>libre</i> de la NOR de abajo</li>
-          <li>Salida de la NOR de abajo (Q̄) → a la entrada <i>libre</i> de la NOR de arriba</li>
-          <li>Ambas salidas también a sus Salidas (indicadores) para poder mirarlas</li>
+          <li>Entrada R → a una entrada de la NOR de arriba. Entrada S → a una entrada de la NOR de abajo</li>
+          <li>Salida de la NOR de arriba → a la entrada libre de la NOR de abajo</li>
+          <li>Salida de la NOR de abajo → a la entrada libre de la NOR de arriba</li>
+          <li>Salida de la NOR de arriba a la Salida Q; salida de la NOR de abajo a la Salida Q̄</li>
         </ol>
-        <p><b>El experimento (hacelo de verdad: es EL momento del curso):</b></p>
+        <p><b>El experimento:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Poné S=1: Q se enciende (el latch "guarda" el 1)</li>
-          <li>Volvé S a 0: <b>Q sigue encendida</b>, aunque nadie la sostenga</li>
-          <li>Poné R=1: Q se apaga. Volvé R a 0: <b>Q sigue apagada</b></li>
-        </ol>
-        <p>El circuito recuerda cuál fue el último comando. Acabás de crear memoria.</p>`,
+          <li>Poné S=1: Q se enciende (valor 1 guardado).</li>
+          <li>Volvé S a 0: <b>Q sigue encendida</b> sola en memoria.</li>
+          <li>Poné R=1: Q se apaga. Volvé R a 0: <b>Q sigue apagada</b>.</li>
+        </ol>`,
       en: `
-        <p>Everything you built so far was <b>combinational</b> — a term that only means: the
-        output depends <i>only</i> on the current input. Change the input, the output changes.
-        Release everything, and the circuit "forgets" it all. There is no way to <i>store</i>
-        anything. A machine without memory can't do much: it can't remember a calculation,
-        nor where it is in a program.</p>
-        <p>The most important conceptual leap of the course is <b>feedback</b>: wiring a
-        circuit's output back into its own input. It sounds odd — and that's exactly what
-        makes it special: the circuit starts influencing itself.</p>
-        <p><b>The SR latch</b> (Set = "make it 1", Reset = "make it 0") is two NOR gates with
-        outputs cross-wired into each other's inputs. That crossing makes the circuit
-        <i>remember</i> the last command it received:</p>
-        ${lt(["S (Set)", "R (Reset)", "Q (result)"], [["0","0","previous value is kept"],["0","1","0 (reset)"],["1","0","1 (set)"],["1","1","✕ forbidden"]])}
-        <p>Read the first row slowly: when S and R are both 0, the output stays as it was —
-        <i>even though nothing is driving it</i>. That is <b>1 bit of memory</b>: the building
-        block of all computer memory.</p>
+        <p>Until now, circuits forgot everything the moment you released the inputs. The <b>SR latch</b> is the simplest memory: think of a light switch with two pushbuttons, one to turn it on (<b>Set</b>) and one to turn it off (<b>Reset</b>). Press Set and the light stays on even after releasing the button; press Reset and it goes off. The secret is cross-wiring: each NOR gate's output feeds the other gate's input, holding each other in a closed loop.</p>
         <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>2× <b>Input</b> (key 2) — one will be S (Set), the other R (Reset)</li>
+          <li>2× <b>Input</b> (key 2) — R (Reset) and S (Set)</li>
           <li>2× <b>NOR</b> (key 9)</li>
-          <li>2× <b>Output</b> (key 3) — to watch Q and its inverse Q̄</li>
+          <li>2× <b>Output</b> (key 3) — Q and Q̄ (its inverse)</li>
         </ul>
-        ${lay('Layout on the canvas (left to right):', [
-          'Input <b>R</b> (Reset) on top (feeds the top NOR), Input <b>S</b> (Set) below',
-          '<b>Top NOR</b> (output Q) on top, <b>bottom NOR</b> (output Q̄) below',
-          '<b>Output Q</b> on top, <b>Output Q̄</b> below'
-        ], 'Each number is a column. Wires always flow to the right.')}
-        <p><b>Wiring — the crossing is the key:</b></p>
+        ${lay("Layout on the canvas (left to right):", [
+          "Input <b>R</b> (Reset) on top, Input <b>S</b> (Set) below",
+          "<b>Top NOR</b> (output Q) on top, <b>bottom NOR</b> (output Q̄) below",
+          "Outputs <b>Q</b> on top, <b>Q̄</b> below",
+        ], "Each number is a column. Wires always flow to the right.")}
+        <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Input R → into the top NOR</li>
-          <li>Input S → into the bottom NOR</li>
-          <li>Top NOR's output (call it Q) → the <i>free</i> input of the bottom NOR</li>
-          <li>Bottom NOR's output (Q̄) → the <i>free</i> input of the top NOR</li>
-          <li>Both outputs also to Outputs (indicators) so you can watch them</li>
+          <li>Input R → one input of the top NOR. Input S → one input of the bottom NOR</li>
+          <li>Top NOR output → free input of the bottom NOR</li>
+          <li>Bottom NOR output → free input of the top NOR</li>
+          <li>Top NOR output to Output Q; bottom NOR output to Output Q̄</li>
         </ol>
-        <p><b>The experiment (really do it: it's THE moment of the course):</b></p>
+        <p><b>The experiment:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Set S=1: Q lights up (the latch "stores" the 1)</li>
-          <li>Set S back to 0: <b>Q stays lit</b>, although nothing holds it</li>
-          <li>Set R=1: Q goes off. Set R back to 0: <b>Q stays off</b></li>
-        </ol>
-        <p>The circuit remembers the last command. You just created memory.</p>`,
+          <li>Set S=1: Q turns on (value 1 stored).</li>
+          <li>Set S back to 0: <b>Q stays on</b> by itself in memory.</li>
+          <li>Set R=1: Q turns off. Set R back to 0: <b>Q stays off</b>.</li>
+        </ol>`,
     },
   },
   {
@@ -571,89 +539,69 @@ const LESSONS = [
     title: LL("7. Latch D: memoria con permiso", "7. D Latch: gated memory"),
     theory: {
       es: `
-        <p>El latch SR recuerda, pero tiene un problema de diseño: <b>no hay forma de
-        coordinar cuándo</b> acepta datos. Imaginá una CPU con cientos de latches: si cada uno
-        reacciona apenas cambia su entrada, los cambios se propagan en cualquier momento y en
-        desorden. Todo el circuito sería una fiesta sin horarios.</p>
-        <p>La solución: un <b>portero</b>. Antes de que el dato llegue al latch, que pase por
-        una compuerta que solo se abre cuando una señal de permiso lo autoriza. Esa señal de
-        permiso se llama <b>reloj</b> (CLK, de clock) — y es la idea más importante de esta
-        lección: <i>toda</i> la CPU va a marchar al ritmo de esa señal común.</p>
-        <p><b>El latch D</b> ("D" de <i>Data</i>, dato) hace eso con 5 compuertas: cuando
-        CLK=1, la salida Q copia en vivo lo que pongas en D (está "transparente"); cuando
-        CLK=0, Q se congela con el último valor que pasó.</p>
+        <p>El <b>latch D</b> es la memoria anterior con un permiso: solo guarda cuando se lo ordenás. Tiene una entrada para el dato que querés guardar (<b>D</b>) y otra para el permiso, llamada reloj (<b>CLK</b>, clock). Con CLK=1 la salida copia en vivo a D; con CLK=0 la memoria se congela con el último valor. Las dos compuertas AND funcionan como porteros que solo dejan pasar la señal cuando CLK=1, y el NOT genera la señal invertida para apagar el latch cuando D vale 0.</p>
         <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>2× <b>Entrada</b> (tecla 2) — D (el dato) y CLK (el permiso)</li>
-          <li>1× <b>NOT</b> (tecla 5) — genera ¬D (la negación de D, que se usa para "resetear")</li>
-          <li>2× <b>AND</b> (tecla 6) — los "porteros": uno deja pasar D cuando CLK=1, el otro ¬D</li>
-          <li>2× <b>NOR</b> (tecla 9) — el latch de memoria del fondo (el que recuerda)</li>
-          <li>1-2× <b>Salida</b> (tecla 3)</li>
+          <li>2× <b>Entrada</b> (tecla 2) — D (dato) y CLK (reloj / permiso)</li>
+          <li>1× <b>NOT</b> (tecla 5) — invierte D</li>
+          <li>2× <b>AND</b> (tecla 6) — porteros del reloj</li>
+          <li>2× <b>NOR</b> (tecla 9) — memoria interna</li>
+          <li>1× <b>Salida</b> (tecla 3) — Q</li>
         </ul>
-        ${lay('Disposición en el canvas (de izquierda a derecha):', [
-          'Entrada <b>D</b> arriba, Entrada <b>CLK</b> abajo',
-          '<b>NOT</b> (¬D) alineado con el AND de abajo',
-          '<b>AND de arriba</b> (D·CLK) arriba, <b>AND de abajo</b> (¬D·CLK) abajo',
-          '<b>NOR de arriba</b> arriba, <b>NOR de abajo</b> abajo',
-          '<b>Salida Q</b> arriba, <b>Salida Q̄</b> abajo'
-        ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
+        ${lay("Disposición en el canvas (de izquierda a derecha):", [
+          "Entradas <b>D</b> arriba y <b>CLK</b> abajo",
+          "<b>NOT</b> alineado abajo (recibe D)",
+          "<b>AND de arriba</b> arriba, <b>AND de abajo</b> abajo",
+          "<b>NOR de arriba</b> arriba, <b>NOR de abajo</b> abajo",
+          "Salida <b>Q</b> arriba",
+        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>D → NOT → a una entrada del AND de abajo (ese AND recibe ¬D)</li>
-          <li>D (directo, sin NOT) → a una entrada del AND de arriba</li>
-          <li>CLK → a la entrada libre de <b>ambos</b> AND</li>
-          <li>Salida del AND de arriba → a una entrada de la NOR de abajo; salida del AND de abajo → a una entrada de la NOR de arriba</li>
-          <li>Realimentación cruzada entre las NOR (como en la lección 6): la salida de cada NOR a la entrada libre de la otra</li>
+          <li>Entrada D → a una entrada del AND de arriba y a la entrada del NOT</li>
+          <li>Salida del NOT → a una entrada del AND de abajo</li>
+          <li>Entrada CLK → a la entrada libre de <b>ambos</b> AND</li>
+          <li>Salida del AND de arriba → a una entrada de la NOR de abajo</li>
+          <li>Salida del AND de abajo → a una entrada de la NOR de arriba</li>
+          <li>Cruce entre las NOR: salida de cada NOR a la entrada libre de la otra</li>
+          <li>Salida de la NOR de arriba a la <b>Salida Q</b></li>
         </ol>
         <p><b>El experimento:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>CLK=1: cambiá D y mirá Q — lo copia en vivo (el latch está "transparente")</li>
-          <li>CLK=0: cambiá D — <b>Q no se mueve</b>. La memoria queda congelada con lo último que pasó por el portero</li>
-        </ol>
-        <p>Es el mismo latch de la lección anterior, pero disciplinado: solo acepta datos
-        cuando el reloj se lo permite.</p>`,
+          <li>Con CLK=1: cambiá D y mirá Q. Q copia a D en tiempo real.</li>
+          <li>Con CLK=0: cambiá D. <b>Q no se mueve</b>: la memoria está congelada.</li>
+        </ol>`,
       en: `
-        <p>The SR latch remembers, but has a design flaw: <b>there's no way to coordinate
-        when</b> it accepts data. Imagine a CPU with hundreds of latches: if each one reacts
-        the instant its input changes, changes propagate at random times. The whole circuit
-        would be a party with no schedule.</p>
-        <p>The fix: a <b>gatekeeper</b>. Before data reaches the latch, it passes through a
-        gate that only opens when a permission signal says so. That permission signal is the
-        <b>clock</b> (CLK) — the most important idea of this lesson: <i>all</i> of the CPU
-        will march to that one common signal's rhythm.</p>
-        <p><b>The D latch</b> ("D" for <i>Data</i>) does this with 5 gates: when CLK=1, the
-        output Q copies live whatever you put on D (it is "transparent"); when CLK=0, Q
-        freezes with the last value that passed.</p>
+        <p>The <b>D latch</b> is the previous memory plus a permission: it only updates when you allow it. It has one input for the data to store (<b>D</b>) and one for permission, called the clock (<b>CLK</b>). When CLK=1, the output copies D live; when CLK=0, memory freezes with the last value. The two AND gates act as gatekeepers that only pass signals when CLK=1, and the NOT generates the inverted signal to reset the latch whenever D is 0.</p>
         <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>2× <b>Input</b> (key 2) — D (the data) and CLK (the permission)</li>
-          <li>1× <b>NOT</b> (key 5) — generates ¬D (D's negation, used to reset)</li>
-          <li>2× <b>AND</b> (key 6) — the gatekeepers: one passes D when CLK=1, the other ¬D</li>
-          <li>2× <b>NOR</b> (key 9) — the memory latch at the back (the one that remembers)</li>
-          <li>1-2× <b>Output</b> (key 3)</li>
+          <li>2× <b>Input</b> (key 2) — D (data) and CLK (clock / permission)</li>
+          <li>1× <b>NOT</b> (key 5) — inverts D</li>
+          <li>2× <b>AND</b> (key 6) — clock gatekeepers</li>
+          <li>2× <b>NOR</b> (key 9) — internal memory</li>
+          <li>1× <b>Output</b> (key 3) — Q</li>
         </ul>
-        ${lay('Layout on the canvas (left to right):', [
-          'Input <b>D</b> on top, Input <b>CLK</b> below',
-          '<b>NOT</b> (¬D) aligned with the bottom AND',
-          '<b>top AND</b> (D·CLK) on top, <b>bottom AND</b> (¬D·CLK) below',
-          '<b>top NOR</b> on top, <b>bottom NOR</b> below',
-          '<b>Output Q</b> on top, <b>Output Q̄</b> below'
-        ], 'Each number is a column. Wires always flow to the right.')}
+        ${lay("Layout on the canvas (left to right):", [
+          "Inputs <b>D</b> on top and <b>CLK</b> below",
+          "<b>NOT</b> aligned below (receives D)",
+          "<b>Top AND</b> on top, <b>bottom AND</b> below",
+          "<b>Top NOR</b> on top, <b>bottom NOR</b> below",
+          "Output <b>Q</b> on top",
+        ], "Each number is a column. Wires always flow to the right.")}
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>D → NOT → into one input of the bottom AND (so that AND gets ¬D)</li>
-          <li>D (direct, no NOT) → into one input of the top AND</li>
-          <li>CLK → the free input of <b>both</b> ANDs</li>
-          <li>Top AND's output → into a bottom NOR input; bottom AND's output → into a top NOR input</li>
-          <li>Cross feedback between the NORs (like lesson 6): each NOR's output into the other's free input</li>
+          <li>Input D → one input of the top AND, and into the NOT</li>
+          <li>NOT output → one input of the bottom AND</li>
+          <li>Input CLK → the free input of <b>both</b> ANDs</li>
+          <li>Top AND output → one input of the bottom NOR</li>
+          <li>Bottom AND output → one input of the top NOR</li>
+          <li>Cross feedback between NORs: each NOR's output to the other's free input</li>
+          <li>Top NOR output to <b>Output Q</b></li>
         </ol>
         <p><b>The experiment:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>CLK=1: change D and watch Q — it copies live (the latch is "transparent")</li>
-          <li>CLK=0: change D — <b>Q doesn't move</b>. Memory is frozen with whatever last passed through the gatekeeper</li>
-        </ol>
-        <p>Same latch as before, but disciplined: it only accepts data when the clock
-        allows it.</p>`,
+          <li>With CLK=1: toggle D and watch Q. Q copies D in real time.</li>
+          <li>With CLK=0: toggle D. <b>Q does not move</b>: memory is frozen.</li>
+        </ol>`,
     },
     check() {
       const sws = state.components.filter(c => c.type === "switch");
@@ -697,99 +645,63 @@ const LESSONS = [
     title: LL("8. Flip-Flop D: memoria por flanco", "8. D Flip-Flop: edge-triggered memory"),
     theory: {
       es: `
-        <p>El latch D mejoró las cosas, pero todavía tiene un problema que tiene nombre:
-        <b>transparencia</b>. Mientras CLK=1, la salida Q es una "ventana abierta": cualquier
-        cambio en D se arrastra a Q al instante.</p>
-        <p>¿Por qué es malo? Imaginá conectar la salida de un latch a la entrada de otro, y
-        ese a otro más: mientras el reloj esté en 1, un solo cambio se arrastra por <i>toda
-        la cadena</i> en el mismo instante. Sin control. Para construir una CPU necesitamos
-        que cada pieza registre <b>un solo instante</b> por ciclo de reloj — ni antes, ni
-        después.</p>
-        <p><b>La solución es elegantísima: dos latches D en cascada</b>, el famoso arreglo
-        <b>master-slave</b> (maestro-esclavo):</p>
-        <ul style="padding-left:18px; margin:6px 0;">
-          <li><b>Maestro</b>: escucha a D mientras CLK=1 (en ese momento el esclavo está congelado)</li>
-          <li><b>Esclavo</b>: copia lo que el maestro guardó cuando CLK vuelve a 0 (justo entonces el maestro se congela)</li>
-        </ul>
-        <p>Los dos nunca están abiertos a la vez. Resultado: la salida Q solo cambia en el
-        <b>flanco</b> — el instante exacto en que el reloj pasa de 1 a 0. Una "fotografía" del
-        dato por ciclo. Esa pieza se llama <b>flip-flop D</b>, y es con la que se construyen
-        todos los registros de una CPU.</p>
+        <p>La señal de reloj (CLK) sube a 1 y baja a 0 alternadamente. El <b>flanco</b> es el <i>instante exacto</i> en que cambia (aquí, al caer de 1 a 0), como el clic de un interruptor y no el tiempo que pasa encendido. Copiar el dato solo en ese clic es fundamental para que la información no se descontrole al encadenar varias memorias. El <b>flip-flop D</b> lo logra uniendo dos latches (maestro y esclavo) como dos puertas que nunca se abren juntas: el maestro recibe D mientras CLK=1, y en el clic hacia 0 el esclavo lo pasa a la salida Q.</p>
         <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>2× <b>Entrada</b> (tecla 2) — D y CLK</li>
-          <li>4× <b>NOR</b> (tecla 9) — 2 para el maestro, 2 para el esclavo</li>
+          <li>4× <b>NOR</b> (tecla 9) — 2 en el maestro, 2 en el esclavo</li>
           <li>4× <b>AND</b> (tecla 6) — 2 por etapa</li>
-          <li>3× <b>NOT</b> (tecla 5) — uno dentro de cada latch (¬D en el maestro, ¬QM en el esclavo) y uno aparte para <b>¬CLK</b> (¡este es el truco!)</li>
-          <li>1× <b>Salida</b> (tecla 3)</li>
+          <li>3× <b>NOT</b> (tecla 5) — uno en cada latch y uno aparte para ¬CLK</li>
+          <li>1× <b>Salida</b> (tecla 3) — Q</li>
         </ul>
-        ${lay('Disposición en el canvas (de izquierda a derecha):', [
-          'Entrada <b>D</b> arriba, Entrada <b>CLK</b> abajo',
-          '<b>Maestro</b> (latch 1, armado como en la lección 7, salida <b>QM</b>) arriba, <b>¬CLK</b> (NOT aparte) abajo',
-          '<b>Esclavo</b> (latch 2, armado como en la lección 7) arriba, <b>Salida Q</b> a su misma altura'
-        ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
-        <p>Cada mitad es un <b>latch</b> (el de la lección 7); las dos juntas forman el <b>flip-flop</b>.</p>
+        ${lay("Disposición en el canvas (de izquierda a derecha):", [
+          "Entrada <b>D</b> arriba, Entrada <b>CLK</b> abajo",
+          "<b>Maestro</b> (latch 1, salida QM) arriba, <b>NOT de ¬CLK</b> abajo",
+          "<b>Esclavo</b> (latch 2, recibe QM y ¬CLK) arriba, <b>Salida Q</b> a la derecha",
+        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li><b>Maestro</b> (latch 1): exactamente el latch D de la lección 7 — 1 NOT, 2 AND, 2 NOR. La Entrada D va a su NOT y a un AND; la Entrada CLK va a sus dos AND. La salida de su NOR "Q" la llamamos <b>QM</b> (la Q del maestro)</li>
-          <li><b>Esclavo</b> (latch 2): otra copia completa — su propio NOT, 2 AND y 2 NOR — con dos cambios: su dato no viene de una Entrada sino del cable <b>QM</b>, y sus dos AND no reciben CLK sino <b>¬CLK</b></li>
-          <li><b>¬CLK</b>: un tercer NOT, aparte de los dos latches. CLK entra a ese NOT y su salida va a los dos AND del esclavo. Así, cuando el maestro está abierto, el esclavo está cerrado</li>
-          <li>La salida de la NOR "Q" del esclavo va a la <b>Salida</b></li>
+          <li><b>Maestro (latch 1):</b> armá un latch D (1 NOT, 2 AND, 2 NOR) como en la lección 7 con Entrada D y Entrada CLK. La salida de su NOR de arriba es <b>QM</b></li>
+          <li><b>Inversor de reloj:</b> conectá CLK a un NOT suelto para generar <b>¬CLK</b></li>
+          <li><b>Esclavo (latch 2):</b> armá otro latch D idéntico (1 NOT, 2 AND, 2 NOR). Su dato es el cable <b>QM</b> y sus dos AND reciben <b>¬CLK</b> en vez de CLK</li>
+          <li>Conectá la salida de la NOR de arriba del esclavo a la <b>Salida Q</b></li>
         </ol>
         <p><b>El experimento:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Poné D=1 y subí CLK a 1: <i>no pasa nada</i> — el maestro escucha, pero el esclavo está congelado</li>
-          <li>Bajá CLK a 0: <b>ahora Q=1</b> — copió el dato en el flanco</li>
-          <li>Cambiá D (con CLK=0): Q no se inmuta. Una sola foto por ciclo.</li>
+          <li>Poné D=1 y subí CLK a 1: Q no cambia (el maestro guarda D, pero el esclavo sigue cerrado).</li>
+          <li>Bajá CLK a 0: <b>Q se enciende</b> (en el clic de bajada 1→0, el esclavo copió a QM).</li>
+          <li>Con CLK=0, cambiá D: Q no se mueve. Solo captura en el instante del clic.</li>
         </ol>
-        <p>La diferencia entre latch y flip-flop es exactamente esta: el latch mira durante
-        todo el nivel del reloj; el flip-flop, solo en el instante del flanco.</p>`,
+        <p style="color:var(--dim); font-size:12px;">💡 Al terminar, empaquetalo como <b>DFF</b>: es la memoria base de los registros de la CPU.</p>`,
       en: `
-        <p>The D latch improved things, but still has a named problem: <b>transparency</b>.
-        While CLK=1, the output Q is an "open window": any change on D drags to Q instantly.</p>
-        <p>Why is that bad? Imagine chaining latches: one's output into the next's input, and
-        so on. While the clock is 1, a single change ripples through the <i>whole chain</i> in
-        the same instant. No control. To build a CPU we need each part to register <b>one
-        single instant</b> per clock cycle — not before, not after.</p>
-        <p><b>The solution is elegant: two D latches in cascade</b>, the famous
-        <b>master-slave</b> arrangement:</p>
-        <ul style="padding-left:18px; margin:6px 0;">
-          <li><b>Master</b>: listens to D while CLK=1 (the slave is frozen then)</li>
-          <li><b>Slave</b>: copies what the master stored when CLK returns to 0 (the master freezes exactly then)</li>
-        </ul>
-        <p>They are never open at the same time. Result: the output Q only changes on the
-        <b>edge</b> — the exact instant the clock goes 1→0. One "photo" of the data per
-        cycle. That piece is called a <b>D flip-flop</b>, and every CPU register is built
-        from it.</p>
+        <p>The clock signal (CLK) alternates between 1 and 0. An <b>edge</b> is the <i>exact instant</i> it changes (here, falling from 1 to 0), like the click of a switch, not the time it stays on. Capturing data only at that click is essential so values do not rush uncontrollably through chained memories. The <b>D flip-flop</b> achieves this by pairing two latches (master and slave) like two doors that never open together: the master receives D while CLK=1, and on the click to 0 the slave passes it to output Q.</p>
         <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>2× <b>Input</b> (key 2) — D and CLK</li>
-          <li>4× <b>NOR</b> (key 9) — 2 for the master, 2 for the slave</li>
+          <li>4× <b>NOR</b> (key 9) — 2 in the master, 2 in the slave</li>
           <li>4× <b>AND</b> (key 6) — 2 per stage</li>
-          <li>3× <b>NOT</b> (key 5) — one inside each latch (¬D in the master, ¬QM in the slave) and a separate one for <b>¬CLK</b> (this is the trick!)</li>
-          <li>1× <b>Output</b> (key 3)</li>
+          <li>3× <b>NOT</b> (key 5) — one inside each latch and a separate one for ¬CLK</li>
+          <li>1× <b>Output</b> (key 3) — Q</li>
         </ul>
-        ${lay('Layout on the canvas (left to right):', [
-          'Input <b>D</b> on top, Input <b>CLK</b> below',
-          '<b>Master</b> (latch 1, built like lesson 7, output <b>QM</b>) on top, <b>¬CLK</b> (separate NOT) below',
-          '<b>Slave</b> (latch 2, built like lesson 7) on top, <b>Output Q</b> at the same height'
-        ], 'Each number is a column. Wires always flow to the right.')}
-        <p>Each half is a <b>latch</b> (the one from lesson 7); together they form the <b>flip-flop</b>.</p>
+        ${lay("Layout on the canvas (left to right):", [
+          "Input <b>D</b> on top, Input <b>CLK</b> below",
+          "<b>Master</b> (latch 1, output QM) on top, <b>¬CLK NOT</b> below",
+          "<b>Slave</b> (latch 2, gets QM and ¬CLK) on top, <b>Output Q</b> to the right",
+        ], "Each number is a column. Wires always flow to the right.")}
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li><b>Master</b> (latch 1): exactly the D latch from lesson 7 — 1 NOT, 2 ANDs, 2 NORs. Input D goes to its NOT and to one AND; Input CLK goes to both of its ANDs. We call the output of its "Q" NOR <b>QM</b> (the master's Q)</li>
-          <li><b>Slave</b> (latch 2): another full copy — its own NOT, 2 ANDs and 2 NORs — with two changes: its data comes from the <b>QM</b> wire instead of an Input, and its two ANDs get <b>¬CLK</b> instead of CLK</li>
-          <li><b>¬CLK</b>: a third NOT, separate from both latches. CLK goes into that NOT and its output goes to the slave's two ANDs. So when the master is open, the slave is closed</li>
-          <li>The output of the slave's "Q" NOR goes to the <b>Output</b></li>
+          <li><b>Master (latch 1):</b> build a D latch (1 NOT, 2 ANDs, 2 NORs) as in lesson 7 with Input D and Input CLK. The output of its top NOR is <b>QM</b></li>
+          <li><b>Clock inverter:</b> connect CLK to a standalone NOT to produce <b>¬CLK</b></li>
+          <li><b>Slave (latch 2):</b> build an identical D latch (1 NOT, 2 ANDs, 2 NORs). Its data is the <b>QM</b> wire, and both of its ANDs receive <b>¬CLK</b> instead of CLK</li>
+          <li>Connect the slave's top NOR output to <b>Output Q</b></li>
         </ol>
         <p><b>The experiment:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Set D=1 and raise CLK to 1: <i>nothing happens</i> — the master listens, but the slave is frozen</li>
-          <li>Lower CLK to 0: <b>now Q=1</b> — it copied the data on the edge</li>
-          <li>Change D (with CLK=0): Q doesn't budge. One photo per cycle.</li>
+          <li>Set D=1 and raise CLK to 1: Q does not change (the master stores D, but the slave is closed).</li>
+          <li>Lower CLK to 0: <b>Q turns on</b> (on the 1→0 falling click, the slave copied QM).</li>
+          <li>With CLK=0, toggle D: Q does not move. It only captures at the instant of the click.</li>
         </ol>
-        <p>The difference between latch and flip-flop is exactly this: the latch watches
-        during the whole clock level; the flip-flop, only at the edge instant.</p>`,
+        <p style="color:var(--dim); font-size:12px;">💡 When done, pack it as <b>DFF</b>: it is the building block for all CPU registers.</p>`,
     },
     check() {
       const sws = state.components.filter(c => c.type === "switch");
