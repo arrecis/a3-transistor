@@ -135,7 +135,7 @@
     max-width: 520px;
     z-index: 40;
   }
-  #helpBtn {
+  #helpBtn, #fitBtn {
     position: absolute;
     right: 12px;
     bottom: 12px;
@@ -154,7 +154,8 @@
     user-select: none;
     z-index: 41;
   }
-  #helpBtn:hover { border-color: var(--accent); color: var(--accent); }
+  #helpBtn:hover, #fitBtn:hover { border-color: var(--accent); color: var(--accent); }
+  #fitBtn { right: 46px; font-weight: 400; }
   #lessonBtn {
     position: absolute;
     left: 12px;
@@ -215,7 +216,6 @@
   </div>
   <div class="spacer"></div>
   <div class="toolbar">
-    <button id="fitBtn" data-i18n="fitView"></button>
     <button id="clearBtn" class="btn-danger" data-i18n="clear"></button>
     <button id="powerBtn" class="off">⏻ FUENTE OFF</button>
   </div>
@@ -227,6 +227,7 @@
 <div id="canvasWrap">
   <canvas id="cv"></canvas>
   <div id="status"></div>
+  <div id="fitBtn" title="Ajustar vista a todas las piezas (F)">⤢</div>
   <div id="helpBtn" title="Ayuda">?</div>
   <div id="help">
     <b>Compuertas</b>: teclas 5–0 (NOT, AND, OR, NAND, NOR, XOR) · 2 Entrada · 3 Salida · 4 Reloj<br>

@@ -20,7 +20,6 @@ const I18N = {
     toolPack: "<span class='key'>P</span>📦 Empaquetar",
     // Buttons
     clear: "Limpiar",
-    fitView: "<span class='key'>F</span>🔍 Ajustar vista",
     powerOn: "⏻ FUENTE ON",
     powerOff: "⏻ FUENTE OFF",
     // Status
@@ -88,7 +87,6 @@ const I18N = {
     toolPack: "<span class='key'>P</span>📦 Pack",
     // Botones
     clear: "Clear",
-    fitView: "<span class='key'>F</span>🔍 Fit view",
     powerOn: "⏻ POWER ON",
     powerOff: "⏻ POWER OFF",
     // Estado
