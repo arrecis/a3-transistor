@@ -227,51 +227,61 @@ const LESSONS = [
     title: LL("3. AND y OR: decidir", "3. AND and OR: deciding"),
     theory: {
       es: `
-        <p>Las siguientes compuertas tienen <b>2 entradas</b>: comparan dos señales y deciden
-        qué salida producir. Son el mecanismo con el que una computadora toma decisiones.</p>
-        <p><b>AND</b> — la salida vale 1 <i>solo si ambas entradas</i> valen 1. Es el
-        "<b>y</b>" estricto del lenguaje:</p>
+        <p>Una <b>compuerta lógica</b> es una pieza que lee señales de entrada y devuelve
+        una salida siguiendo una regla fija. Es como un portero que decide si abre o no
+        según quién toca el timbre.</p>
+        <p>Ahora usás dos compuertas con <b>2 entradas</b>. <b>AND</b> devuelve 1 solo cuando
+        <i>ambas</i> entradas son 1 (cerradura con dos llaves). <b>OR</b> devuelve 1 cuando
+        <i>al menos una</i> entrada es 1 (alarma con dos sensores).</p>
         ${lt(["A", "B", "AND"], [[0,0,0],[0,1,0],[1,0,0],[1,1,1]])}
-        <p style="color:var(--dim); font-size:12px;"><i>"Tengo llave <b>Y</b> la puerta está abierta" →
-        paso solo si las dos cosas son verdad. Si falta una, no paso.</i></p>
-        <p><b>OR</b> — la salida vale 1 si <i>al menos una</i> entrada vale 1. Es el
-        "<b>o</b>" inclusivo:</p>
         ${lt(["A", "B", "OR"], [[0,0,0],[0,1,1],[1,0,1],[1,1,1]])}
-        <p style="color:var(--dim); font-size:12px;"><i>"Llueve <b>O</b> hace frío" → me llevo el abrigo
-        si pasa cualquiera de las dos, o las dos a la vez.</i></p>
-        <p>Estas tablas se llaman <b>tablas de verdad</b>: muestran la salida para cada
-        combinación posible de entradas. Las vas a ver en toda la serie.</p>
-        <p><b>Misión — armá estos DOS circuitos separados:</b></p>
+        <p><b>Componentes que necesitás:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>4× <b>Entrada</b> (tecla 2) — 2 para el AND y 2 para el OR</li>
+          <li>1× <b>AND</b> (tecla 6)</li>
+          <li>1× <b>OR</b> (tecla 7)</li>
+          <li>2× <b>Salida</b> (tecla 3)</li>
+        </ul>
+        ${lay('Disposición en el canvas (de izquierda a derecha):', [
+          'Entradas del <b>AND</b> arriba; entradas del <b>OR</b> abajo',
+          '<b>AND</b> arriba, <b>OR</b> abajo',
+          '<b>Salida AND</b> arriba, <b>Salida OR</b> abajo'
+        ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
+        <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li><b>Circuito AND:</b> 2 Entradas (tecla 2) → una a cada entrada del AND (tecla 6) → la salida del AND a una Salida (tecla 3)</li>
-          <li><b>Circuito OR:</b> otras 2 Entradas → una a cada entrada del OR (tecla 7) → a otra Salida</li>
+          <li><b>AND:</b> sus dos Entradas → a cada entrada del AND; salida del AND → Salida</li>
+          <li><b>OR:</b> sus dos Entradas → a cada entrada del OR; salida del OR → la otra Salida</li>
         </ol>
-        <p><b>El experimento:</b> en el AND, probá las 4 combinaciones de tus dos Entradas:
-        la salida solo se enciende con 1 y 1. En el OR, se apaga solo con 0 y 0. Notá la
-        diferencia de personalidad: el AND es exigente, el OR es conformista.</p>`,
+        <p><b>El experimento:</b> en el AND, probá las 4 combinaciones; solo se enciende con
+        1 y 1. En el OR, solo se apaga con 0 y 0.</p>`,
       en: `
-        <p>The next gates have <b>2 inputs</b>: they compare two signals and decide what to
-        output. They are the mechanism by which a computer makes decisions.</p>
-        <p><b>AND</b> — output is 1 <i>only if both inputs</i> are 1. The strict
-        "<b>and</b>":</p>
+        <p>A <b>logic gate</b> is a part that reads input signals and returns an output
+        following a fixed rule. Like a doorman who decides whether to open the door based on
+        who rings the bell.</p>
+        <p>Now you use two gates with <b>2 inputs</b>. <b>AND</b> returns 1 only when
+        <i>both</i> inputs are 1 (a lock with two keys). <b>OR</b> returns 1 when
+        <i>at least one</i> input is 1 (an alarm with two sensors).</p>
         ${lt(["A", "B", "AND"], [[0,0,0],[0,1,0],[1,0,0],[1,1,1]])}
-        <p style="color:var(--dim); font-size:12px;"><i>"I have the key <b>AND</b> the door is open" →
-        I pass only if both are true. Missing one? No pass.</i></p>
-        <p><b>OR</b> — output is 1 if <i>at least one</i> input is 1. The inclusive
-        "<b>or</b>":</p>
         ${lt(["A", "B", "OR"], [[0,0,0],[0,1,1],[1,0,1],[1,1,1]])}
-        <p style="color:var(--dim); font-size:12px;"><i>"It's raining <b>OR</b> it's cold" →
-        I take a coat if either happens, or both.</i></p>
-        <p>These tables are called <b>truth tables</b>: they show the output for every
-        possible input combination. You'll see them throughout the series.</p>
-        <p><b>Mission — build these TWO separate circuits:</b></p>
+        <p><b>Components you need:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>4× <b>Input</b> (key 2) — 2 for the AND and 2 for the OR</li>
+          <li>1× <b>AND</b> (key 6)</li>
+          <li>1× <b>OR</b> (key 7)</li>
+          <li>2× <b>Output</b> (key 3)</li>
+        </ul>
+        ${lay('Layout on the canvas (left to right):', [
+          'Inputs for the <b>AND</b> on top; inputs for the <b>OR</b> below',
+          '<b>AND</b> on top, <b>OR</b> below',
+          '<b>AND Output</b> on top, <b>OR Output</b> below'
+        ], 'Each number is a column. Wires always flow to the right.')}
+        <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li><b>AND circuit:</b> 2 Inputs (key 2) → one into each AND input (key 6) → the AND's output to an Output (key 3)</li>
-          <li><b>OR circuit:</b> 2 other Inputs → one into each OR input (key 7) → another Output</li>
+          <li><b>AND:</b> its two Inputs → each AND input; AND output → Output</li>
+          <li><b>OR:</b> its two Inputs → each OR input; OR output → the other Output</li>
         </ol>
-        <p><b>The experiment:</b> on the AND, try all 4 combinations: the output only lights
-        with 1 and 1. On the OR, it only goes dark with 0 and 0. Notice the personality:
-        AND is demanding, OR is easygoing.</p>`,
+        <p><b>The experiment:</b> on the AND, try all 4 combinations; it only lights with 1
+        and 1. On the OR, it only goes dark with 0 and 0.</p>`,
     },
     check() {
       const results = [];
@@ -299,56 +309,62 @@ const LESSONS = [
     title: LL("4. NAND y XOR", "4. NAND and XOR"),
     theory: {
       es: `
-        <p>Dos compuertas más, y con estas cerrás el set básico. Cada una se lee como una
-        compuerta conocida <i>más un giro</i>.</p>
-        <p><b>NAND</b> = NOT + AND. Primero hace el AND y luego niega el resultado: la salida
-        vale 0 <i>solo</i> cuando ambas entradas valen 1 — lo contrario del AND en cada fila:</p>
+        <p>Dos compuertas más cierran el set básico.</p>
+        <p><b>NAND</b> hace primero un AND y luego lo niega: la salida vale 0 solo cuando
+        ambas entradas son 1. Es tan útil que <b>con NAND sola se puede construir cualquier
+        circuito</b>; por eso los fabricantes la usan como base.</p>
         ${lt(["A", "B", "NAND"], [[0,0,1],[0,1,1],[1,0,1],[1,1,0]])}
-        <p>¿Por qué importa tanto? Porque los chips se fabrican, en esencia, a base de NAND:
-        es más fácil de fabricar, y <b>con NAND sola se construye cualquier otro circuito</b> —
-        un NOT es un NAND con las dos entradas unidas; un AND es un NAND seguido de un
-        NOT... y así hasta una CPU completa. Por eso se la llama la compuerta
-        <b>universal</b>.</p>
-        <p><b>XOR</b> ("eXclusive OR" — O exclusivo) — la salida vale 1 cuando las entradas
-        son <b>diferentes</b> entre sí:</p>
+        <p><b>XOR</b> (O exclusivo) devuelve 1 cuando sus entradas son <b>diferentes</b>.
+        Es la compuerta que más adelante va a <b>sumar bits</b>.</p>
         ${lt(["A", "B", "XOR"], [[0,0,0],[0,1,1],[1,0,1],[1,1,0]])}
-        <p style="color:var(--dim); font-size:12px;"><i>"Uno u otro, pero <b>no ambos</b>" — como un pasillo
-        con dos puertas: entrás por una o por la otra, nunca por las dos a la vez.</i></p>
-        <p>Guardá bien la XOR: es la compuerta que <b>suma bits</b> (1+0=1, 1+1=0 con acarreo),
-        y la suma es el corazón de las próximas lecciones.</p>
-        <p><b>Misión — armá estos DOS circuitos separados:</b></p>
+        <p><b>Componentes que necesitás:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>4× <b>Entrada</b> (tecla 2) — 2 para el NAND y 2 para el XOR</li>
+          <li>1× <b>NAND</b> (tecla 8)</li>
+          <li>1× <b>XOR</b> (tecla 0)</li>
+          <li>2× <b>Salida</b> (tecla 3)</li>
+        </ul>
+        ${lay('Disposición en el canvas (de izquierda a derecha):', [
+          'Entradas del <b>NAND</b> arriba; entradas del <b>XOR</b> abajo',
+          '<b>NAND</b> arriba, <b>XOR</b> abajo',
+          '<b>Salida NAND</b> arriba, <b>Salida XOR</b> abajo'
+        ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
+        <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li><b>NAND:</b> 2 Entradas (tecla 2) → una a cada entrada del NAND (tecla 8) → su salida a una Salida (tecla 3)</li>
-          <li><b>XOR:</b> otras 2 Entradas → XOR (tecla 0) → otra Salida</li>
+          <li><b>NAND:</b> sus dos Entradas → a cada entrada del NAND; salida del NAND → Salida</li>
+          <li><b>XOR:</b> sus dos Entradas → a cada entrada del XOR; salida del XOR → la otra Salida</li>
         </ol>
         <p><b>El experimento:</b> en el NAND, buscá la única combinación que lo apaga (1 y 1).
-        En la XOR, cambiá una sola Entrada y mirá cómo la salida "salta" cada vez que las
+        En el XOR, alterná una sola Entrada y mirá cómo la salida cambia cada vez que las
         señales pasan a ser distintas.</p>`,
       en: `
-        <p>Two more gates and you complete the basic set. Each one reads as a familiar gate
-        <i>plus a twist</i>.</p>
-        <p><b>NAND</b> = NOT + AND. It does the AND first, then negates the result: the output
-        is 0 <i>only</i> when both inputs are 1 — the opposite of AND on every row:</p>
+        <p>Two more gates complete the basic set.</p>
+        <p><b>NAND</b> does an AND first and then negates it: the output is 0 only when both
+        inputs are 1. It is so useful that <b>any circuit can be built from NAND alone</b>;
+        that's why manufacturers use it as a base.</p>
         ${lt(["A", "B", "NAND"], [[0,0,1],[0,1,1],[1,0,1],[1,1,0]])}
-        <p>Why does it matter so much? Because chips are, at their core, manufactured out of
-        NAND: it is easier to fabricate, and <b>every other circuit can be built from NAND
-        alone</b> — a NOT is a NAND with both inputs tied; an AND is a NAND followed by a
-        NOT... all the way up to a whole CPU. That's why it is called the <b>universal</b>
-        gate.</p>
-        <p><b>XOR</b> ("eXclusive OR") — the output is 1 when the inputs are <b>different</b>
-        from each other:</p>
+        <p><b>XOR</b> (exclusive OR) returns 1 when its inputs are <b>different</b>.
+        This is the gate that will <b>add bits</b> later.</p>
         ${lt(["A", "B", "XOR"], [[0,0,0],[0,1,1],[1,0,1],[1,1,0]])}
-        <p style="color:var(--dim); font-size:12px;"><i>"One or the other, but <b>not both</b>" — like a hallway with
-        two doors: you come in through one or the other, never both at once.</i></p>
-        <p>Keep XOR in mind: it is the gate that <b>adds bits</b> (1+0=1, 1+1=0 with a
-        carry), and addition is the heart of the next lessons.</p>
-        <p><b>Mission — build these TWO separate circuits:</b></p>
+        <p><b>Components you need:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>4× <b>Input</b> (key 2) — 2 for the NAND and 2 for the XOR</li>
+          <li>1× <b>NAND</b> (key 8)</li>
+          <li>1× <b>XOR</b> (key 0)</li>
+          <li>2× <b>Output</b> (key 3)</li>
+        </ul>
+        ${lay('Layout on the canvas (left to right):', [
+          'Inputs for the <b>NAND</b> on top; inputs for the <b>XOR</b> below',
+          '<b>NAND</b> on top, <b>XOR</b> below',
+          '<b>NAND Output</b> on top, <b>XOR Output</b> below'
+        ], 'Each number is a column. Wires always flow to the right.')}
+        <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li><b>NAND:</b> 2 Inputs (key 2) → one into each NAND input (key 8) → its output to an Output (key 3)</li>
-          <li><b>XOR:</b> 2 other Inputs → XOR (key 0) → another Output</li>
+          <li><b>NAND:</b> its two Inputs → each NAND input; NAND output → Output</li>
+          <li><b>XOR:</b> its two Inputs → each XOR input; XOR output → the other Output</li>
         </ol>
         <p><b>The experiment:</b> on the NAND, find the single combination that turns it off
-        (1 and 1). On the XOR, change just one Input and watch the output "jump" whenever
+        (1 and 1). On the XOR, toggle just one Input and watch the output change whenever
         the signals become different.</p>`,
     },
     check() {
@@ -375,13 +391,10 @@ const LESSONS = [
     title: LL("5. Empaquetar: tu primera caja", "5. Packing: your first box"),
     theory: {
       es: `
-        <p>Hasta acá armaste compuertas sueltas. Si siguieras así, una computadora real
-        necesitaría <i>miles</i> de compuertas visibles a la vez: inmanejable. La solución es
-        uno de los conceptos más importantes de la ingeniería: la <b>abstracción</b>.</p>
-        <p>Abstraer es: agrupar piezas en una caja con patas (pines), ponerle un nombre, y de
-        ahí en más usar la caja <i>sin pensar en lo de adentro</i>. Los ingenieros reales no
-        piensan en los transistores de cada compuerta — piensan en compuertas. De acá en
-        más, vos vas a pensar en cajas.</p>
+        <p>Hasta acá armaste compuertas sueltas. Una computadora real tiene miles, así que
+        los ingenieros las agrupan en <b>cajas con pines</b> y les ponen nombre. A eso se
+        le llama <b>empaquetar</b>: una vez cerrada la caja, la usás sin pensar en lo de
+        adentro.</p>
         <p><b>Componentes que necesitás (los de la lección 2):</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>1× <b>Entrada</b> (tecla 2)</li>
@@ -393,28 +406,21 @@ const LESSONS = [
           'NOT',
           'Salida'
         ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
-        <p><b>Misión — empaquetar tu NOT como componente reutilizable:</b></p>
+        <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Armá el circuito cableado: Entrada → NOT → Salida</li>
-          <li>Presioná <b>📦 Empaquetar</b> (tecla P): entrás al modo de selección</li>
-          <li><b>Arrastrá un rectángulo</b> que cubra las 3 piezas: quedan marcadas en verde y abajo aparece una barra con un contador</li>
-          <li>Apretá <b>Crear componente</b> (en esa barra)</li>
-          <li>Nombralo exactamente <b>MI_NOT</b> (sin espacios, con guion bajo)</li>
-          <li>En el diálogo, hacé click sobre la <b>Entrada</b> para marcarla como pin de entrada, y sobre la <b>Salida</b> como pin de salida — el orden de click define el orden de los pines</li>
+          <li>Armá el circuito: Entrada → NOT → Salida</li>
+          <li>Apretá <b>📦 Empaquetar</b> (P) y arrastrá un rectángulo que cubra las 3 piezas</li>
+          <li>Apretá <b>Crear componente</b>, nombralo exactamente <b>MI_NOT</b> (sin espacios, con guion bajo)</li>
+          <li>En el diálogo, hacé click primero en la <b>Entrada</b> (pin de entrada) y luego en la <b>Salida</b> (pin de salida)</li>
           <li>Apretá <b>Crear componente</b> para confirmar</li>
         </ol>
-        <p><b>¿Qué acaba de pasar?</b> Las 3 piezas colapsaron en una sola caja. Tu
-        <b>MI_NOT</b> aparece abajo, en la fila 🧩 de componentes. Colocala, conectale una
-        Entrada y una Salida, y probá: funciona como un NOT — pero ahora es
-        <i>hardware tuyo, reutilizable</i>.</p>`,
+        <p><b>El experimento:</b> colocá tu <b>MI_NOT</b> de la fila 🧩, conectale una Entrada y
+        una Salida, y alterná la Entrada. Funciona como un NOT común, pero ahora es
+        hardware tuyo y reutilizable.</p>`,
       en: `
-        <p>So far you built loose gates. If you kept going that way, a real computer would
-        need <i>thousands</i> of visible gates at once: unmanageable. The fix is one of the
-        most important ideas in engineering: <b>abstraction</b>.</p>
-        <p>Abstracting means: group parts into a box with legs (pins), give it a name, and
-        from then on use the box <i>without thinking about the inside</i>. Real engineers
-        don't think about the transistors inside each gate — they think in gates. From now
-        on, you'll think in boxes.</p>
+        <p>So far you built loose gates. A real computer has thousands of them, so
+        engineers group them into <b>boxes with pins</b> and give them a name. That is called
+        <b>packing</b>: once the box is closed, you use it without thinking about the inside.</p>
         <p><b>Components you need (from lesson 2):</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>1× <b>Input</b> (key 2)</li>
@@ -426,20 +432,17 @@ const LESSONS = [
           'NOT',
           'Output'
         ], 'Each number is a column. Wires always flow to the right.')}
-        <p><b>Mission — pack your NOT as a reusable component:</b></p>
+        <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Build the wired circuit: Input → NOT → Output</li>
-          <li>Press <b>📦 Pack</b> (key P): you enter selection mode</li>
-          <li><b>Drag a rectangle</b> covering the 3 pieces: they get marked green and a bar with a counter appears at the bottom</li>
-          <li>Press <b>Create component</b> (on that bar)</li>
-          <li>Name it exactly <b>MI_NOT</b> (no spaces, with underscore)</li>
-          <li>In the dialog, click the <b>Input</b> to mark it as an input pin, and the <b>Output</b> as output pin — the click order defines the pin order</li>
+          <li>Build the circuit: Input → NOT → Output</li>
+          <li>Press <b>📦 Pack</b> (P) and drag a rectangle covering the 3 pieces</li>
+          <li>Press <b>Create component</b> and name it exactly <b>MI_NOT</b> (no spaces, underscore)</li>
+          <li>In the dialog, click the <b>Input</b> first (input pin), then the <b>Output</b> (output pin)</li>
           <li>Press <b>Create component</b> to confirm</li>
         </ol>
-        <p><b>What just happened?</b> The 3 pieces collapsed into a single box. Your
-        <b>MI_NOT</b> appears below, in the 🧩 components row. Place it, wire an Input and an
-        Output to it, and check: it works like a NOT — but now it's <i>your own reusable
-        hardware</i>.</p>`,
+        <p><b>The experiment:</b> place your <b>MI_NOT</b> from the 🧩 row, wire an Input and
+        an Output to it, and toggle the Input. It works like a plain NOT, but now it is your
+        own reusable hardware.</p>`,
     },
     check() {
       const results = [];
