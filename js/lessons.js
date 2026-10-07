@@ -4678,6 +4678,7 @@ function renderLesson() {
   if (i > 0) {
     const prev = document.createElement("button");
     prev.textContent = "←";
+    prev.style.flex = "none";
     prev.title = TXT(LL("Lección anterior", "Previous lesson"));
     prev.addEventListener("click", () => { lessonViewing--; saveLessonCurrent(); renderLesson(); });
     nav.appendChild(prev);
@@ -4690,7 +4691,8 @@ function renderLesson() {
     if (k === i) opt.selected = true;
     sel.appendChild(opt);
   }
-  sel.style.flex = "1";
+  // fill the space between ← and → only; long titles end in "…" (the open list shows them whole)
+  Object.assign(sel.style, { flex: "1", minWidth: "0", width: "0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" });
   sel.addEventListener("change", () => {
     lessonViewing = +sel.value;
     saveLessonCurrent();
@@ -4700,6 +4702,7 @@ function renderLesson() {
   if (lessonViewing < LESSONS.length - 1) {
     const next = document.createElement("button");
     next.textContent = "→";
+    next.style.flex = "none";
     next.title = TXT(LL("Lección siguiente", "Next lesson"));
     next.addEventListener("click", () => { lessonViewing++; saveLessonCurrent(); renderLesson(); });
     nav.appendChild(next);
