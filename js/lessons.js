@@ -780,7 +780,13 @@ const LESSONS = [
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Con CLK=1: cambiá D y mirá Q. Q copia a D en tiempo real.</li>
           <li>Con CLK=0: cambiá D. <b>Q no se mueve</b>: la memoria está congelada.</li>
-        </ol>`,
+        </ol>
+        <p style="color:var(--dim); font-size:12px;">💡 Al terminar, empaquetalo como <b>LATCH</b>:<br>
+        📦 Empaquetar (P) → rectángulo → <b>Crear componente</b>.<br>
+        Nombralo <b>LATCH</b>.<br>
+        Pines de entrada, <b>en este orden de click</b>: D, CLK.<br>
+        Pin de salida: Q.<br>
+        En la próxima lección vas a usar 2 de estos para armar el flip-flop.</p>`,
       en: `
         <p>The <b>D latch</b> is the previous memory plus a permission: it only updates when you allow it. It has one input for the data to store (<b>D</b>) and one for permission, called the clock (<b>CLK</b>). When CLK=1, the output copies D live; when CLK=0, memory freezes with the last value. The two AND gates act as gatekeepers that only pass signals when CLK=1, and the NOT generates the inverted signal to reset the latch whenever D is 0.</p>
         <p><b>Components you need:</b></p>
@@ -812,7 +818,13 @@ const LESSONS = [
         <ol style="padding-left:18px; margin:6px 0;">
           <li>With CLK=1: toggle D and watch Q. Q copies D in real time.</li>
           <li>With CLK=0: toggle D. <b>Q does not move</b>: memory is frozen.</li>
-        </ol>`,
+        </ol>
+        <p style="color:var(--dim); font-size:12px;">💡 When done, pack it as <b>LATCH</b>:<br>
+        📦 Pack (P) → rectangle → <b>Create component</b>.<br>
+        Name it <b>LATCH</b>.<br>
+        Input pins, <b>in this click order</b>: D, CLK.<br>
+        Output pin: Q.<br>
+        Next lesson you will use 2 of these to build the flip-flop.</p>`,
     },
     check() {
       const sws = state.components.filter(c => c.type === "switch");
@@ -845,10 +857,17 @@ const LESSONS = [
       }
       const works = tryLatch();
       sws.forEach(s => s.on = false);
-      return [
+      const results = [
         { name: nameNeeds, ok: true },
         { name: TXT(LL("CLK=1: Q sigue a D (transparente); CLK=0: Q se congela (memoria)", "CLK=1: Q follows D (transparent); CLK=0: Q freezes (memory)")), ok: works },
       ];
+      if (lib["LATCH"]) {
+        results.push({
+          name: TXT(LL("Caja LATCH: 2 entradas (D, CLK) y 1 salida (Q)", "LATCH box: 2 inputs (D, CLK) and 1 output (Q)")),
+          ok: lib["LATCH"].inputs.length === 2 && lib["LATCH"].outputs.length === 1,
+        });
+      }
+      return results;
     },
   },
   {
@@ -859,28 +878,29 @@ const LESSONS = [
         <p>La señal de reloj (CLK) sube a 1 y baja a 0 alternadamente. El <b>flanco</b> es el <i>instante exacto</i> en que cambia (aquí, al caer de 1 a 0), como el clic de un interruptor y no el tiempo que pasa encendido. Copiar el dato solo en ese clic es fundamental para que la información no se descontrole al encadenar varias memorias. El <b>flip-flop D</b> lo logra uniendo dos latches (maestro y esclavo) como dos puertas que nunca se abren juntas: el maestro recibe D mientras CLK=1, y en el clic hacia 0 el esclavo lo pasa a la salida Q.</p>
         <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
+          <li>2× tu caja <b>LATCH</b> 🧩 (de la lección 7) — maestro y esclavo</li>
+          <li>1× <b>NOT</b> (tecla 5) — para ¬CLK</li>
           <li>2× <b>Entrada</b> (tecla 2) — D y CLK</li>
-          <li>4× <b>NOR</b> (tecla 9) — 2 en el maestro, 2 en el esclavo</li>
-          <li>4× <b>AND</b> (tecla 6) — 2 por etapa</li>
-          <li>3× <b>NOT</b> (tecla 5) — uno en cada latch y uno aparte para ¬CLK</li>
           <li>1× <b>Salida</b> (tecla 3) — Q</li>
         </ul>
         ${lay("Disposición en el canvas (de izquierda a derecha):", [
-          "Entrada <b>D</b> arriba, Entrada <b>CLK</b> abajo",
-          "<b>Maestro</b> (latch 1, salida QM) arriba, <b>NOT de ¬CLK</b> abajo",
-          "<b>Esclavo</b> (latch 2, recibe QM y ¬CLK) arriba, <b>Salida Q</b> a la derecha",
+          "Entradas: <b>D</b> arriba y <b>CLK</b> abajo",
+          "<b>LATCH maestro</b> arriba y <b>NOT</b> abajo",
+          "<b>LATCH esclavo</b>",
+          "Salida <b>Q</b>",
         ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li><b>Maestro (latch 1):</b> armá un latch D (1 NOT, 2 AND, 2 NOR) como en la lección 7 con Entrada D y Entrada CLK. La salida de su NOR de arriba es <b>QM</b></li>
-          <li><b>Inversor de reloj:</b> conectá CLK a un NOT suelto para generar <b>¬CLK</b></li>
-          <li><b>Esclavo (latch 2):</b> armá otro latch D idéntico (1 NOT, 2 AND, 2 NOR). Su dato es el cable <b>QM</b> y sus dos AND reciben <b>¬CLK</b> en vez de CLK</li>
-          <li>Conectá la salida de la NOR de arriba del esclavo a la <b>Salida Q</b></li>
+          <li>Entrada D → entrada D del maestro</li>
+          <li>Entrada CLK → entrada CLK del maestro y entrada del NOT</li>
+          <li>Salida Q del maestro → entrada D del esclavo</li>
+          <li>Salida del NOT → entrada CLK del esclavo</li>
+          <li>Salida Q del esclavo → Salida</li>
         </ol>
         <p><b>El experimento:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Poné D=1 y subí CLK a 1: Q no cambia (el maestro guarda D, pero el esclavo sigue cerrado).</li>
-          <li>Bajá CLK a 0: <b>Q se enciende</b> (en el clic de bajada 1→0, el esclavo copió a QM).</li>
+          <li>Bajá CLK a 0: <b>Q se enciende</b> (en el clic de bajada 1→0, el esclavo copió la salida del maestro).</li>
           <li>Con CLK=0, cambiá D: Q no se mueve. Solo captura en el instante del clic.</li>
         </ol>
         <p style="color:var(--dim); font-size:12px;">💡 Al terminar, empaquetalo como <b>DFF</b>: es la memoria base de los registros de la CPU.</p>`,
@@ -888,88 +908,118 @@ const LESSONS = [
         <p>The clock signal (CLK) alternates between 1 and 0. An <b>edge</b> is the <i>exact instant</i> it changes (here, falling from 1 to 0), like the click of a switch, not the time it stays on. Capturing data only at that click is essential so values do not rush uncontrollably through chained memories. The <b>D flip-flop</b> achieves this by pairing two latches (master and slave) like two doors that never open together: the master receives D while CLK=1, and on the click to 0 the slave passes it to output Q.</p>
         <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
+          <li>2× your <b>LATCH</b> box 🧩 (from lesson 7) — master and slave</li>
+          <li>1× <b>NOT</b> (key 5) — for ¬CLK</li>
           <li>2× <b>Input</b> (key 2) — D and CLK</li>
-          <li>4× <b>NOR</b> (key 9) — 2 in the master, 2 in the slave</li>
-          <li>4× <b>AND</b> (key 6) — 2 per stage</li>
-          <li>3× <b>NOT</b> (key 5) — one inside each latch and a separate one for ¬CLK</li>
           <li>1× <b>Output</b> (key 3) — Q</li>
         </ul>
         ${lay("Layout on the canvas (left to right):", [
-          "Input <b>D</b> on top, Input <b>CLK</b> below",
-          "<b>Master</b> (latch 1, output QM) on top, <b>¬CLK NOT</b> below",
-          "<b>Slave</b> (latch 2, gets QM and ¬CLK) on top, <b>Output Q</b> to the right",
+          "Inputs: <b>D</b> on top and <b>CLK</b> below",
+          "<b>Master LATCH</b> on top and <b>NOT</b> below",
+          "<b>Slave LATCH</b>",
+          "Output <b>Q</b>",
         ], "Each number is a column. Wires always flow to the right.")}
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li><b>Master (latch 1):</b> build a D latch (1 NOT, 2 ANDs, 2 NORs) as in lesson 7 with Input D and Input CLK. The output of its top NOR is <b>QM</b></li>
-          <li><b>Clock inverter:</b> connect CLK to a standalone NOT to produce <b>¬CLK</b></li>
-          <li><b>Slave (latch 2):</b> build an identical D latch (1 NOT, 2 ANDs, 2 NORs). Its data is the <b>QM</b> wire, and both of its ANDs receive <b>¬CLK</b> instead of CLK</li>
-          <li>Connect the slave's top NOR output to <b>Output Q</b></li>
+          <li>Input D → master's D input</li>
+          <li>Input CLK → master's CLK input and NOT input</li>
+          <li>Master's Q output → slave's D input</li>
+          <li>NOT output → slave's CLK input</li>
+          <li>Slave's Q output → Output</li>
         </ol>
         <p><b>The experiment:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Set D=1 and raise CLK to 1: Q does not change (the master stores D, but the slave is closed).</li>
-          <li>Lower CLK to 0: <b>Q turns on</b> (on the 1→0 falling click, the slave copied QM).</li>
+          <li>Lower CLK to 0: <b>Q turns on</b> (on the 1→0 falling click, the slave copied the master's output).</li>
           <li>With CLK=0, toggle D: Q does not move. It only captures at the instant of the click.</li>
         </ol>
         <p style="color:var(--dim); font-size:12px;">💡 When done, pack it as <b>DFF</b>: it is the building block for all CPU registers.</p>`,
     },
     check() {
       const sws = state.components.filter(c => c.type === "switch");
+      const latches = state.components.filter(c => c.type === "LATCH");
       const nors = state.components.filter(c => c.type === "nor");
       const ands = state.components.filter(c => c.type === "and");
       const nots = state.components.filter(c => c.type === "not");
+      const outs = state.components.filter(c => c.type === "out");
+
+      const hasBoxVersion = latches.length >= 2 && nots.length >= 1;
+      const hasGateVersion = nors.length >= 4 && ands.length >= 4 && nots.length >= 2;
       const nameNeeds = TXT(LL(
-        "Circuito: 4 NOR (2 por etapa), 4 AND, 3 NOT, 2 Entradas",
-        "Circuit: 4 NORs (2 per stage), 4 ANDs, 3 NOTs, 2 Inputs"));
-      if (nors.length < 4 || ands.length < 4 || nots.length < 2 || sws.length < 2)
+        "Circuito: 2 LATCH (o compuertas), 1 NOT, 2 Entradas",
+        "Circuit: 2 LATCHes (or gates), 1 NOT, 2 Inputs"));
+
+      if (sws.length < 2 || (!hasBoxVersion && !hasGateVersion))
         return [{ name: nameNeeds, ok: false }];
+
       const forQ = TXT(LL("Q copia D solo en el flanco de bajada de CLK", "Q copies D only on CLK's falling edge"));
       const forHold = TXT(LL("Con CLK=0, Q queda congelado aunque D cambie", "With CLK=0, Q stays frozen even if D changes"));
       const forHoldH = TXT(LL("Con CLK=1, Q no sigue a D (sin transparencia)", "With CLK=1, Q doesn't follow D (not transparent)"));
-      // Edge behavior: with both latches clocked by CLK (no slave ¬CLK),
-      // Q follows D live while CLK=1 — so while the clock is high, flip D
-      // and check that Q does NOT move; on the falling edge Q takes the
-      // value; with CLK=0 a further D change must not move Q either.
-      // The lesson doesn't fix a creation order for D/CLK: test both
-      // role assignments (like the s6 check does).
+
+      const connectedOuts = outs.filter(o =>
+        state.wires.some(w => (w.a.c === o.id && w.a.t === 0) || (w.b.c === o.id && w.b.t === 0))
+      );
+      let candidateTerms = [];
+      if (connectedOuts.length > 0) {
+        candidateTerms = connectedOuts.map(o => o.id + ":0");
+      } else {
+        for (const n of nors) candidateTerms.push(n.id + ":2");
+        for (const l of latches) {
+          const nIn = lib[l.type]?.inputs.length ?? 2;
+          const nOut = lib[l.type]?.outputs.length ?? 1;
+          for (let j = 0; j < nOut; j++) candidateTerms.push(l.id + ":" + (nIn + j));
+        }
+      }
+
+      const savedGateOuts = new Map(gateOuts);
       const roles = [[sws[0], sws[1]], [sws[1], sws[0]]];
-      // A single (role, NOR) combination must pass ALL tests for BOTH
-      // dState values; the 3 report items all come from that combination
-      // (or stay false if none does). No partial credit.
       const ok = { q: false, hold: false, holdH: false };
+
       for (const [data, g] of roles) {
-        for (const qn of nors) {
+        for (const term of candidateTerms) {
           if (ok.q && ok.hold && ok.holdH) break;
           let passedTrue = false, passedFalse = false;
           for (const dState of [true, false]) {
-            const qv = r => r.values[r.netOf.get(qn.id + ":2")];
+            const qv = r => {
+              const net = r.netOf.get(term);
+              return net === undefined ? -1 : r.values[net];
+            };
+
             sws.forEach(s => s.on = false);
-            g.on = true; data.on = !dState; // CLK=1, D opposite
+            g.on = true; data.on = !dState;
             simulate();
-            data.on = dState; // flip D with CLK=1: for a real FF, Q must NOT move
+            g.on = false;
+            simulate();
+
+            g.on = true; data.on = dState;
             let r = simulate();
-            const notTransp = qv(r) === (dState ? 0 : 1); // Q still holds the old value
-            g.on = false; // falling edge: Q captures the last D
+            const notTransp = qv(r) === (dState ? 0 : 1);
+
+            g.on = false;
             r = simulate();
             const onEdge = qv(r) === (dState ? 1 : 0);
-            data.on = !dState; // CLK=0: change D, Q must hold
+
+            data.on = !dState;
             r = simulate();
             const holdLo = qv(r) === (dState ? 1 : 0);
-            // reset both roles before the next attempt
+
             sws.forEach(s => s.on = false);
             if (notTransp && onEdge && holdLo) {
               if (dState) passedTrue = true; else passedFalse = true;
             }
           }
-          // the whole combination must pass for BOTH dStates
           if (passedTrue && passedFalse) {
-            // the 3 items come from this same combination
             ok.q = ok.hold = ok.holdH = true;
             break;
           }
         }
       }
+
+      sws.forEach(s => s.on = false);
+      gateOuts.clear();
+      for (const [k, v] of savedGateOuts) gateOuts.set(k, v);
+      simulate();
+
       return [
         { name: nameNeeds, ok: true },
         { name: forQ, ok: ok.q },
@@ -984,7 +1034,7 @@ const LESSONS = [
     title: LL("9. Empaquetar el Flip-Flop", "9. Packing the Flip-Flop"),
     theory: {
       es: `
-        <p>El flip-flop que armaste tiene 11 compuertas (4 NOR + 4 AND + 3 NOT). Ahora usá
+        <p>El flip-flop que armaste une 2 cajas <b>LATCH</b> y un <b>NOT</b>. Ahora usá
         el superpoder del curso:
         <b>empaquetarlo</b> para que se convierta en una caja con 2 entradas y una salida.
         A partir de ahora, un flip-flop es una pieza más — igual que las compuertas, pero
@@ -1002,7 +1052,7 @@ const LESSONS = [
         y verificá que sigue funcionando por flanco.</p>
         <p style="color:var(--dim); font-size:12px;">💡 Consejo: las Entradas que NO marques como pines quedan como constantes internas (congeladas al valor que tenían). Para el DFF, marcá D y CLK — son las únicas que deben cambiar.</p>`,
       en: `
-        <p>The flip-flop you built has 11 gates (4 NORs + 4 ANDs + 3 NOTs). Now for the
+        <p>The flip-flop you built combines 2 <b>LATCH</b> boxes and a <b>NOT</b>. Now for the
         course's superpower:
         <b>pack it</b>. It becomes a box with 2 inputs and 1 output — from now on,
         a flip-flop is just a part — like gates, but more powerful: <i>it remembers one
@@ -1027,10 +1077,18 @@ const LESSONS = [
       if (def) {
         results.push({ name: TXT(LL("Tiene 2 pines de entrada", "It has 2 input pins")), ok: def.inputs.length === 2 });
         results.push({ name: TXT(LL("Tiene al menos 1 pin de salida", "It has at least 1 output pin")), ok: def.outputs.length >= 1 });
-        const inner = def.components ?? [];
+        const countNors = (pkgDef, depth = 0) => {
+          if (!pkgDef || depth > 10) return 0;
+          let count = 0;
+          for (const c of (pkgDef.components ?? [])) {
+            if (c.type === "nor") count++;
+            else if (lib[c.type]) count += countNors(lib[c.type], depth + 1);
+          }
+          return count;
+        };
         results.push({
           name: TXT(LL("El interior tiene las compuertas del flip-flop (4 NOR)", "The inside has the flip-flop gates (4 NORs)")),
-          ok: inner.filter(c => c.type === "nor").length >= 4,
+          ok: countNors(def) >= 4,
         });
         const inst = state.components.find(c => c.type === "DFF");
         if (inst) {

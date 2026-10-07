@@ -73,6 +73,34 @@ function flipFlop({ edge = true, clkFirst = false } = {}) {
   const out = T.add("out"); T.w(q, 2, out, 0);
   return { D, C, out };
 }
+function packLatchBox() {
+  if (T.lib()["LATCH"]) return;
+  const d = T.add("switch"), clk = T.add("switch");
+  const q = dLatch(d, 0, clk, 0);
+  const out = T.add("out"); T.w(q, 2, out, 0);
+  T.pack("LATCH", [d, clk], [out]);
+  T.clearCanvas();
+}
+// Flip-flop using 2 LATCH boxes + 1 NOT (lesson 8 rewritten).
+// LATCH pins: D=0, CLK=1, Q=2
+function flipFlopBox({ edge = true, clkFirst = false } = {}) {
+  packLatchBox();
+  let D, C;
+  if (clkFirst) { C = T.add("switch"); D = T.add("switch"); } else { D = T.add("switch"); C = T.add("switch"); }
+  const master = T.add("LATCH"), slave = T.add("LATCH");
+  const nclk = T.add("not");
+  T.w(D, 0, master, 0);
+  T.w(C, 0, master, 1);
+  T.w(C, 0, nclk, 0);
+  T.w(master, 2, slave, 0);
+  if (edge) {
+    T.w(nclk, 1, slave, 1);
+  } else {
+    T.w(C, 0, slave, 1);
+  }
+  const out = T.add("out"); T.w(slave, 2, out, 0);
+  return { D, C, out };
+}
 // full adder (lesson 14)
 function fullAdder({ xor2First = false } = {}) {
   const A = T.add("switch"), B = T.add("switch"), Ci = T.add("switch");
@@ -245,18 +273,43 @@ const setNum = (sws, n) => sws.forEach((s, i) => s.on = !!(n >> i & 1));
 const readNum = outs => outs.map((o, i) => { const v = T.val(o, 0); return v === -1 ? NaN : v << i; }).reduce((a, b) => a + b, 0);
 
 /* ---------- tests ---------- */
-// s8 — flip-flop
-T.reset(); flipFlop();                 expectCheck("s8 correct FF (D created first)", 7, true);
-T.reset(); flipFlop({ clkFirst: true }); expectCheck("s8 correct FF (CLK created first)", 7, true);
-T.reset(); flipFlop({ edge: false });  expectCheck("s8 fake FF (both latches on CLK) fails", 7, false);
+// s7 — D latch
+{
+  T.reset();
+  const d = T.add("switch"), clk = T.add("switch");
+  dLatch(d, 0, clk, 0);
+  expectCheck("s7 correct D latch", 6, true);
+}
+{
+  T.reset();
+  packLatchBox();
+  const d = T.add("switch"), clk = T.add("switch");
+  dLatch(d, 0, clk, 0);
+  expectCheck("s7 correct D latch with LATCH in lib", 6, true);
+}
 
-// s9 — packed DFF, both click orders
+// s8 — flip-flop
+T.reset(); flipFlopBox();                 expectCheck("s8 correct FF from 2 LATCH boxes (D created first)", 7, true);
+T.reset(); flipFlopBox({ clkFirst: true }); expectCheck("s8 correct FF from 2 LATCH boxes (CLK created first)", 7, true);
+T.reset(); flipFlopBox({ edge: false });  expectCheck("s8 fake FF from 2 LATCH boxes (both latches on CLK) fails", 7, false);
+T.reset(); flipFlop();                 expectCheck("s8 correct loose-gate FF (D created first)", 7, true);
+T.reset(); flipFlop({ clkFirst: true }); expectCheck("s8 correct loose-gate FF (CLK created first)", 7, true);
+T.reset(); flipFlop({ edge: false });  expectCheck("s8 fake loose-gate FF (both latches on CLK) fails", 7, false);
+
+// s9 — packed DFF, both click orders (from boxes and loose gates)
+for (const clkFirst of [false, true]) {
+  T.reset(); const f = flipFlopBox();
+  const inst = T.pack("DFF", clkFirst ? [f.C, f.D] : [f.D, f.C], [f.out]);
+  const d = T.add("switch"), c = T.add("switch");
+  T.w(d, 0, inst, 0); T.w(c, 0, inst, 1);
+  expectCheck(`s9 packed DFF from LATCH boxes (clicked ${clkFirst ? "CLK, D" : "D, CLK"})`, 8, true);
+}
 for (const clkFirst of [false, true]) {
   T.reset(); const f = flipFlop();
   const inst = T.pack("DFF", clkFirst ? [f.C, f.D] : [f.D, f.C], [f.out]);
   const d = T.add("switch"), c = T.add("switch");
   T.w(d, 0, inst, 0); T.w(c, 0, inst, 1);
-  expectCheck(`s9 packed DFF (clicked ${clkFirst ? "CLK, D" : "D, CLK"})`, 8, true);
+  expectCheck(`s9 packed DFF from loose gates (clicked ${clkFirst ? "CLK, D" : "D, CLK"})`, 8, true);
 }
 
 // s10 — MUX with Inputs created in S, B, A order
