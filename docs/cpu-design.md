@@ -439,225 +439,175 @@ Los registros A, B y OUT arrancan en `-1`. Esto es deliberado y arquitectónicam
 
 ## 9. Plan de Lecciones (23 a 28)
 
-*Guía pedagógica*: Cada lección sigue rigurosamente el estilo establecido en `js/lessons.js`: define qué es cada elemento mediante una analogía intuitiva de la vida cotidiana, explica por qué es crucial para la CPU final, detalla componentes con sus atajos de teclado, enumera los pasos de cableado sin omitir conexiones, propone un experimento visible, establece los criterios estrictos del `check()` y documenta la caja empaquetada con su orden exacto de pines.
+*Guía pedagógica*: Cada lección sigue el estilo establecido en `js/lessons.js`: define qué es cada elemento mediante una analogía intuitiva, explica por qué es crucial para la CPU final, detalla componentes con sus atajos de teclado, enumera los pasos de cableado, propone un experimento visible y documenta las cajas empaquetadas.
 
 ---
 
-### Lección 23: Decodificadores 2→4 y 3→8 (`DEC2` y `DEC3`)
+### Lección 23: RAM con dirección
 
-- **Objetivo**: Comprender cómo un circuito combinatorio puede traducir un código binario compacto de pocos cables en la activación exclusiva de una sola línea entre muchas. Construir y empaquetar `DEC2` y `DEC3`.
+- **Objetivo**: Entender la memoria direccionable. Construir un decodificador 1→2 (o 2→4) y al menos dos celdas de memoria para ver cómo la dirección elige qué celda se lee o escribe.
 - **Analogía**:
-  - *¿Qué es?* Es como el conserje de un hotel con un casillero de llaves numeradas: si le pedís el número 3, va exactamente al casillero 3 y enciende su luz, dejando todas las demás apagadas.
-  - *¿Por qué importa?* En la CPU, las instrucciones se guardan como números (0 a 7). El decodificador es el encargado de leer ese número y levantar el cable exacto que activa la operación correspondiente (`LDA`, `ADD`, `OUT`, etc.).
+  - *¿Qué es?* Un edificio con habitaciones numeradas: la dirección dice cuál habitación, no qué hay adentro.
+  - *¿Por qué importa?* Así es como la CPU guarda programas: cada instrucción vive en una dirección y el PC (lección 21) recorre esas direcciones.
 - **Componentes con Teclas**:
-  - 3× **Entrada** (tecla 2): $A_0, A_1, A_2$
-  - 3× **NOT** (tecla 5): para obtener $\neg A_0, \neg A_1, \neg A_2$
-  - 4× **AND** (tecla 6): para armar el `DEC2` básico
-  - 8× **AND** (tecla 6): para combinar con $A_2$ y formar el `DEC3`
-  - 8× **Salida** (tecla 3): $Y_0$ a $Y_7$
+  - 1× **Entrada** (tecla 2) para la línea de dirección A0
+  - 1× **NOT** (tecla 5) para generar la dirección negada
+  - 2× **AND** (tecla 6) para activar la celda elegida
+  - 2× caja **DFF** 🧩 como celdas de memoria
+  - Indicadores para ver la salida de cada celda
 - **Pasos de Cableado**:
-  1. Conectar cada Entrada $A_x$ a la entrada de su compuerta NOT correspondiente para disponer en el lienzo de la señal directa y su negada.
-  2. Construir `DEC2` para $A_0$ y $A_1$:
-     - $Y_0 = \neg A_1 \cdot \neg A_0$
-     - $Y_1 = \neg A_1 \cdot A_0$
-     - $Y_2 = A_1 \cdot \neg A_0$
-     - $Y_3 = A_1 \cdot A_0$
-  3. Expandir a `DEC3` utilizando $A_2$:
-     - Multiplicar cada salida del `DEC2` por $\neg A_2$ para generar $Y_0..Y_3$.
-     - Multiplicar cada salida del `DEC2` por $A_2$ para generar $Y_4..Y_7$.
-  4. Conectar las 8 salidas a los indicadores visuales.
+  1. Conectar A0 y su versión negada a las compuertas AND para seleccionar una de las dos celdas.
+  2. Conectar la salida de cada AND a la entrada LOAD de su DFF.
+  3. Conectar la salida Q de cada DFF a un indicador.
+  4. Probar: solo la celda cuya dirección está activa responde.
 - **Experimento**:
-  - Probar las 8 combinaciones posibles de $A_0, A_1, A_2$ (desde `000` hasta `111`).
-  - Observar cómo la luz encendida viaja limpiamente de $Y_0$ a $Y_7$, encendiéndose exactamente una a la vez.
+  - Alternar la dirección y observar que solo la celda seleccionada responde.
+  - Entender por qué construir RAM a mano no escala y por qué la próxima lección introduce el chip RAM16.
 - **Verificación `check()`**:
-  - Comprobar que existen al menos 3 Entradas y 8 Salidas.
-  - Evaluar exhaustivamente las 8 combinaciones de entrada: para cada una, verificar que la salida esperada valga 1 y las otras 7 valgan 0.
+  - Comprobar que existen al menos 2 DFF y que están cableados.
 - **Empaquetado**:
-  - **DEC2**:
-    - Entradas (click en orden): `A0, A1`
-    - Salidas (click en orden): `Y0, Y1, Y2, Y3`
-  - **DEC3**:
-    - Entradas (click en orden): `A0, A1, A2`
-    - Salidas (click en orden): `Y0, Y1, Y2, Y3, Y4, Y5, Y6, Y7`
+  - No aplica en esta lección (la caja RAM16 se empaqueta en la siguiente).
 
 ---
 
-### Lección 24: Contador de Pasos y RESET (`RING3`)
+### Lección 24: RAM16 — la memoria del programa
 
-- **Objetivo**: Construir el generador de ritmo y secuencia temporal de la CPU: un contador de anillo (*ring counter*) de 3 fases ($T_0, T_1, T_2$) con inicialización limpia por `RESET`.
+- **Objetivo**: Usar la caja **RAM16** del motor: 16 palabras de 4 bits, con direcciones A0-A3, datos de entrada D0-D3, salida Q0-Q3, y señales CS (chip select) y WE (write enable).
 - **Analogía**:
-  - *¿Qué es?* Es como el distribuidor de tiempos de un semáforo o los tiempos de un motor de 4 tiempos: primero busca la orden ($T_0$), luego busca el dato ($T_1$) y finalmente ejecuta la acción ($T_2$).
-  - *¿Por qué importa?* La CPU no puede hacer todo en un solo instante; necesita un compás ordenado para no mezclar la lectura de la memoria con la ejecución.
+  - *¿Qué es?* Un archivero con 16 cajones numerados, cada uno capaz de guardar un número de 4 bits.
+  - *¿Por qué importa?* Es donde el programa se almacena antes de ejecutarse.
+- **Componentes con Teclas**:
+  - 1× caja **RAM16** 🧠
+  - 4× **Entrada** (tecla 2) para dirección A0-A3
+  - 4× **Entrada** (tecla 2) para datos D0-D3
+  - 1× **Entrada** WE (tecla 2)
+  - 1× **Entrada** CS (tecla 2)
+  - 4× **Salida** (tecla 3) para Q0-Q3
+- **Pasos de Cableado**:
+  1. Conectar A0-A3 a las entradas de dirección de la RAM16.
+  2. Conectar D0-D3 a las entradas de datos.
+  3. Conectar WE=1 y CS=1 para escribir; WE=0 y CS=1 para leer.
+  4. Conectar Q0-Q3 a las salidas visuales.
+- **Experimento**:
+  - Escribir un valor en una dirección y luego leerlo.
+  - Probar distintas direcciones para confirmar que la RAM16 retiene valores.
+- **Verificación `check()`**:
+  - Comprobar que la RAM16 está presente, que se escribe un valor y que se lee correctamente.
+- **Empaquetado**:
+  - La RAM16 ya es una caja del motor; no requiere empaquetado manual.
+
+---
+
+### Lección 25: Decodificadores 2→4 y 3→8 (`DEC2` y `DEC3`)
+
+- **Objetivo**: Comprender cómo un circuito combinatorio traduce un código binario en la activación exclusiva de una sola línea. Construir y empaquetar `DEC2` y `DEC3`.
+- **Analogía**:
+  - *¿Qué es?* El conserje de un hotel con casilleros de llaves numeradas: si le pedís el número 3, enciende solo el casillero 3.
+  - *¿Por qué importa?* En la CPU, las instrucciones se guardan como números (0 a 7). El decodificador levanta el cable exacto que activa cada operación (`LDA`, `ADD`, `OUT`, `JMP`, `HALT`).
+- **Componentes con Teclas**:
+  - 3× **Entrada** (tecla 2): A0, A1, A2
+  - 3× **NOT** (tecla 5)
+  - 4× **AND** (tecla 6) para el `DEC2` básico
+  - 8× **AND** (tecla 6) para formar el `DEC3`
+  - 8× **Salida** (tecla 3): Y0 a Y7
+- **Pasos de Cableado**:
+  1. Construir `DEC2` para A0 y A1.
+  2. Expandir a `DEC3` utilizando A2.
+  3. Conectar las 8 salidas a indicadores visuales.
+- **Experimento**:
+  - Probar las 8 combinaciones de A0, A1, A2 y observar que solo una salida está encendida a la vez.
+- **Verificación `check()`**:
+  - Evaluar las 8 combinaciones: la salida esperada debe valer 1 y las otras 7 deben valer 0.
+- **Empaquetado**:
+  - **DEC2**: Entradas `A0, A1`; Salidas `Y0, Y1, Y2, Y3`.
+  - **DEC3**: Entradas `A0, A1, A2`; Salidas `Y0..Y7`.
+
+---
+
+### Lección 26: Contador de Pasos y RESET (`RING3`)
+
+- **Objetivo**: Construir el generador de ritmo de la CPU: un contador de anillo de 3 fases (T0, T1, T2) con inicialización limpia por RESET.
+- **Analogía**:
+  - *¿Qué es?* El distribuidor de tiempos de un semáforo: primero busca la orden (T0), luego el dato (T1), finalmente ejecuta (T2).
+  - *¿Por qué importa?* La CPU necesita un compás ordenado para no mezclar lectura de memoria con ejecución.
 - **Componentes con Teclas**:
   - 3× caja **DFF** 🧩
-  - 1× **OR** (tecla 7): para inyectar el RESET en $T_0$
-  - 2× **AND** (tecla 6): para condicionar el paso de $T_1$ y $T_2$ al RESET
-  - 1× **NOT** (tecla 5): para generar $\neg\text{RESET}$
-  - 2× **Entrada** (tecla 2): `RESET` y `CLK`
-  - 3× **Salida** (tecla 3): indicadores de $T_0, T_1, T_2$
+  - 1× **OR** (tecla 7) para inyectar RESET en T0
+  - 2× **AND** (tecla 6)
+  - 1× **NOT** (tecla 5)
+  - 2× **Entrada** (tecla 2): RESET y CLK
+  - 3× **Salida** (tecla 3): T0, T1, T2
 - **Pasos de Cableado**:
-  1. Colocar los 3 `DFF` en fila horizontal.
-  2. Conectar la Entrada `CLK` al pin 1 (CLK) de los 3 `DFF`.
-  3. Conectar la Entrada `RESET` a la compuerta NOT para obtener $\neg\text{RESET}$.
-  4. Realimentar $T_2$ hacia $T_0$: conectar la salida $Q$ del DFF2 y la línea `RESET` a la compuerta OR. Llevar la salida de la OR al pin 0 ($D$) del DFF0.
-  5. Conectar la salida $Q$ del DFF0 y $\neg\text{RESET}$ a una AND; llevar su salida al pin 0 ($D$) del DFF1.
-  6. Conectar la salida $Q$ del DFF1 y $\neg\text{RESET}$ a otra AND; llevar su salida al pin 0 ($D$) del DFF2.
-  7. Conectar las salidas $Q$ a los 3 visualizadores.
+  1. Colocar los 3 DFF en fila.
+  2. Conectar CLK a los relojes de los 3 DFF.
+  3. Conectar RESET a una NOT para obtener ¬RESET.
+  4. Realimentar T2 hacia T0 con la OR que también recibe RESET.
+  5. Conectar Q de cada DFF y ¬RESET a una AND; su salida va al D del siguiente DFF.
+  6. Conectar las salidas Q a los indicadores.
 - **Experimento**:
-  1. Con `RESET = 1`, dar un pulso de reloj: observar cómo $T_0$ se pone en 1 y $T_1, T_2$ quedan en 0 (eliminando cualquier cable gris).
-  2. Bajar `RESET = 0` y enviar pulsos de reloj: ver cómo el "1" salta ordenadamente $T_0 \rightarrow T_1 \rightarrow T_2 \rightarrow T_0$ en bucle continuo.
+  1. RESET=1, pulso de reloj: T0=1, T1=0, T2=0.
+  2. RESET=0, pulsos sucesivos: el “1” viaja T0 → T1 → T2 → T0.
 - **Verificación `check()`**:
-  - Identificar entradas de RESET y CLK.
-  - Probar con RESET=1 y un pulso de reloj $\rightarrow$ verificar $T_0=1, T_1=0, T_2=0$.
-  - Probar con RESET=0 y 3 pulsos sucesivos $\rightarrow$ verificar la secuencia cíclica $100 \rightarrow 010 \rightarrow 001 \rightarrow 100$.
+  - RESET=1 y un pulso → T0=1, T1=0, T2=0.
+  - RESET=0 y 3 pulsos → secuencia cíclica 100 → 010 → 001 → 100.
 - **Empaquetado**:
-  - **RING3**:
-    - Entradas: `RESET, CLK`
-    - Salidas: `T0, T1, T2`
+  - **RING3**: Entradas `RESET, CLK`; Salidas `T0, T1, T2`.
 
 ---
 
-### Lección 25: Registro con LOAD y la Etapa de Búsqueda (Fetch: `REG4`)
+### Lección 27: Etapa de Búsqueda (Fetch)
 
-- **Objetivo**: Construir un registro multipropósito de 4 bits con permiso de escritura condicional (`REG4`) y conectarlo a la memoria `RAM16` para implementar la fase de *Fetch* (captura de $OP$ y $ARG$).
+- **Objetivo**: Conectar la RAM16, el PC (lección 21), el RING3 (lección 26) y dos registros `REG4` (OP y ARG, de la lección 13) para capturar opcode y argumento en momentos distintos.
 - **Analogía**:
-  - *¿Qué es?* Es como una caja fuerte con botón de depósito: aunque alguien deje paquetes afuera, la caja solo guarda lo que hay en la puerta si pulsás el botón `LOAD` al mismo tiempo que gira la cerradura (`CLK`).
-  - *¿Por qué importa?* En la CPU, los registros OP y ARG comparten la misma salida de la RAM, pero deben retener valores distintos en momentos distintos: OP solo captura en $T_0$, y ARG solo captura en $T_1$.
+  - *¿Qué es?* Una caja fuerte con botón: solo guarda un nuevo dato si LOAD coincide con el pulso de reloj.
+  - *¿Por qué importa?* La RAM tiene un solo puerto de salida, pero una instrucción ocupa dos celdas; OP y ARG deben retener valores distintos en T0 y T1.
 - **Componentes con Teclas**:
-  - 4× caja **DFF** 🧩
-  - 4× caja **MUX2** 🧩
-  - 1× caja **RAM16** 🧠
-  - Entradas de datos y control (tecla 2)
-  - Salidas (tecla 3)
-- **Pasos de Cableado de `REG4`**:
-  1. Para cada bit $i \in \{0, 1, 2, 3\}$, colocar un `MUX2` frente al pin $D$ del DFF:
-     - Entrada A del MUX: conectada a la propia salida $Q$ del DFF (retroalimentación de retención).
-     - Entrada B del MUX: conectada al dato nuevo externo $D_i$.
-     - Selector S del MUX: conectado a la línea común `LOAD`.
-     - Salida del MUX: al pin 0 ($D$) del DFF.
-  2. Conectar la línea común `CLK` al pin 1 de los 4 DFFs.
+  - 2× caja **REG4** 🧩 (de la lección 13): OP y ARG
+  - 1× caja **RAM16** 🧠 (de la lección 24)
+  - 1× caja **PC** 🧩 (de la lección 21)
+  - 1× caja **RING3** 🧩 (de la lección 26)
+- **Pasos de Cableado**:
+  1. Conectar las salidas Q0-Q3 de la RAM16 en paralelo a las entradas D de OP y ARG.
+  2. Conectar T0 del RING3 a LOAD de OP; T1 a LOAD de ARG.
+  3. Conectar la salida del PC a las entradas de dirección A0-A3 de la RAM16.
+  4. Conectar el reloj del RING3 y del PC entre sí.
 - **Experimento**:
-  1. Empaquetar `REG4`.
-  2. Probarlo aisladamente: colocar datos en $D_0..D_3$, cambiar el reloj con $\text{LOAD}=0$ (el registro ignora el dato), activar $\text{LOAD}=1$ y dar un pulso (el registro captura el dato).
-  3. Conectar dos cajas `REG4` (bautizadas `OP` y `ARG`) a las salidas $Q_0..Q_3$ de una `RAM16`. Conectar $T_0$ al `LOAD` de OP y $T_1$ al `LOAD` de ARG: observar cómo cada registro captura alternadamente su celda correspondiente.
+  - Escribir celda 0 = 1 y celda 1 = 5 en la RAM16.
+  - RESET=1, un pulso; RESET=0.
+  - Observar que en T0 OP carga 1 y en T1 ARG carga 5; en T2 ambos retienen.
 - **Verificación `check()`**:
-  - Evaluar la caja o subcircuito `REG4`:
-    - Con $\text{LOAD}=1$ y un pulso de reloj, verificar que captura un patrón de prueba (ej. `1010`).
-    - Con $\text{LOAD}=0$ y cambio en las entradas de datos, verificar que retiene inalterado el patrón previo tras múltiples pulsos de reloj.
+  - Comprobar que OP y ARG capturan los valores correctos en sus fases correspondientes.
 - **Empaquetado**:
-  - **REG4**:
-    - Entradas (click en orden): `D0, D1, D2, D3, LOAD, CLK`
-    - Salidas (click en orden): `Q0, Q1, Q2, Q3`
+  - No aplica; se usan las cajas REG4 y RAM16 ya empaquetadas.
 
 ---
 
-### Lección 26: La Unidad de Control
+### Lección 28: La Unidad de Control
 
-- **Objetivo**: Implementar el decodificador de control central: la matriz combinatoria que toma las señales de tiempo ($T_0, T_1, T_2$) y las instrucciones decodificadas (`LDA`, `LDB`, `ADD`, `AND`, `OUT`, `JMP`, `HALT`) para encender los cables de habilitación exactos en cada micro-operación.
+- **Objetivo**: Implementar la matriz combinatoria que, a partir de las fases T0-T2 y las señales del DEC3, genera las señales de control de la CPU.
 - **Analogía**:
-  - *¿Qué es?* Es la torre de control de un aeropuerto o la mesa de mezclas de un teatro: según qué escena esté sonando ($T$) y qué actor esté en el escenario ($OP$), abre el micrófono del actor adecuado (`LOAD`) y apunta el reflector (`SEL`).
-  - *¿Por qué importa?* Sin este bloque, los registros no sabrían cuándo escuchar ni la ALU sabría cuándo guardar su resultado.
+  - *¿Qué es?* La torre de control de un aeropuerto: según la escena (T) y el actor (OP), abre el micrófono correcto (LOAD) y apunta el reflector (SEL).
+  - *¿Por qué importa?* Sin este bloque, los registros no sabrían cuándo escuchar ni la ALU cuándo guardar su resultado.
 - **Componentes con Teclas**:
-  - Compuertas **AND** (tecla 6)
-  - Compuertas **OR** (tecla 7)
-  - Entradas de prueba (tecla 2) para simular fases de tiempo e instrucciones
-  - Salidas de prueba (tecla 3) para inspeccionar las líneas de control
+  - Compuertas **AND** (tecla 6) y **OR** (tecla 7)
+  - Entradas de prueba para simular fases e instrucciones
+  - Salidas de prueba para inspeccionar líneas de control
 - **Pasos de Cableado**:
-  1. Cablear las ecuaciones canónicas:
-     - $\text{PC\_LOAD} = T_0 + T_1 + (T_2 \cdot \text{JMP})$ (usar AND para $T_2 \cdot \text{JMP}$ y OR de 3 entradas o cascada de dos OR).
-     - $\text{JMP\_SEL} = T_2 \cdot \text{JMP}$.
-     - $\text{OP\_LOAD} = T_0$.
-     - $\text{ARG\_LOAD} = T_1$.
-     - $\text{A\_LOAD} = T_2 \cdot (\text{LDA} + \text{ADD} + \text{AND})$.
-     - $\text{A\_SEL} = \text{ADD} + \text{AND}$.
-     - $\text{B\_LOAD} = T_2 \cdot \text{LDB}$.
-     - $\text{OUT\_LOAD} = T_2 \cdot \text{OUT}$.
-     - $\text{HALT\_SET} = T_2 \cdot \text{HALT}$.
+  1. Generar las señales canónicas:
+     - `PC_LOAD = T0 + T1 + (T2 · JMP)`
+     - `A_SEL = ADD + AND`
+     - `A_LOAD = T2 · (LDA + ADD + AND)`
+     - `B_LOAD = T2 · LDB`
+     - `OUT_LOAD = T2 · OUT`
+     - `HALT_SET = T2 · HALT`
 - **Experimento**:
-  - Forzar $T_0=1$: verificar que únicamente se encienden `PC_LOAD` y `OP_LOAD`.
-  - Forzar $T_1=1$: verificar que únicamente se encienden `PC_LOAD` y `ARG_LOAD`.
-  - Forzar $T_2=1$ y alternar las líneas de instrucción:
-    - Con `LDA=1`: se enciende solo `A_LOAD` con `A_SEL=0`.
-    - Con `ADD=1`: se enciende `A_LOAD` con `A_SEL=1`.
-    - Con `OUT=1`: se enciende solo `OUT_LOAD`.
-    - Con `JMP=1`: se encienden `PC_LOAD` y `JMP_SEL`.
+  - Forzar T0=1 y verificar que se encienden PC_LOAD y OP_LOAD.
+  - Forzar T1=1 y verificar PC_LOAD y ARG_LOAD.
+  - Forzar T2=1 con diferentes instrucciones y verificar las señales correspondientes.
 - **Verificación `check()`**:
-  - Verificar que las salidas de control responden fielmente a la tabla de verdad de la sección 5 ante todas las combinaciones de paso e instrucción.
+  - Verificar que las salidas de control responden a la tabla de verdad para todas las combinaciones de fase e instrucción.
 - **Empaquetado**:
-  - Las compuertas pueden organizarse en un bloque agrupado o cablearse directamente como el cableado de control maestro de la CPU en la siguiente lección.
-
----
-
-### Lección 27: Tu Primer CPU (Ejecución del Programa "Suma")
-
-- **Objetivo**: Integrar la ruta de datos completa (Datapath: PC, RAM16, OP, ARG, A, B, ALU4, OUT) con el secuenciador `RING3`, el decodificador `DEC3` y la lógica de control. Ejecutar el programa "Suma" ($5 + 3 = 8$) de principio a fin.
-- **Analogía**:
-  - *¿Qué es?* Es el momento en que se ensambla el motor, las ruedas y la transmisión en el chasis del auto: por primera vez, el vehículo arranca y rueda por sus propios medios sin empujarlo a mano.
-  - *¿Por qué importa?* Es la culminación del concepto de computación digital: compuertas elementales organizadas para seguir un programa almacenado en memoria.
-- **Componentes con Teclas**:
-  - 1× caja **RING3** 🧩 (lección 24)
-  - 1× caja **DEC3** 🧩 (lección 23)
-  - 1× caja **RAM16** 🧠
-  - 4× caja **REG4** 🧩 (para OP, ARG, A, B, OUT)
-  - 1× caja **ALU4** 🧩 (lección 18)
-  - 4× caja **MUX2** 🧩 (para el selector de entrada de A)
-  - Circuito del PC (lección 19: 4 DFF + sumador +1 + MUX de avance)
-  - 1× **Entrada** `RESET` (tecla 2)
-  - 1× **Reloj** `CLK` (⏱, tecla 4) o Entrada manual de reloj
-  - 4× **Salida** (tecla 3) para el resultado visual
-- **Pasos de Cableado**:
-  1. Conectar `PC` a las direcciones $A_0..A_3$ de la `RAM16`.
-  2. Conectar las salidas de datos de la RAM a las entradas de los registros `OP` y `ARG`.
-  3. Conectar las salidas $Q_0..Q_2$ de `OP` al decodificador `DEC3`.
-  4. Conectar `RING3` a `RESET` y `CLK`.
-  5. Cablear las compuertas de la Unidad de Control conectando sus salidas a los pines `LOAD` correspondientes.
-  6. Conectar `ARG` al registro B.
-  7. Conectar `ARG` y las salidas de la `ALU4` a los 4 `MUX2` de entrada del registro A (controlados por `A_SEL = ADD + AND`).
-  8. Conectar los buses de salida de A y B a las entradas de la `ALU4`. Conectar la señal de control `AND` del decodificador al pin selector de la `ALU4`.
-  9. Conectar el bus A al registro `OUT`, y las salidas de `OUT` a las lámparas indicadoras.
-- **Experimento**:
-  1. Abrir la RAM16 y cargar el programa "Suma": `1 5 2 3 3 0 5 0 7 0`.
-  2. Activar `RESET = 1`, dar un pulso de reloj y bajar `RESET = 0`.
-  3. Encender el reloj: contemplar cómo el PC avanza, OP y ARG cargan los valores, A toma el 5, B toma el 3, la ALU produce 8 y, exactamente en el ciclo 12, las 4 salidas se iluminan marcando el número **8** (`1000` binario).
-- **Verificación `check()`**:
-  - Cargar el programa "Suma" en la RAM del simulador.
-  - Ejecutar el pulso de RESET.
-  - Simular 12 ciclos de reloj y comprobar que:
-    - El registro A contiene el valor `8`.
-    - La salida visual `OUT` muestra limpiamente `8`.
-- **Empaquetado**:
-  - No aplica empaquetado (el circuito completo es el procesador visible en el lienzo).
-
----
-
-### Lección 28: Salto y Parada (JMP y HALT)
-
-- **Objetivo**: Dotar a la CPU de control de flujo dinámico: implementar la instrucción de salto `JMP` para permitir bucles de código y la instrucción `HALT` con compuerta de reloj para detener la máquina automáticamente.
-- **Analogía**:
-  - *¿Qué es?* Es como el pedal de freno que apaga el motor al llegar a destino (`HALT`) y las rotondas de tránsito que te permiten dar otra vuelta a la pista (`JMP`).
-  - *¿Por qué importa?* Sin saltos, una computadora solo puede ejecutar programas lineales que mueren al final de la memoria; con saltos, puede repetir tareas, ejecutar algoritmos y tomar decisiones.
-- **Componentes con Teclas**:
-  - 1× caja **DFF** 🧩 (para el biestable H de parada)
-  - 1× **OR** (tecla 7) y 1× **AND** (tecla 6) para la compuerta de reloj
-  - 1× **AND** y 1× **NOT** para la lógica del flip-flop H
-  - MUX de salto del PC conectado al bus `ARG`
-- **Pasos de Cableado**:
-  1. Conectar la señal `JMP` del decodificador y $T_2$ a la habilitación del MUX de entrada del PC: cuando $T_2 \cdot \text{JMP} = 1$, el PC carga los 4 bits provenientes del registro `ARG` en lugar de $PC+1$.
-  2. Construir el biestable H:
-     - Entrada D: $D_H = \neg\text{RESET} \cdot (H + T_2 \cdot \text{HALT})$.
-     - Reloj: conectado a `CLK` directo (antes de la compuerta).
-  3. Construir la compuerta de reloj de la CPU:
-     - Conectar $\neg H$ y `RESET` a una compuerta OR.
-     - Conectar la salida de la OR y el reloj maestro `CLK` a una compuerta AND.
-     - La salida de esta AND es `CPU_CLK`, que distribuye el reloj a `RING3`, `PC`, `OP`, `ARG`, `A`, `B` y `OUT`.
-- **Experimento**:
-  1. **Prueba de HALT**: Ejecutar el programa "Suma" con la instrucción final `7 0` (HALT): observar cómo, tras escribir 8 en OUT, el procesador se detiene en seco en el ciclo 15; el reloj sigue oscilando pero el CPU no consume más instrucciones ni se desborda la memoria.
-  2. **Prueba de JMP en bucle**: Cargar el programa "Contador": `1 0 2 1 3 0 5 0 6 4`. Dar RESET y encender el reloj: ver cómo la CPU suma 1 continuamente, muestra el valor en OUT y salta de regreso a la dirección 4 indefinidamente ($1, 2, 3 \dots 15, 0, 1 \dots$).
-- **Verificación `check()`**:
-  - **Prueba 1 (HALT)**: Cargar `1 5 2 3 3 0 5 0 7 0`, ejecutar y verificar que en el ciclo 15 $H=1$, `CPU_CLK` se mantiene en 0 y el PC se detiene en 10.
-  - **Prueba 2 (Bucle JMP)**: Cargar `1 0 2 1 3 0 5 0 6 4`, ejecutar varios ciclos y verificar que el PC salta exitosamente a la dirección 4 al finalizar cada iteración y que OUT incrementa periódicamente.
-- **Empaquetado**:
-  - Cierre y certificación del Bloque 4 del tutorial.
+  - No aplica; la unidad de control se cablea como parte del CPU en la lección 29.
 
 ---
 
