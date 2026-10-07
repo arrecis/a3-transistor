@@ -90,6 +90,10 @@ const LESSONS = [
           <li>1× <b>Entrada</b> (tecla 2) — un interruptor que <i>vos</i> controlás: click sobre él para ponerlo en 1 o en 0</li>
           <li>1× <b>Salida</b> (tecla 3) — un indicador que muestra qué valor llegó hasta él</li>
         </ul>
+        ${lay('Disposición en el canvas (de izquierda a derecha):', [
+          'Entrada',
+          'Salida'
+        ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
         <p><b>Misión: tu primer circuito (el más simple posible)</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Colocá la Entrada y la Salida (cada una: apretar la tecla, click en el lienzo)</li>
@@ -116,6 +120,10 @@ const LESSONS = [
           <li>1× <b>Input</b> (key 2) — a switch <i>you</i> control: click it to set 1 or 0</li>
           <li>1× <b>Output</b> (key 3) — an indicator showing what value arrived</li>
         </ul>
+        ${lay('Layout on the canvas (left to right):', [
+          'Input',
+          'Output'
+        ], 'Each number is a column. Wires always flow to the right.')}
         <p><b>Mission: your first circuit (the simplest possible)</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Place the Input and the Output (each: press the key, click the canvas)</li>
@@ -164,6 +172,11 @@ const LESSONS = [
           <li>1× <b>NOT</b> (tecla 5) — el protagonista</li>
           <li>1× <b>Salida</b> (tecla 3) — para ver el resultado</li>
         </ul>
+        ${lay('Disposición en el canvas (de izquierda a derecha):', [
+          'Entrada',
+          'NOT',
+          'Salida'
+        ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
         <p><b>Conexión:</b> cableá los tres en fila: Entrada → NOT → Salida. Fijate que el
         NOT tiene dos círculos: el de la izquierda es la entrada (A), el de la derecha la
         salida (Y).</p>
@@ -185,6 +198,11 @@ const LESSONS = [
           <li>1× <b>NOT</b> (key 5) — the star</li>
           <li>1× <b>Output</b> (key 3) — to see the result</li>
         </ul>
+        ${lay('Layout on the canvas (left to right):', [
+          'Input',
+          'NOT',
+          'Output'
+        ], 'Each number is a column. Wires always flow to the right.')}
         <p><b>Wiring:</b> wire the three in a row: Input → NOT → Output. Notice the NOT has
         two circles: left one is the input (A), right one the output (Y).</p>
         <p><b>The experiment:</b> toggle the Input. The Output always shows the opposite
@@ -370,6 +388,11 @@ const LESSONS = [
           <li>1× <b>NOT</b> (tecla 5)</li>
           <li>1× <b>Salida</b> (tecla 3)</li>
         </ul>
+        ${lay('Disposición en el canvas (de izquierda a derecha):', [
+          'Entrada',
+          'NOT',
+          'Salida'
+        ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
         <p><b>Misión — empaquetar tu NOT como componente reutilizable:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Armá el circuito cableado: Entrada → NOT → Salida</li>
@@ -398,6 +421,11 @@ const LESSONS = [
           <li>1× <b>NOT</b> (key 5)</li>
           <li>1× <b>Output</b> (key 3)</li>
         </ul>
+        ${lay('Layout on the canvas (left to right):', [
+          'Input',
+          'NOT',
+          'Output'
+        ], 'Each number is a column. Wires always flow to the right.')}
         <p><b>Mission — pack your NOT as a reusable component:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Build the wired circuit: Input → NOT → Output</li>
@@ -474,6 +502,11 @@ const LESSONS = [
           <li>2× <b>NOR</b> (tecla 9)</li>
           <li>2× <b>Salida</b> (tecla 3) — para ver Q y su inverso Q̄</li>
         </ul>
+        ${lay('Disposición en el canvas (de izquierda a derecha):', [
+          'Entrada <b>R</b> (Reset) arriba (alimenta la NOR de arriba), Entrada <b>S</b> (Set) abajo',
+          '<b>NOR de arriba</b> (salida Q) arriba, <b>NOR de abajo</b> (salida Q̄) abajo',
+          '<b>Salida Q</b> arriba, <b>Salida Q̄</b> abajo'
+        ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
         <p><b>Conexión — el cruce es la clave:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Entrada R → a una entrada de la NOR de arriba</li>
@@ -511,6 +544,11 @@ const LESSONS = [
           <li>2× <b>NOR</b> (key 9)</li>
           <li>2× <b>Output</b> (key 3) — to watch Q and its inverse Q̄</li>
         </ul>
+        ${lay('Layout on the canvas (left to right):', [
+          'Input <b>R</b> (Reset) on top (feeds the top NOR), Input <b>S</b> (Set) below',
+          '<b>Top NOR</b> (output Q) on top, <b>bottom NOR</b> (output Q̄) below',
+          '<b>Output Q</b> on top, <b>Output Q̄</b> below'
+        ], 'Each number is a column. Wires always flow to the right.')}
         <p><b>Wiring — the crossing is the key:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Input R → into the top NOR</li>
@@ -552,6 +590,13 @@ const LESSONS = [
           <li>2× <b>NOR</b> (tecla 9) — el latch de memoria del fondo (el que recuerda)</li>
           <li>1-2× <b>Salida</b> (tecla 3)</li>
         </ul>
+        ${lay('Disposición en el canvas (de izquierda a derecha):', [
+          'Entrada <b>D</b> arriba, Entrada <b>CLK</b> abajo',
+          '<b>NOT</b> (¬D) alineado con el AND de abajo',
+          '<b>AND de arriba</b> (D·CLK) arriba, <b>AND de abajo</b> (¬D·CLK) abajo',
+          '<b>NOR de arriba</b> arriba, <b>NOR de abajo</b> abajo',
+          '<b>Salida Q</b> arriba, <b>Salida Q̄</b> abajo'
+        ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>D → NOT → a una entrada del AND de abajo (ese AND recibe ¬D)</li>
@@ -587,6 +632,13 @@ const LESSONS = [
           <li>2× <b>NOR</b> (key 9) — the memory latch at the back (the one that remembers)</li>
           <li>1-2× <b>Output</b> (key 3)</li>
         </ul>
+        ${lay('Layout on the canvas (left to right):', [
+          'Input <b>D</b> on top, Input <b>CLK</b> below',
+          '<b>NOT</b> (¬D) aligned with the bottom AND',
+          '<b>top AND</b> (D·CLK) on top, <b>bottom AND</b> (¬D·CLK) below',
+          '<b>top NOR</b> on top, <b>bottom NOR</b> below',
+          '<b>Output Q</b> on top, <b>Output Q̄</b> below'
+        ], 'Each number is a column. Wires always flow to the right.')}
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>D → NOT → into one input of the bottom AND (so that AND gets ¬D)</li>
@@ -671,6 +723,11 @@ const LESSONS = [
           <li>3× <b>NOT</b> (tecla 5) — uno dentro de cada latch (¬D en el maestro, ¬QM en el esclavo) y uno aparte para <b>¬CLK</b> (¡este es el truco!)</li>
           <li>1× <b>Salida</b> (tecla 3)</li>
         </ul>
+        ${lay('Disposición en el canvas (de izquierda a derecha):', [
+          'Entrada <b>D</b> arriba, Entrada <b>CLK</b> abajo',
+          '<b>Maestro</b> (latch 1, armado como en la lección 7, salida <b>QM</b>) arriba, <b>¬CLK</b> (NOT aparte) abajo',
+          '<b>Esclavo</b> (latch 2, armado como en la lección 7) arriba, <b>Salida Q</b> a su misma altura'
+        ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
         <p>Cada mitad es un <b>latch</b> (el de la lección 7); las dos juntas forman el <b>flip-flop</b>.</p>
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
@@ -715,6 +772,11 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>3× <b>NOT</b> (key 5) — one inside each latch (¬D in the master, ¬QM in the slave) and a separate one for <b>¬CLK</b> (this is the trick!)</li>
           <li>1× <b>Output</b> (key 3)</li>
         </ul>
+        ${lay('Layout on the canvas (left to right):', [
+          'Input <b>D</b> on top, Input <b>CLK</b> below',
+          '<b>Master</b> (latch 1, built like lesson 7, output <b>QM</b>) on top, <b>¬CLK</b> (separate NOT) below',
+          '<b>Slave</b> (latch 2, built like lesson 7) on top, <b>Output Q</b> at the same height'
+        ], 'Each number is a column. Wires always flow to the right.')}
         <p>Each half is a <b>latch</b> (the one from lesson 7); together they form the <b>flip-flop</b>.</p>
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
@@ -914,6 +976,14 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>1× tu caja <b>DFF</b> 🧩 (de la lección 9)</li>
           <li>1× <b>Salida</b> (tecla 3)</li>
         </ul>
+        ${lay('Disposición en el canvas (de izquierda a derecha):', [
+          'Bit 0 arriba, bit 1 debajo, bit 2…; <b>LOAD</b> y <b>CLK</b> abajo del todo, compartidos',
+          '<b>NOT</b> (¬LOAD)',
+          'Por cada bit: <b>AND (D·LOAD)</b> arriba, <b>AND (Q·¬LOAD)</b> debajo',
+          'Por cada bit: <b>OR</b> del mux',
+          'Por cada bit: caja <b>DFF</b>',
+          'Por cada bit: <b>Salida Q</b>'
+        ], 'Cada número es una columna. El único cable que va hacia la izquierda es el de <b>Q</b> al AND (Q·¬LOAD): es la memoria que se reescribe a sí misma.')}
         <p>Y compartidos entre todos los bits: 1× <b>NOT</b> (tecla 5) para ¬LOAD,
         1× <b>Entrada</b> de CLK, 1× <b>Entrada</b> de LOAD
         (o un ⏱ reloj, tecla 4, si preferís que avance solo).</p>
@@ -946,6 +1016,14 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>1× your <b>DFF</b> box 🧩 (from lesson 9)</li>
           <li>1× <b>Output</b> (key 3)</li>
         </ul>
+        ${lay('Layout on the canvas (left to right):', [
+          'Bit 0 on top, bit 1 below, bit 2…; <b>LOAD</b> and <b>CLK</b> at the bottom, shared',
+          '<b>NOT</b> (¬LOAD)',
+          'Per bit: <b>AND (D·LOAD)</b> on top, <b>AND (Q·¬LOAD)</b> below',
+          'Per bit: <b>OR</b> of the mux',
+          'Per bit: <b>DFF</b> box',
+          'Per bit: <b>Output Q</b>'
+        ], 'Each number is a column. The only wire that flows left is <b>Q</b> to the AND (Q·¬LOAD): that is the memory rewriting itself.')}
         <p>Shared by all bits: 1× <b>NOT</b> (key 5) for ¬LOAD,
         1× CLK <b>Input</b>, 1× LOAD <b>Input</b> (or a ⏱ clock, key 4).</p>
         <p><b>Mission (2 bits is enough — do 4 if you like):</b></p>
@@ -1089,6 +1167,13 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>1× <b>OR</b> (tecla 7)</li>
           <li>1× <b>Salida</b> (tecla 3)</li>
         </ul>
+        ${lay('Disposición en el canvas (de izquierda a derecha):', [
+          'Entradas <b>A</b> arriba, <b>B</b> abajo; <b>S</b> a la altura del NOT (cable a la derecha)',
+          '<b>NOT</b> (¬S)',
+          '<b>AND1</b> (A·¬S) arriba, <b>AND2</b> (B·S) abajo',
+          '<b>OR</b>',
+          '<b>Salida</b>'
+        ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>S → NOT (su salida es ¬S)</li>
@@ -1114,6 +1199,13 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>1× <b>OR</b> (key 7)</li>
           <li>1× <b>Output</b> (key 3)</li>
         </ul>
+        ${lay('Layout on the canvas (left to right):', [
+          'Inputs <b>A</b> on top, <b>B</b> below; <b>S</b> next to the NOT (wire to the right)',
+          '<b>NOT</b> (¬S)',
+          '<b>AND1</b> (A·¬S) on top, <b>AND2</b> (B·S) below',
+          '<b>OR</b>',
+          '<b>Output</b>'
+        ], 'Each number is a column. Wires always flow to the right.')}
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>S → NOT (its output is ¬S)</li>
@@ -1263,6 +1355,11 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>1× <b>AND</b> (tecla 6) — da el acarreo C</li>
           <li>2× <b>Salida</b> (tecla 3) — S y C</li>
         </ul>
+        ${lay('Disposición en el canvas (de izquierda a derecha):', [
+          'Entradas <b>A</b> arriba, <b>B</b> abajo',
+          '<b>XOR</b> (suma S) arriba, <b>AND</b> (acarreo C) abajo',
+          '<b>Salida S</b> arriba, <b>Salida C</b> abajo'
+        ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
         <p><b>Conexión:</b> las 2 Entradas van <i>a la vez</i> al XOR y al AND. Salida del
         XOR = S; salida del AND = C.</p>
         <p><b>El experimento:</b> probá las 4 combinaciones. En 1+1, la suma da 0 y el acarreo
@@ -1287,6 +1384,11 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>1× <b>AND</b> (key 6) — gives the carry C</li>
           <li>2× <b>Output</b> (key 3) — S and C</li>
         </ul>
+        ${lay('Layout on the canvas (left to right):', [
+          'Inputs <b>A</b> on top, <b>B</b> below',
+          '<b>XOR</b> (sum S) on top, <b>AND</b> (carry C) below',
+          '<b>Output S</b> on top, <b>Output C</b> below'
+        ], 'Each number is a column. Wires always flow to the right.')}
         <p><b>Wiring:</b> both Inputs feed the XOR and the AND <i>at once</i>. XOR's output = S; AND's output = C.</p>
         <p><b>The experiment:</b> try all 4 combinations. At 1+1, the sum is 0 and the carry
         is 1 — the first time your circuit "carries a one", just like hand addition.</p>`,
