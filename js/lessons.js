@@ -1474,10 +1474,10 @@ const LESSONS = [
         ], "Los cables de datos van en línea recta. Las líneas de LOAD y CLK se ramifican hacia las 4 cajas.")}
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Cada entrada D0-D3 va al pin D (pin 0) de su respectiva caja REG1</li>
-          <li>La entrada LOAD va al pin LOAD (pin 1) de las 4 cajas REG1</li>
-          <li>La entrada CLK va al pin CLK (pin 2) de las 4 cajas REG1</li>
-          <li>La salida Q (pin 3) de cada REG1 va a su Salida (Q0-Q3)</li>
+          <li>Cada entrada D0-D3 va al pin D de su respectiva caja REG1</li>
+          <li>La entrada LOAD va al pin LOAD de las 4 cajas REG1</li>
+          <li>La entrada CLK va al pin CLK de las 4 cajas REG1</li>
+          <li>La salida Q de cada REG1 va a su Salida (Q0-Q3)</li>
         </ol>
         <p><b>El experimento:</b> poné LOAD=1, colocá un 5 en binario (D0=1, D1=0, D2=1, D3=0) y da un pulso de CLK:
         las salidas muestran 5. Poné LOAD=0, cambiá las entradas D a cualquier otro número y da otro pulso:
@@ -1508,10 +1508,10 @@ const LESSONS = [
         ], "Data wires run straight across. The LOAD and CLK lines branch out to all 4 boxes.")}
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Each input D0-D3 goes to the D pin (pin 0) of its REG1 box</li>
-          <li>The LOAD input connects to the LOAD pin (pin 1) of all 4 REG1 boxes</li>
-          <li>The CLK input connects to the CLK pin (pin 2) of all 4 REG1 boxes</li>
-          <li>The Q pin (pin 3) of each REG1 connects to its Output (Q0-Q3)</li>
+          <li>Each input D0-D3 goes to the D pin of its REG1 box</li>
+          <li>The LOAD input connects to the LOAD pin of all 4 REG1 boxes</li>
+          <li>The CLK input connects to the CLK pin of all 4 REG1 boxes</li>
+          <li>The Q pin of each REG1 connects to its Output (Q0-Q3)</li>
         </ol>
         <p><b>Experiment:</b> set LOAD=1, enter binary 5 (D0=1, D1=0, D2=1, D3=0), and pulse CLK: outputs show 5.
         Set LOAD=0, change D to any other number, and pulse CLK again: outputs <b>stay at 5</b>.</p>
@@ -1964,7 +1964,7 @@ const LESSONS = [
           name: TXT(LL("Las 4 están cableadas", "All 4 are wired")),
           ok: fa.every(c => state.wires.some(w => w.a.c === c.id || w.b.c === c.id)),
         });
-        // cascade: at least 3 Cout (pin 4) connected to another's Cin (pin 2)
+        // cascade: at least 3 Cout connected to another's Cin
         const r = simulate();
         let cascadeCount = 0;
         for (const a of fa) {
@@ -2062,13 +2062,13 @@ const LESSONS = [
           "Entradas: <b>A0-A3</b> arriba, <b>B0-B3</b> al medio, <b>S</b> abajo",
           "4 cajas <b>MUX2</b>, una debajo de otra (bit 0 arriba, bit 3 abajo)",
           "4 <b>Salidas O0-O3</b> (una al lado de cada MUX2)"
-        ], "Cada número es una columna. La señal S se ramifica hacia la entrada S (pin 2) de los 4 MUX2.")}
+        ], "Cada número es una columna. La señal S se ramifica hacia la entrada S de los 4 MUX2.")}
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Cada entrada A0-A3 va a la entrada A (pin 0) de su respectivo MUX2</li>
-          <li>Cada entrada B0-B3 va a la entrada B (pin 1) de su respectivo MUX2</li>
-          <li>La entrada de selección S va a la entrada S (pin 2) de las 4 cajas MUX2</li>
-          <li>La salida (pin 3) de cada MUX2 va a su Salida correspondiente (O0-O3)</li>
+          <li>Cada entrada A0-A3 va a la entrada A de su respectivo MUX2</li>
+          <li>Cada entrada B0-B3 va a la entrada B de su respectivo MUX2</li>
+          <li>La entrada de selección S va a la entrada S de las 4 cajas MUX2</li>
+          <li>La salida de cada MUX2 va a su Salida correspondiente (O0-O3)</li>
         </ol>
         <p><b>El experimento:</b> poné un número en A (p. ej. A=10: A1=1, A3=1) y otro en B (p. ej. B=5: B0=1, B2=1).
         Con S=0, las salidas muestran 10 (copian A).
@@ -2099,13 +2099,13 @@ const LESSONS = [
           "Inputs: <b>A0-A3</b> on top, <b>B0-B3</b> in the middle, <b>S</b> below",
           "4 <b>MUX2</b> boxes, stacked (bit 0 on top, bit 3 below)",
           "4 <b>Outputs O0-O3</b> (one next to each MUX2)"
-        ], "Each number is a column. The S signal branches out to input S (pin 2) of all 4 MUX2 boxes.")}
+        ], "Each number is a column. The S signal branches out to input S of all 4 MUX2 boxes.")}
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Each input A0-A3 connects to input A (pin 0) of its MUX2</li>
-          <li>Each input B0-B3 connects to input B (pin 1) of its MUX2</li>
-          <li>Select input S connects to input S (pin 2) of all 4 MUX2 boxes</li>
-          <li>Output (pin 3) of each MUX2 connects to its Output (O0-O3)</li>
+          <li>Each input A0-A3 connects to input A of its MUX2</li>
+          <li>Each input B0-B3 connects to input B of its MUX2</li>
+          <li>Select input S connects to input S of all 4 MUX2 boxes</li>
+          <li>Output of each MUX2 connects to its Output (O0-O3)</li>
         </ol>
         <p><b>Experiment:</b> put a number on A (e.g. A=10: A1=1, A3=1) and another on B (e.g. B=5: B0=1, B2=1).
         With S=0, the outputs show 10 (copying A).
