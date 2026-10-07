@@ -4657,6 +4657,7 @@ function renderLesson() {
     '</div>';
   document.getElementById("lessonVerify").textContent = t("lessonVerifyLabel");
   panel.style.display = "flex";
+  document.getElementById("lessonBtn").style.display = "none";  // the ✕ in the panel closes it
 }
 
 function lessonVerify() {
@@ -4688,12 +4689,9 @@ function lessonVerify() {
   });
 }
 
-document.getElementById("lessonBtn").addEventListener("click", () => {
-  const p = document.getElementById("lessonPanel");
-  if (p.style.display === "flex") {
-    p.style.display = "none";
-  } else {
-    renderLesson();
-  }
+document.getElementById("lessonBtn").addEventListener("click", renderLesson);
+document.getElementById("lessonClose").addEventListener("click", () => {
+  document.getElementById("lessonPanel").style.display = "none";
+  document.getElementById("lessonBtn").style.display = "flex";
 });
 document.getElementById("lessonVerify").addEventListener("click", lessonVerify);
