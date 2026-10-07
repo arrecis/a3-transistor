@@ -60,11 +60,11 @@ function lt(cols, rows) {
    title and note are already in the lesson's language. */
 function lay(title, items, note) {
   const badge = n => `<span style="flex:none;width:18px;height:18px;border-radius:50%;border:1px solid var(--accent);color:var(--accent);font-size:10.5px;display:inline-flex;align-items:center;justify-content:center;">${n}</span>`;
-  let h = `<p><b>${title}</b></p><ul style="list-style:none;padding:0;margin:6px 0;">`;
+  let h = `<p><b>${title}</b></p>`;
+  if (note) h += `<p style="color:var(--dim);font-size:11.5px;margin:2px 0 0;">${note}</p>`;
+  h += `<ul style="list-style:none;padding:0;margin:6px 0;">`;
   items.forEach((it, i) => { h += `<li style="display:flex;gap:8px;align-items:baseline;padding:3px 0;">${badge(i + 1)}<span>${it}</span></li>`; });
-  h += "</ul>";
-  if (note) h += `<p style="color:var(--dim);font-size:11.5px;margin-top:4px;">${note}</p>`;
-  return h;
+  return h + "</ul>";
 }
 const LL = (es, en) => ({ es, en });  // bilingual pair
 const TXT = (o) => o[i18nLang()] ?? o.es;
@@ -736,9 +736,6 @@ const LESSONS = [
           <li><b>¬CLK</b>: un tercer NOT, aparte de los dos latches. CLK entra a ese NOT y su salida va a los dos AND del esclavo. Así, cuando el maestro está abierto, el esclavo está cerrado</li>
           <li>La salida de la NOR "Q" del esclavo va a la <b>Salida</b></li>
         </ol>
-        <pre style="font-size:11.5px; color:var(--dim); margin:6px 0;">D ──► [ latch maestro ] ──QM──► [ latch esclavo ] ──► Q
-          ▲                            ▲
-CLK ──────┴────► [NOT] ── ¬CLK ────────┘</pre>
         <p><b>El experimento:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Poné D=1 y subí CLK a 1: <i>no pasa nada</i> — el maestro escucha, pero el esclavo está congelado</li>
@@ -785,9 +782,6 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li><b>¬CLK</b>: a third NOT, separate from both latches. CLK goes into that NOT and its output goes to the slave's two ANDs. So when the master is open, the slave is closed</li>
           <li>The output of the slave's "Q" NOR goes to the <b>Output</b></li>
         </ol>
-        <pre style="font-size:11.5px; color:var(--dim); margin:6px 0;">D ──► [ master latch ] ──QM──► [ slave latch ] ──► Q
-          ▲                          ▲
-CLK ──────┴────► [NOT] ── ¬CLK ──────┘</pre>
         <p><b>The experiment:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Set D=1 and raise CLK to 1: <i>nothing happens</i> — the master listens, but the slave is frozen</li>
