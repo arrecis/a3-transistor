@@ -950,7 +950,7 @@ const LESSONS = [
           <li>1× <b>Salida</b> (tecla 3) — Q</li>
         </ul>
         ${grid("Colócalos en este orden (de izquierda a derecha, de arriba abajo):", [
-          [[1, "Entrada D"], [3, "LATCH maestro"], [5, "LATCH esclavo"], [7, "Salida Q"]],
+          [[1, "Entrada D"], [3, "LATCH maestro"], [5, "LATCH esclavo"], [6, "Salida Q"]],
           [[2, "Entrada CLK"], [4, "NOT"], null, null],
         ])}
         <p><b>Conexión:</b></p>
@@ -959,7 +959,7 @@ const LESSONS = [
           <li>Cableá la Entrada CLK ${nb(2)} a la entrada CLK del LATCH maestro ${nb(3)} y a la entrada del NOT ${nb(4)}.</li>
           <li>Cableá la salida Q del LATCH maestro ${nb(3)} a la entrada D del LATCH esclavo ${nb(5)}.</li>
           <li>Cableá la salida del NOT ${nb(4)} a la entrada CLK del LATCH esclavo ${nb(5)}.</li>
-          <li>Cableá la salida Q del LATCH esclavo ${nb(5)} a la Salida Q ${nb(7)}.</li>
+          <li>Cableá la salida Q del LATCH esclavo ${nb(5)} a la Salida Q ${nb(6)}.</li>
         </ol>
         <p><b>El experimento:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
@@ -977,7 +977,7 @@ const LESSONS = [
           <li>1× <b>Output</b> (key 3) — Q</li>
         </ul>
         ${grid("Place them in this order (left to right, top to bottom):", [
-          [[1, "Input D"], [3, "Master LATCH"], [5, "Slave LATCH"], [7, "Output Q"]],
+          [[1, "Input D"], [3, "Master LATCH"], [5, "Slave LATCH"], [6, "Output Q"]],
           [[2, "Input CLK"], [4, "NOT"], null, null],
         ])}
         <p><b>Wiring:</b></p>
@@ -986,7 +986,7 @@ const LESSONS = [
           <li>Wire Input CLK ${nb(2)} to the CLK input of the master LATCH ${nb(3)} and to the input of the NOT ${nb(4)}.</li>
           <li>Wire the Q output of the master LATCH ${nb(3)} to the D input of the slave LATCH ${nb(5)}.</li>
           <li>Wire the output of the NOT ${nb(4)} to the CLK input of the slave LATCH ${nb(5)}.</li>
-          <li>Wire the Q output of the slave LATCH ${nb(5)} to the Output Q ${nb(7)}.</li>
+          <li>Wire the Q output of the slave LATCH ${nb(5)} to the Output Q ${nb(6)}.</li>
         </ol>
         <p><b>The experiment:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
@@ -1853,17 +1853,17 @@ const LESSONS = [
           <li>2× <b>Salida</b> (tecla 3) — S y Cout</li>
         </ul>
         ${grid("Colócalos en este orden (de izquierda a derecha, de arriba abajo):", [
-          [[1, "Entrada A"], [4, "XOR1"], [6, "XOR2"], [9, "OR"], [10, "Salida S"]],
-          [[2, "Entrada B"], [5, "AND1"], null, null, [11, "Salida Cout"]],
+          [[1, "Entrada A"], [4, "XOR1"], [6, "XOR2"], [8, "OR"], [9, "Salida S"]],
+          [[2, "Entrada B"], [5, "AND1"], null, null, [10, "Salida Cout"]],
           [[3, "Entrada Cin"], null, [7, "AND2"], null, null],
         ])}
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Cableá la Entrada A ${nb(1)} y la Entrada B ${nb(2)} a las dos entradas del XOR1 ${nb(4)}.</li>
-          <li>Cableá la salida del XOR1 ${nb(4)} y la Entrada Cin ${nb(3)} a las dos entradas del XOR2 ${nb(6)}. La salida del XOR2 ${nb(6)} es la Salida S ${nb(10)}.</li>
+          <li>Cableá la salida del XOR1 ${nb(4)} y la Entrada Cin ${nb(3)} a las dos entradas del XOR2 ${nb(6)}. La salida del XOR2 ${nb(6)} es la Salida S ${nb(9)}.</li>
           <li>Cableá la Entrada A ${nb(1)} y la Entrada B ${nb(2)} a las dos entradas del AND1 ${nb(5)}.</li>
           <li>Cableá la salida del XOR1 ${nb(4)} y la Entrada Cin ${nb(3)} a las dos entradas del AND2 ${nb(7)}.</li>
-          <li>Cableá la salida del AND1 ${nb(5)} y la salida del AND2 ${nb(7)} a las entradas del OR ${nb(9)}. La salida del OR ${nb(9)} es la Salida Cout ${nb(11)}.</li>
+          <li>Cableá la salida del AND1 ${nb(5)} y la salida del AND2 ${nb(7)} a las entradas del OR ${nb(8)}. La salida del OR ${nb(8)} es la Salida Cout ${nb(10)}.</li>
         </ol>
         <p><b>El experimento:</b> probá 1+1+0 (S=0, Cout=1) y 1+1+1 (S=1, Cout=1). En la próxima lección vas a empaquetar esta pieza como FULLADDER.</p>`,
       en: `
@@ -1885,17 +1885,17 @@ const LESSONS = [
           <li>2× <b>Output</b> (key 3) — S and Cout</li>
         </ul>
         ${grid("Place them in this order (left to right, top to bottom):", [
-          [[1, "Input A"], [4, "XOR1"], [6, "XOR2"], [9, "OR"], [10, "Output S"]],
-          [[2, "Input B"], [5, "AND1"], null, null, [11, "Output Cout"]],
+          [[1, "Input A"], [4, "XOR1"], [6, "XOR2"], [8, "OR"], [9, "Output S"]],
+          [[2, "Input B"], [5, "AND1"], null, null, [10, "Output Cout"]],
           [[3, "Input Cin"], null, [7, "AND2"], null, null],
         ])}
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Wire Input A ${nb(1)} and Input B ${nb(2)} to the two inputs of XOR1 ${nb(4)}.</li>
-          <li>Wire the output of XOR1 ${nb(4)} and Input Cin ${nb(3)} to the two inputs of XOR2 ${nb(6)}. The output of XOR2 ${nb(6)} is Output S ${nb(10)}.</li>
+          <li>Wire the output of XOR1 ${nb(4)} and Input Cin ${nb(3)} to the two inputs of XOR2 ${nb(6)}. The output of XOR2 ${nb(6)} is Output S ${nb(9)}.</li>
           <li>Wire Input A ${nb(1)} and Input B ${nb(2)} to the two inputs of AND1 ${nb(5)}.</li>
           <li>Wire the output of XOR1 ${nb(4)} and Input Cin ${nb(3)} to the two inputs of AND2 ${nb(7)}.</li>
-          <li>Wire the output of AND1 ${nb(5)} and the output of AND2 ${nb(7)} to the inputs of the OR ${nb(9)}. The output of the OR ${nb(9)} is Output Cout ${nb(11)}.</li>
+          <li>Wire the output of AND1 ${nb(5)} and the output of AND2 ${nb(7)} to the inputs of the OR ${nb(8)}. The output of the OR ${nb(8)} is Output Cout ${nb(10)}.</li>
         </ol>
         <p><b>The experiment:</b> try 1+1+0 (S=0, Cout=1) and 1+1+1 (S=1, Cout=1). Next lesson you will pack this piece as FULLADDER.</p>`,
     },
