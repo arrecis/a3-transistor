@@ -4,7 +4,7 @@ Regla del autor: si una lección repite el mismo sub-circuito varias veces, ese
 sub-circuito se arma primero solo, en su propia lección, y se empaqueta. La
 lección siguiente encadena las cajas.
 
-## Orden nuevo (30 lecciones)
+## Orden nuevo (31 lecciones)
 
 | Nº | id nuevo | Viene de | Lección |
 |---|---|---|---|
@@ -24,12 +24,13 @@ lección siguiente encadena las cajas.
 | 22 | s22 | s20 | Repaso (actualizar la lista de cajas) |
 | 23 | s23 | s21 | RAM con dirección |
 | 24 | s24 | s22 | RAM16 |
-| 25 | s25 | s23 | Decodificadores |
-| 26 | s26 | s24 | Contador de pasos RING3 |
-| 27 | s27 | s25 | Fetch: ya no arma REG4 (viene de la lección 13) |
-| 28 | s28 | s26 | Unidad de control |
-| 29 | s29 | s27 | Tu primer CPU: usar SEL4 donde hoy hay 4 MUX2 sueltos |
-| 30 | s30 | s28 | JMP y HALT |
+| 25 | s25 | s23 | Decodificador 2→4 → caja **DEC2** (A0, A1 \| Y0-Y3) |
+| 26 | s26 | s23 | Decodificador 3→8: **DEC2** + NOT + 8 AND → caja **DEC3** (A0-A2 \| Y0-Y7) |
+| 27 | s27 | s24 | Contador de pasos RING3 |
+| 28 | s28 | s25 | Fetch: ya no arma REG4 (viene de la lección 13) |
+| 29 | s29 | s26 | Unidad de control |
+| 30 | s30 | s27 | Tu primer CPU: usar SEL4 donde hoy hay 4 MUX2 sueltos |
+| 31 | s31 | s28 | JMP y HALT |
 
 ## Fase B1 (un agente)
 Reordenar, renumerar ids y títulos, lecciones nuevas 12 (REG1) y 19 (SEL4),

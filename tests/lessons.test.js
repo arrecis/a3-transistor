@@ -563,45 +563,40 @@ expectCheck("s16 packed FULLADDER", 15, true);
   expectCheck("s24 RAM16 with data written", 23, true);
 }
 
-// s25 — decoders (DEC2 and DEC3): empaquetado obligatorio
-{
-  T.reset();
-  const d2 = dec2();
-  T.pack("DEC2", [d2.A0, d2.A1], [d2.y0, d2.y1, d2.y2, d2.y3]);
-  T.clearCanvas();
-  const d3 = dec3();
-  T.pack("DEC3", [d3.A0, d3.A1, d3.A2], d3.yOuts);
-  T.clearCanvas();
-  expectCheck("s25 DEC2 y DEC3 empaquetados PASA", 24, true);
+// s22 — review: every box the next lessons use must be in the library
+function packStub(name) {
+  const i = T.add("switch"), o = T.add("out"); T.w(i, 0, o, 0);
+  T.pack(name, [i], [o]); T.clearCanvas();
 }
 {
-  T.reset();
-  const d2 = dec2({ miswire: true });
+  T.reset(); ["DFF", "MUX2", "REG4", "ADD4", "SEL4", "ALU4"].forEach(packStub);
+  expectCheck("s22 con todas las cajas PASA", 21, true);
+}
+{
+  T.reset(); ["DFF", "MUX2", "REG4", "ADD4", "SEL4"].forEach(packStub);
+  expectCheck("s22 sin ALU4 FALLA", 21, false);
+}
+
+// s25 — DEC2 decoder: empaquetado obligatorio
+function packDec2(opts) {
+  const d2 = dec2(opts);
   T.pack("DEC2", [d2.A0, d2.A1], [d2.y0, d2.y1, d2.y2, d2.y3]);
   T.clearCanvas();
-  const d3 = dec3();
-  T.pack("DEC3", [d3.A0, d3.A1, d3.A2], d3.yOuts);
-  T.clearCanvas();
+}
+{
+  T.reset(); packDec2();
+  expectCheck("s25 DEC2 empaquetada PASA", 24, true);
+}
+{
+  T.reset(); packDec2({ miswire: true });
   expectCheck("s25 DEC2 mal cableado FALLA", 24, false);
 }
 {
-  T.reset();
-  const d2 = dec2({ reverseOuts: true });
-  T.pack("DEC2", [d2.A0, d2.A1], [d2.y0, d2.y1, d2.y2, d2.y3]);
-  T.clearCanvas();
-  const d3 = dec3();
-  T.pack("DEC3", [d3.A0, d3.A1, d3.A2], d3.yOuts);
-  T.clearCanvas();
+  T.reset(); packDec2({ reverseOuts: true });
   expectCheck("s25 DEC2 con salidas en orden inverso PASA", 24, true);
 }
 {
-  T.reset();
-  const d2 = dec2({ multiActive: true });
-  T.pack("DEC2", [d2.A0, d2.A1], [d2.y0, d2.y1, d2.y2, d2.y3]);
-  T.clearCanvas();
-  const d3 = dec3();
-  T.pack("DEC3", [d3.A0, d3.A1, d3.A2], d3.yOuts);
-  T.clearCanvas();
+  T.reset(); packDec2({ multiActive: true });
   expectCheck("s25 DEC2 con dos salidas activas FALLA", 24, false);
 }
 {
@@ -615,30 +610,62 @@ expectCheck("s16 packed FULLADDER", 15, true);
 }
 {
   T.reset();
-  const d2 = dec2();
-  T.pack("DEC2", [d2.A0, d2.A1], [d2.y0, d2.y1, d2.y2, d2.y3]);
+  expectCheck("s25 sin caja DEC2 FALLA", 24, false);
+}
+
+// s26 — DEC3 built from the DEC2 box, following the lesson's numbered steps
+function dec3FromBox() {
+  const A0 = T.add("switch"), A1 = T.add("switch"), A2 = T.add("switch"); // 1, 2, 3
+  const dec = T.add("DEC2");                                             // 4
+  const not = T.add("not");                                              // 5
+  const ands = Array.from({ length: 8 }, () => T.add("and"));            // 6..13
+  const yOuts = Array.from({ length: 8 }, () => T.add("out"));           // 14..21
+  T.w(A0, 0, dec, 0); T.w(A1, 0, dec, 1);
+  T.w(A2, 0, not, 0);
+  for (let i = 0; i < 4; i++) {
+    T.w(dec, 2 + i, ands[i], 0);     T.w(not, 1, ands[i], 1);      // low bank
+    T.w(dec, 2 + i, ands[4 + i], 0); T.w(A2, 0, ands[4 + i], 1);   // high bank
+  }
+  ands.forEach((a, i) => T.w(a, 2, yOuts[i], 0));
+  return { A0, A1, A2, yOuts };
+}
+{
+  T.reset(); packDec2();
+  const d3 = dec3FromBox();
+  T.pack("DEC3", [d3.A0, d3.A1, d3.A2], d3.yOuts);
   T.clearCanvas();
+  expectCheck("s26 DEC3 con la caja DEC2 (siguiendo los pasos) PASA", 25, true);
+}
+{
+  T.reset(); packDec2();
   const d3 = dec3();
   T.pack("DEC3", [d3.A0, d3.A1, d3.A2], d3.yOuts);
   T.clearCanvas();
-  expectCheck("s25 DEC3 correcto empaquetado PASA", 24, true);
+  expectCheck("s26 DEC3 hecha con compuertas sueltas (sin DEC2) FALLA", 25, false);
+}
+{
+  T.reset(); packDec2();
+  const d3 = dec3FromBox();
+  T.pack("DEC3", [d3.A0, d3.A1, d3.A2], [...d3.yOuts.slice(4), ...d3.yOuts.slice(0, 4)]);
+  T.clearCanvas();
+  expectCheck("s26 DEC3 con bancos invertidos FALLA", 25, false);
 }
 
-// s26 — step counter (RING3): empaquetado obligatorio
+// s27 — step counter (RING3): empaquetado obligatorio
 {
   T.reset();
   const f = flipFlop(); T.pack("DFF", [f.D, f.C], [f.out]); T.clearCanvas();
   const r = ring3({ withReset: true });
   T.pack("RING3", [r.RESET, r.CLK], r.outs);
   T.clearCanvas();
-  expectCheck("s26 RING3 empaquetado correcto PASA", 25, true);
+  expectCheck("s27 RING3 empaquetado correcto PASA", 26, true);
 }
 {
   T.reset();
   const f = flipFlop(); T.pack("DFF", [f.D, f.C], [f.out]); T.clearCanvas();
   const r = ring3({ withReset: false });
   T.pack("RING3", [T.add("switch"), r.CLK], r.outs); // fake RESET pin
-  expectCheck("s26 RING3 sin RESET empaquetado FALLA", 25, false);
+  expectCheck("s27 RING3 sin RESET empaquetado FALLA", 26, false);
 }
 
 // s20 — ALU4 packed with brief pin order: A0-A3, B0-B3, OP | R0-R3
@@ -715,7 +742,7 @@ expectCheck("s16 packed FULLADDER", 15, true);
   expect("pack: click order defines pin order", def.inStubs[0] === f.C.id, "inStubs=" + def.inStubs.join(","));
 }
 
-// s27 — REG4 & Fetch
+// s28 — REG4 & Fetch
 function packREG4Box({ swapPins = false } = {}) {
   const load = T.add("switch"), clk = T.add("switch");
   const D = [], outs = [];
@@ -738,11 +765,11 @@ function packREG4Box({ swapPins = false } = {}) {
 
 {
   T.reset(); packDFFBox(); packMUX2Box(); packREG4Box();
-  expectCheck("s27 REG4 empaquetado correctamente PASA", 26, true);
+  expectCheck("s28 REG4 empaquetado correctamente PASA", 27, true);
 }
 {
   T.reset(); packDFFBox(); packMUX2Box(); packREG4Box({ swapPins: true });
-  expectCheck("s27 REG4 con pines LOAD/CLK invertidos FALLA", 26, false);
+  expectCheck("s28 REG4 con pines LOAD/CLK invertidos FALLA", 27, false);
 }
 function packFullAdderBox() {
   const f = fullAdder();
@@ -818,15 +845,15 @@ function buildFetchStage({ miswire = false } = {}) {
 {
   T.reset(); packDFFBox(); packMUX2Box(); packREG4Box(); packADD4Box(); packRING3Box();
   buildFetchStage({ miswire: false });
-  expectCheck("s27 circuito de Fetch correcto PASA", 26, true);
+  expectCheck("s28 circuito de Fetch correcto PASA", 27, true);
 }
 {
   T.reset(); packDFFBox(); packMUX2Box(); packREG4Box(); packADD4Box(); packRING3Box();
   buildFetchStage({ miswire: true });
-  expectCheck("s27 circuito de Fetch sin conectar PC a RAM FALLA", 26, false);
+  expectCheck("s28 circuito de Fetch sin conectar PC a RAM FALLA", 27, false);
 }
 
-// s28 — Unidad de control
+// s29 — Unidad de control
 function packDEC3Box() {
   const d = dec3();
   T.pack("DEC3", [d.A0, d.A1, d.A2], d.yOuts);
@@ -915,15 +942,15 @@ function buildControlUnit({ invertASel = false } = {}) {
 {
   T.reset(); packDEC3Box();
   buildControlUnit({ invertASel: false });
-  expectCheck("s28 Unidad de control correcta PASA", 27, true);
+  expectCheck("s29 Unidad de control correcta PASA", 28, true);
 }
 {
   T.reset(); packDEC3Box();
   buildControlUnit({ invertASel: true });
-  expectCheck("s28 Unidad de control con A_SEL invertido FALLA", 27, false);
+  expectCheck("s29 Unidad de control con A_SEL invertido FALLA", 28, false);
 }
 
-// s29 & s30 — Tu primer CPU / JMP y HALT
+// s30 & s31 — Tu primer CPU / JMP y HALT
 function packALU4Box() {
   const A = [0, 1, 2, 3].map(() => T.add("switch"));
   const B = [0, 1, 2, 3].map(() => T.add("switch"));
@@ -1053,22 +1080,22 @@ function buildFullCpuFixture({ withoutPcRam = false, withoutHalt = false } = {})
 {
   T.reset(); packAllCpuBoxes();
   buildFullCpuFixture({ withoutPcRam: false, withoutHalt: false });
-  expectCheck("s29 Tu primer CPU correcta PASA", 28, true);
+  expectCheck("s30 Tu primer CPU correcta PASA", 29, true);
 }
 {
   T.reset(); packAllCpuBoxes();
   buildFullCpuFixture({ withoutPcRam: true, withoutHalt: false });
-  expectCheck("s29 sin cable PC a RAM FALLA", 28, false);
+  expectCheck("s30 sin cable PC a RAM FALLA", 29, false);
 }
 {
   T.reset(); packAllCpuBoxes();
   buildFullCpuFixture({ withoutPcRam: false, withoutHalt: false });
-  expectCheck("s30 JMP y HALT correcto PASA", 29, true);
+  expectCheck("s31 JMP y HALT correcto PASA", 30, true);
 }
 {
   T.reset(); packAllCpuBoxes();
   buildFullCpuFixture({ withoutPcRam: false, withoutHalt: true });
-  expectCheck("s30 sin HALT (H nunca se activa) FALLA en la parte de HALT", 29, false);
+  expectCheck("s31 sin HALT (H nunca se activa) FALLA en la parte de HALT", 30, false);
 }
 
 // Test de contenido para TODAS las lecciones
