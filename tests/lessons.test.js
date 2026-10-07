@@ -1071,8 +1071,8 @@ function buildFullCpuFixture({ withoutPcRam = false, withoutHalt = false } = {})
   const LESSONS = vm.runInContext("LESSONS", ctx);
   const missing = [];
   for (const L of LESSONS) {
-    if (/Componentes que necesitás/.test(L.theory.es) && !/Disposición en el canvas/.test(L.theory.es)) missing.push(L.id + "(es)");
-    if (/Components you need/.test(L.theory.en) && !/Layout on the canvas/.test(L.theory.en)) missing.push(L.id + "(en)");
+    if (/Componentes que necesitás/.test(L.theory.es) && !/Disposición en el canvas|Colócalos en este orden/.test(L.theory.es)) missing.push(L.id + "(es)");
+    if (/Components you need/.test(L.theory.en) && !/Layout on the canvas|Place them in this order/.test(L.theory.en)) missing.push(L.id + "(en)");
   }
   expect("lessons with a component list have a canvas layout guide", missing.length === 0, "missing: " + missing.join(", "));
   const pinNums = LESSONS.filter(L => /\(pin \d\)|\bpin \d\b/i.test(L.theory.es.replace(/<[^>]+>/g, " ") + L.theory.en.replace(/<[^>]+>/g, " "))).map(L => L.id);

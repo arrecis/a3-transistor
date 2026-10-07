@@ -274,6 +274,20 @@ function testPackedSel4() {
   }
   return ok;
 }
+/* Piece number badge, same look as the numbers drawn on the canvas
+   (placement order, visible while the tutorial is open). */
+function nb(k) {
+  return `<span style="display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;border:1px solid var(--accent);color:var(--accent);font-size:10px;font-weight:700;vertical-align:1px;">${k}</span>`;
+}
+/* Placement grid: columns = left to right on the canvas, rows = top to
+   bottom. Each cell is [number, name] or null for an empty spot. */
+function grid(title, rows) {
+  const cell = c => c
+    ? `<td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(c[0])} ${c[1]}</td>`
+    : `<td style="border:1px dashed #262b38;padding:4px 5px;"></td>`;
+  return `<p><b>${title}</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;">`
+    + rows.map(r => "<tr>" + r.map(cell).join("") + "</tr>").join("") + "</table>";
+}
 const LL = (es, en) => ({ es, en });  // bilingual pair
 const TXT = (o) => o[i18nLang()] ?? o.es;
 
@@ -759,22 +773,20 @@ const LESSONS = [
           <li>2× <b>NOR</b> (tecla 9) — memoria interna</li>
           <li>1× <b>Salida</b> (tecla 3) — Q</li>
         </ul>
-        ${lay("Disposición en el canvas (de izquierda a derecha):", [
-          "Entradas <b>D</b> arriba y <b>CLK</b> abajo",
-          "<b>NOT</b> alineado abajo (recibe D)",
-          "<b>AND de arriba</b> arriba, <b>AND de abajo</b> abajo",
-          "<b>NOR de arriba</b> arriba, <b>NOR de abajo</b> abajo",
-          "Salida <b>Q</b> arriba",
-        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
+        ${grid("Colócalos en este orden (de izquierda a derecha, de arriba abajo):", [
+          [[1, "Entrada D"], null, [4, "AND"], [6, "NOR"], [8, "Salida Q"]],
+          [null, [3, "NOT"], null, null, null],
+          [[2, "Entrada CLK"], null, [5, "AND"], [7, "NOR"], null],
+        ])}
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Entrada D → a una entrada del AND de arriba y a la entrada del NOT</li>
-          <li>Salida del NOT → a una entrada del AND de abajo</li>
-          <li>Entrada CLK → a la entrada libre de <b>ambos</b> AND</li>
-          <li>Salida del AND de arriba → a una entrada de la NOR de abajo</li>
-          <li>Salida del AND de abajo → a una entrada de la NOR de arriba</li>
-          <li>Cruce entre las NOR: salida de cada NOR a la entrada libre de la otra</li>
-          <li>Salida de la NOR de arriba a la <b>Salida Q</b></li>
+          <li>La Entrada D ${nb(1)} va a una entrada del AND ${nb(4)} y a la entrada del NOT ${nb(3)}</li>
+          <li>La salida del NOT ${nb(3)} va a una entrada del AND ${nb(5)}</li>
+          <li>La Entrada CLK ${nb(2)} va a la entrada libre de los dos AND: ${nb(4)} y ${nb(5)}</li>
+          <li>La salida del AND ${nb(4)} va a una entrada de la NOR ${nb(7)}</li>
+          <li>La salida del AND ${nb(5)} va a una entrada de la NOR ${nb(6)}</li>
+          <li>El cruce: la salida de la NOR ${nb(6)} va a la entrada libre de la NOR ${nb(7)}, y la salida de ${nb(7)} a la entrada libre de ${nb(6)}</li>
+          <li>La salida de la NOR ${nb(6)} va a la <b>Salida Q</b> ${nb(8)}</li>
         </ol>
         <p><b>El experimento:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
@@ -797,22 +809,20 @@ const LESSONS = [
           <li>2× <b>NOR</b> (key 9) — internal memory</li>
           <li>1× <b>Output</b> (key 3) — Q</li>
         </ul>
-        ${lay("Layout on the canvas (left to right):", [
-          "Inputs <b>D</b> on top and <b>CLK</b> below",
-          "<b>NOT</b> aligned below (receives D)",
-          "<b>Top AND</b> on top, <b>bottom AND</b> below",
-          "<b>Top NOR</b> on top, <b>bottom NOR</b> below",
-          "Output <b>Q</b> on top",
-        ], "Each number is a column. Wires always flow to the right.")}
+        ${grid("Place them in this order (left to right, top to bottom):", [
+          [[1, "Input D"], null, [4, "AND"], [6, "NOR"], [8, "Output Q"]],
+          [null, [3, "NOT"], null, null, null],
+          [[2, "Input CLK"], null, [5, "AND"], [7, "NOR"], null],
+        ])}
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Input D → one input of the top AND, and into the NOT</li>
-          <li>NOT output → one input of the bottom AND</li>
-          <li>Input CLK → the free input of <b>both</b> ANDs</li>
-          <li>Top AND output → one input of the bottom NOR</li>
-          <li>Bottom AND output → one input of the top NOR</li>
-          <li>Cross feedback between NORs: each NOR's output to the other's free input</li>
-          <li>Top NOR output to <b>Output Q</b></li>
+          <li>Input D ${nb(1)} goes to one input of AND ${nb(4)} and to the input of NOT ${nb(3)}</li>
+          <li>The output of NOT ${nb(3)} goes to one input of AND ${nb(5)}</li>
+          <li>Input CLK ${nb(2)} goes to the free input of both ANDs: ${nb(4)} and ${nb(5)}</li>
+          <li>The output of AND ${nb(4)} goes to one input of NOR ${nb(7)}</li>
+          <li>The output of AND ${nb(5)} goes to one input of NOR ${nb(6)}</li>
+          <li>The cross: the output of NOR ${nb(6)} goes to the free input of NOR ${nb(7)}, and the output of ${nb(7)} to the free input of ${nb(6)}</li>
+          <li>The output of NOR ${nb(6)} goes to <b>Output Q</b> ${nb(8)}</li>
         </ol>
         <p><b>The experiment:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
