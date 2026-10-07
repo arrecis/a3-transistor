@@ -66,6 +66,38 @@ function addComp(type, x, y) {
   return comp;
 }
 
+/* Undo for deletions only (Ctrl+Z): before each delete we keep a copy of
+   the circuit; the last 5 copies are enough to recover a slip. */
+const undoStack = [];
+const UNDO_MAX = 5;
+function rememberForUndo() {
+  undoStack.push(JSON.stringify({
+    components: state.components, wires: state.wires,
+    clockFreqs: Object.fromEntries(globalClockFreq),
+    ram: Object.fromEntries([...ramData].map(([id, arr]) => [id, Array.from(arr)])),
+  }));
+  if (undoStack.length > UNDO_MAX) undoStack.shift();
+}
+function undoDelete() {
+  const raw = undoStack.pop();
+  if (!raw) return;
+  const d = JSON.parse(raw);
+  // a box deleted from the library meanwhile can't come back
+  state.components = d.components.filter(c => TYPE_DEFS[c.type]);
+  state.components.forEach(c => c.sel = false);
+  const ids = new Set(state.components.map(c => c.id));
+  state.wires = d.wires.filter(w => ids.has(w.a.c) && ids.has(w.b.c));
+  for (const id in d.clockFreqs) {
+    if (globalClockFreq.has(+id)) continue;
+    globalClockFreq.set(+id, d.clockFreqs[id]);
+    globalClockState.set(+id, false);
+    clockAcc.set(+id, 0);
+  }
+  for (const id in d.ram) if (!ramData.has(+id)) ramData.set(+id, Uint8Array.from(d.ram[id]));
+  ensureClockTimer();
+  save();
+}
+
 function deleteComp(comp) {
   state.components = state.components.filter(c => c !== comp);
   state.wires = state.wires.filter(w => w.a.c !== comp.id && w.b.c !== comp.id);

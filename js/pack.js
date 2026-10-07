@@ -597,9 +597,9 @@ cv.addEventListener("mousedown", e => {
 
   if (state.tool === "delete") {
     const comp = hitComp(p);
-    if (comp) { deleteComp(comp); return; }
+    if (comp) { rememberForUndo(); deleteComp(comp); return; }
     const wire = hitWire(p);
-    if (wire) { state.wires = state.wires.filter(w => w !== wire); save(); }
+    if (wire) { rememberForUndo(); state.wires = state.wires.filter(w => w !== wire); save(); }
     return;
   }
 
@@ -611,9 +611,9 @@ cv.addEventListener("contextmenu", e => {
   e.preventDefault();
   const p = pos(e);
   const comp = hitComp(p);
-  if (comp) { deleteComp(comp); return; }
+  if (comp) { rememberForUndo(); deleteComp(comp); return; }
   const wire = hitWire(p);
-  if (wire) { state.wires = state.wires.filter(w => w !== wire); save(); }
+  if (wire) { rememberForUndo(); state.wires = state.wires.filter(w => w !== wire); save(); }
 });
 
 cv.addEventListener("mousemove", e => {
@@ -794,15 +794,17 @@ window.addEventListener("keydown", e => {
   if (k === "f" && !e.ctrlKey && !e.metaKey && !e.altKey) fitView();
   if (k === "escape") wireDrag = null;
   if (k === "r" && hoverComp && state.tool === "select") { hoverComp.rot = (hoverComp.rot + 3) % 4; save(); }
-  if (k === "delete" || k === "backspace" || k === "x") {
-    // if several components are marked, delete them all together
+  if (k === "z" && (e.ctrlKey || e.metaKey) && !e.shiftKey) { e.preventDefault(); undoDelete(); return; }
+  if ((k === "delete" || k === "backspace" || k === "x") && !e.ctrlKey && !e.metaKey) {
+    // if several components are marked, delete them all together (one undo step)
     const marcados = state.components.filter(c => c.sel);
     if (marcados.length > 1) {
+      rememberForUndo();
       for (const c of marcados) deleteComp(c);
     } else if (hoverComp) {
-      deleteComp(hoverComp);
+      rememberForUndo(); deleteComp(hoverComp);
     } else if (hoverWire) {
-      state.wires = state.wires.filter(w => w !== hoverWire); save();
+      rememberForUndo(); state.wires = state.wires.filter(w => w !== hoverWire); save();
     }
   }
   // Unpack the instance under the cursor with the U shortcut

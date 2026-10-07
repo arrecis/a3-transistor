@@ -53,6 +53,7 @@ document.getElementById("packBarCancel").addEventListener("click", () => {
 document.getElementById("fitBtn").addEventListener("click", fitView);
 document.getElementById("clearBtn").addEventListener("click", () => {
   if (confirm("¿Borrar todo el circuito?")) {
+    rememberForUndo();
     state.components = [];
     state.wires = [];
     gateOuts.clear();
