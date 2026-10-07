@@ -188,6 +188,10 @@ function ring3({ withReset = true } = {}) {
   const dff = [T.add("DFF"), T.add("DFF"), T.add("DFF")];
   const CLK = T.add("switch");
   dff.forEach(d => T.w(CLK, 0, d, 1));
+  const outs = [];
+  for (let i = 0; i < 3; i++) {
+    const o = T.add("out"); T.w(dff[i], 2, o, 0); outs.push(o);
+  }
   if (withReset) {
     const RESET = T.add("switch");
     const nR = T.add("not");
@@ -196,12 +200,12 @@ function ring3({ withReset = true } = {}) {
     T.w(RESET, 0, o0, 0); T.w(dff[2], 2, o0, 1); T.w(o0, 2, dff[0], 0);
     T.w(nR, 1, a1, 0); T.w(dff[0], 2, a1, 1); T.w(a1, 2, dff[1], 0);
     T.w(nR, 1, a2, 0); T.w(dff[1], 2, a2, 1); T.w(a2, 2, dff[2], 0);
-    return { dff, CLK, RESET };
+    return { dff, CLK, RESET, outs };
   } else {
     T.w(dff[2], 2, dff[0], 0);
     T.w(dff[0], 2, dff[1], 0);
     T.w(dff[1], 2, dff[2], 0);
-    return { dff, CLK };
+    return { dff, CLK, outs };
   }
 }
 function packDFFBox() {
@@ -415,16 +419,18 @@ expectCheck("s16 packed FULLADDER", 15, true);
   expect("engine: unconnected Cin leaves S0 indeterminate", s0 === -1, "S0=" + s0);
 }
 
-// s19 — Selector de 4 bits (SEL4)
+// s19 — Selector de 4 bits (SEL4): empaquetado obligatorio
 {
   T.reset();
-  sel4Circuit({ sharedS: true });
-  expectCheck("s19 SEL4 correcto PASA", 18, true);
+  const c = sel4Circuit({ sharedS: true });
+  T.pack("SEL4", [...c.A, ...c.B, c.S], c.outs);
+  expectCheck("s19 SEL4 empaquetado correcto PASA", 18, true);
 }
 {
   T.reset();
-  sel4Circuit({ sharedS: false });
-  expectCheck("s19 SEL4 con S en un solo MUX FALLA", 18, false);
+  const c = sel4Circuit({ sharedS: false });
+  T.pack("SEL4", [...c.A, ...c.B, c.S], c.outs);
+  expectCheck("s19 SEL4 empaquetado con S en un solo MUX FALLA", 18, false);
 }
 
 // s21 — Program Counter (PC)
@@ -557,22 +563,46 @@ expectCheck("s16 packed FULLADDER", 15, true);
   expectCheck("s24 RAM16 with data written", 23, true);
 }
 
-// s25 — decoders (DEC2 and DEC3)
+// s25 — decoders (DEC2 and DEC3): empaquetado obligatorio
 {
-  T.reset(); dec2();
-  expectCheck("DEC2 correcto pasa", 24, true);
+  T.reset();
+  const d2 = dec2();
+  T.pack("DEC2", [d2.A0, d2.A1], [d2.y0, d2.y1, d2.y2, d2.y3]);
+  T.clearCanvas();
+  const d3 = dec3();
+  T.pack("DEC3", [d3.A0, d3.A1, d3.A2], d3.yOuts);
+  T.clearCanvas();
+  expectCheck("s25 DEC2 y DEC3 empaquetados PASA", 24, true);
 }
 {
-  T.reset(); dec2({ miswire: true });
-  expectCheck("DEC2 con una salida mal cableada falla", 24, false);
+  T.reset();
+  const d2 = dec2({ miswire: true });
+  T.pack("DEC2", [d2.A0, d2.A1], [d2.y0, d2.y1, d2.y2, d2.y3]);
+  T.clearCanvas();
+  const d3 = dec3();
+  T.pack("DEC3", [d3.A0, d3.A1, d3.A2], d3.yOuts);
+  T.clearCanvas();
+  expectCheck("s25 DEC2 mal cableado FALLA", 24, false);
 }
 {
-  T.reset(); dec2({ reverseOuts: true });
-  expectCheck("DEC2 correcto con Salidas creadas en orden inverso PASA", 24, true);
+  T.reset();
+  const d2 = dec2({ reverseOuts: true });
+  T.pack("DEC2", [d2.A0, d2.A1], [d2.y0, d2.y1, d2.y2, d2.y3]);
+  T.clearCanvas();
+  const d3 = dec3();
+  T.pack("DEC3", [d3.A0, d3.A1, d3.A2], d3.yOuts);
+  T.clearCanvas();
+  expectCheck("s25 DEC2 con salidas en orden inverso PASA", 24, true);
 }
 {
-  T.reset(); dec2({ multiActive: true });
-  expectCheck("un decodificador donde un valor enciende 2 salidas FALLA", 24, false);
+  T.reset();
+  const d2 = dec2({ multiActive: true });
+  T.pack("DEC2", [d2.A0, d2.A1], [d2.y0, d2.y1, d2.y2, d2.y3]);
+  T.clearCanvas();
+  const d3 = dec3();
+  T.pack("DEC3", [d3.A0, d3.A1, d3.A2], d3.yOuts);
+  T.clearCanvas();
+  expectCheck("s25 DEC2 con dos salidas activas FALLA", 24, false);
 }
 {
   T.reset();
@@ -580,26 +610,35 @@ expectCheck("s16 packed FULLADDER", 15, true);
   T.pack("DEC2", [d.A0, d.A1], [d.y1, d.y0, d.y2, d.y3]); // Y1 before Y0
   const checks = T.check(24);
   const boxItem = checks.find(c => c.name.includes("Caja DEC2"));
-  expect("DEC2 empaquetada con pines de salida en orden incorrecto (Y1 antes que Y0) hace FALLAR el ítem de la caja",
+  expect("s25 DEC2 empaquetada con pines de salida en orden incorrecto (Y1 antes que Y0) hace FALLAR el ítem de la caja",
     boxItem && !boxItem.ok, checks.map(c => (c.ok ? "✓ " : "✗ ") + c.name).join(" | "));
 }
 {
-  T.reset(); dec3();
-  expectCheck("DEC3 correcto pasa", 24, true);
+  T.reset();
+  const d2 = dec2();
+  T.pack("DEC2", [d2.A0, d2.A1], [d2.y0, d2.y1, d2.y2, d2.y3]);
+  T.clearCanvas();
+  const d3 = dec3();
+  T.pack("DEC3", [d3.A0, d3.A1, d3.A2], d3.yOuts);
+  T.clearCanvas();
+  expectCheck("s25 DEC3 correcto empaquetado PASA", 24, true);
 }
 
-// s26 — step counter (RING3)
+// s26 — step counter (RING3): empaquetado obligatorio
 {
   T.reset();
   const f = flipFlop(); T.pack("DFF", [f.D, f.C], [f.out]); T.clearCanvas();
-  ring3({ withReset: true });
-  expectCheck("RING3 correcto pasa", 25, true);
+  const r = ring3({ withReset: true });
+  T.pack("RING3", [r.RESET, r.CLK], r.outs);
+  T.clearCanvas();
+  expectCheck("s26 RING3 empaquetado correcto PASA", 25, true);
 }
 {
   T.reset();
   const f = flipFlop(); T.pack("DFF", [f.D, f.C], [f.out]); T.clearCanvas();
-  ring3({ withReset: false });
-  expectCheck("RING3 sin RESET (D_T0 = T2 solamente) falla", 25, false);
+  const r = ring3({ withReset: false });
+  T.pack("RING3", [T.add("switch"), r.CLK], r.outs); // fake RESET pin
+  expectCheck("s26 RING3 sin RESET empaquetado FALLA", 25, false);
 }
 
 // s20 — ALU4 packed with brief pin order: A0-A3, B0-B3, OP | R0-R3
@@ -664,6 +703,8 @@ expectCheck("s16 packed FULLADDER", 15, true);
 
   expect("ALU4 empaquetada con el orden del brief suma y hace AND correctamente (A=6,B=3: OP=0 → 9, OP=1 → 2)",
     sumVal === 9 && andVal === 2, `sum=${sumVal} and=${andVal}`);
+
+  expectCheck("s20 ALU4 empaquetada correcta PASA", 19, true);
 }
 
 // pack — click order defines pin order

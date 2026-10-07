@@ -274,6 +274,134 @@ function testPackedSel4() {
   }
   return ok;
 }
+
+function testPackedALU4() {
+  const def = lib["ALU4"];
+  if (!def || def.inputs.length !== 9 || def.outputs.length !== 4) return false;
+  if (typeof registerPackedType === "function" && !TYPE_DEFS["ALU4"]) {
+    registerPackedType(def);
+  }
+  const savedComponents = state.components;
+  const savedWires = state.wires;
+  const savedNextId = state.nextId;
+  const savedGateOuts = new Map(gateOuts);
+  let ok = false;
+  try {
+    state.components = [];
+    state.wires = [];
+    state.nextId = 1;
+    gateOuts.clear();
+    const alu = { id: state.nextId++, type: "ALU4", x: 0, y: 0, rot: 0, on: false };
+    state.components.push(alu);
+    const aSws = [], bSws = [];
+    for (let i = 0; i < 4; i++) {
+      const aSw = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+      state.components.push(aSw);
+      state.wires.push({ id: state.nextId++, a: { c: aSw.id, t: 0 }, b: { c: alu.id, t: i } });
+      aSws.push(aSw);
+      const bSw = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+      state.components.push(bSw);
+      state.wires.push({ id: state.nextId++, a: { c: bSw.id, t: 0 }, b: { c: alu.id, t: 4 + i } });
+      bSws.push(bSw);
+    }
+    const opSw = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+    state.components.push(opSw);
+    state.wires.push({ id: state.nextId++, a: { c: opSw.id, t: 0 }, b: { c: alu.id, t: 8 } });
+    const outs = [];
+    for (let j = 0; j < 4; j++) {
+      const o = { id: state.nextId++, type: "out", x: 0, y: 0, rot: 0, on: false };
+      state.components.push(o);
+      state.wires.push({ id: state.nextId++, a: { c: alu.id, t: 9 + j }, b: { c: o.id, t: 0 } });
+      outs.push(o);
+    }
+    const readVal = r => {
+      let v = 0;
+      for (let i = 0; i < 4; i++) {
+        const net = r.netOf.get(outs[i].id + ":0");
+        const val = net !== undefined ? r.values[net] : -1;
+        if (val === 1) v |= (1 << i);
+        else if (val !== 0) return -1;
+      }
+      return v;
+    };
+    for (let i = 0; i < 4; i++) {
+      aSws[i].on = !!((6 >> i) & 1);
+      bSws[i].on = !!((3 >> i) & 1);
+    }
+    opSw.on = false; // sum
+    const vSum = readVal(simulate());
+    opSw.on = true;  // AND
+    const vAnd = readVal(simulate());
+    if (vSum === 9 && vAnd === 2) ok = true;
+  } catch (e) {
+    ok = false;
+  } finally {
+    state.components = savedComponents;
+    state.wires = savedWires;
+    state.nextId = savedNextId;
+    gateOuts.clear();
+    for (const [k, v] of savedGateOuts) gateOuts.set(k, v);
+    simulate();
+  }
+  return ok;
+}
+function testPackedRING3() {
+  const def = lib["RING3"];
+  if (!def || def.inputs.length !== 2 || def.outputs.length !== 3) return false;
+  if (typeof registerPackedType === "function" && !TYPE_DEFS["RING3"]) {
+    registerPackedType(def);
+  }
+  const savedComponents = state.components;
+  const savedWires = state.wires;
+  const savedNextId = state.nextId;
+  const savedGateOuts = new Map(gateOuts);
+  let ok = false;
+  try {
+    state.components = [];
+    state.wires = [];
+    state.nextId = 1;
+    gateOuts.clear();
+    const ring = { id: state.nextId++, type: "RING3", x: 0, y: 0, rot: 0, on: false };
+    state.components.push(ring);
+    const rst = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+    state.components.push(rst);
+    state.wires.push({ id: state.nextId++, a: { c: rst.id, t: 0 }, b: { c: ring.id, t: 0 } });
+    const clk = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+    state.components.push(clk);
+    state.wires.push({ id: state.nextId++, a: { c: clk.id, t: 0 }, b: { c: ring.id, t: 1 } });
+    const outs = [];
+    for (let j = 0; j < 3; j++) {
+      const o = { id: state.nextId++, type: "out", x: 0, y: 0, rot: 0, on: false };
+      state.components.push(o);
+      state.wires.push({ id: state.nextId++, a: { c: ring.id, t: 2 + j }, b: { c: o.id, t: 0 } });
+      outs.push(o);
+    }
+    const read3 = r => outs.map(o => r.values[r.netOf.get(o.id + ":0")]);
+    const pulse = () => { clk.on = true; simulate(); clk.on = false; return simulate(); };
+    rst.on = true; pulse();
+    const q0 = read3(simulate());
+    if (q0[0] !== 1 || q0[1] !== 0 || q0[2] !== 0) throw new Error("reset fail");
+    rst.on = false;
+    pulse();
+    const q1 = read3(simulate());
+    pulse();
+    const q2 = read3(simulate());
+    pulse();
+    const q3 = read3(simulate());
+    const oneHot = q => q.filter(v => v === 1).length === 1 && q.filter(v => v === 0).length === 2;
+    if (oneHot(q1) && oneHot(q2) && oneHot(q3) && q3[0] === 1 && q1.indexOf(1) !== 0 && q2.indexOf(1) !== q1.indexOf(1)) ok = true;
+  } catch (e) {
+    ok = false;
+  } finally {
+    state.components = savedComponents;
+    state.wires = savedWires;
+    state.nextId = savedNextId;
+    gateOuts.clear();
+    for (const [k, v] of savedGateOuts) gateOuts.set(k, v);
+    simulate();
+  }
+  return ok;
+}
 function testPackedLatch() {
   const def = lib["LATCH"];
   if (!def || def.inputs.length !== 2 || def.outputs.length !== 1) return false;
@@ -1946,39 +2074,38 @@ const LESSONS = [
     id: "s16",
     title: LL("16. Empaquetá el FULLADDER", "16. Pack the FULLADDER"),
     theory: {
-      es: `
-        <p>Para sumar números de 4 bits vas a encadenar 4 full adders, donde el acarreo de
-        salida de cada uno (<b>Cout</b>) entra como acarreo de entrada (<b>Cin</b>) del
-        siguiente. Primero, empaquetá el de la lección anterior.</p>
-        <p><b>Misión:</b></p>
+        es: `
+        <p>Para sumar números de 4 bits vas a encadenar 4 sumadores completos, donde el acarreo de salida de cada uno (<b>Cout</b>) entra como acarreo de entrada (<b>Cin</b>) del siguiente. Primero, empaquetá el de la lección anterior.</p>
+        <p><b>Componentes que necesitás:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>1× circuito <b>FULLADDER</b> armado en la lección 15</li>
+        </ul>
+        <p><b>Colócalos en este orden (de izquierda a derecha, de arriba abajo):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} FULLADDER</td></tr></table>
+        <p><b>Empaquetar:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Con el full adder de la lección 15 en el canvas</li>
-          <li>📦 Empaquetar (P) → rectángulo → <b>Crear componente</b></li>
-          <li>Nombralo <b>FULLADDER</b></li>
-          <li>Pines de entrada, <b>en este orden de click</b>: A, B, Cin</li>
-          <li>Pines de salida, <b>en este orden</b>: S, Cout</li>
-          <li><b>Crear componente</b></li>
+          <li>Apretá 📦 Empaquetar (P) y cubrí todo el circuito con el rectángulo.</li>
+          <li>Apretá <b>Crear componente</b> y nombralo <b>FULLADDER</b>.</li>
+          <li>Pines de entrada, <b>en este orden de click</b>: Entrada A, Entrada B, Entrada Cin.</li>
+          <li>Pines de salida, <b>en este orden</b>: Salida S, Salida Cout.</li>
+          <li>Apretá <b>Crear componente</b> para confirmar.</li>
         </ol>
-        <p>En la próxima lección vas a colocar 4 FULLADDER y conectar el Cout de cada uno al
-        Cin del siguiente. Esa conexión en cadena se llama <b>ripple carry</b> ("acarreo
-        ondulante"): el acarreo "viaja" de la columna menos significativa a la más
-        significativa, igual que cuando sumás a mano.</p>`,
-      en: `
-        <p>To add 4-bit numbers you'll chain 4 full adders, where each one's output carry
-        (<b>Cout</b>) enters as the next one's input carry (<b>Cin</b>). First, pack the one
-        from the previous lesson.</p>
-        <p><b>Mission:</b></p>
+        <p><b>El experimento:</b> colocá tu caja <b>FULLADDER</b> de la fila 🧩, conectale 3 Entradas y 2 Salidas, y probá las 8 combinaciones. En la próxima lección vas a usar 4 de estos.</p>`,
+        en: `
+        <p>To add 4-bit numbers you'll chain 4 full adders, where each one's output carry (<b>Cout</b>) enters as the next one's input carry (<b>Cin</b>). First, pack the one from the previous lesson.</p>
+        <p><b>Components you need:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>1× <b>FULLADDER</b> circuit built in lesson 15</li>
+        </ul>
+        <p><b>Place them in this order (left to right, top to bottom):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} FULLADDER</td></tr></table>
+        <p><b>Pack it:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>With the full adder from lesson 15 on the canvas</li>
-          <li>📦 Pack (P) → rectangle → <b>Create component</b></li>
-          <li>Name it <b>FULLADDER</b></li>
-          <li>Input pins, <b>in this click order</b>: A, B, Cin</li>
-          <li>Output pins, <b>in this order</b>: S, Cout</li>
-          <li><b>Create component</b></li>
+          <li>Press 📦 Pack (P) and cover the whole circuit with the rectangle.</li>
+          <li>Press <b>Create component</b> and name it <b>FULLADDER</b>.</li>
+          <li>Input pins, <b>in this click order</b>: Input A, Input B, Input Cin.</li>
+          <li>Output pins, <b>in this order</b>: Output S, Output Cout.</li>
+          <li>Press <b>Create component</b> to confirm.</li>
         </ol>
-        <p>Next lesson you'll place 4 FULLADDERs and wire each Cout into the next Cin. That
-        chain is called <b>ripple carry</b>: the carry "travels" from the least significant
-        column up, exactly like hand addition.</p>`,
+        <p><b>The experiment:</b> place your <b>FULLADDER</b> from the 🧩 row, wire 3 Inputs and 2 Outputs, and test all 8 combinations. Next lesson you'll use 4 of these.</p>`,
     },
     check() {
       const results = [];
@@ -2001,65 +2128,44 @@ const LESSONS = [
     id: "s17",
     title: LL("17. Sumador de 4 bits", "17. 4-bit adder"),
     theory: {
-      es: `
-        <p>Ahora la gran pieza: <b>4 FULLADDER en cascada</b>. Cada uno suma una columna
-        binaria, igual que cuando sumás números a mano: bit 0 (el de más a la derecha, que
-        vale 1), bit 1 (vale 2), bit 2 (vale 4), bit 3 (vale 8) — y el acarreo viaja de
-        derecha a izquierda.</p>
+        es: `
+        <p>Ahora la gran pieza: <b>4 FULLADDER en cascada</b>. Cada uno suma una columna binaria, igual que cuando sumás números a mano: bit 0 (el de más a la derecha, que vale 1), bit 1 (vale 2), bit 2 (vale 4), bit 3 (vale 8) — y el acarreo viaja de derecha a izquierda.</p>
         <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>4× tu caja <b>FULLADDER</b> 🧩 (de la lección 16)</li>
           <li>9× <b>Entrada</b> (tecla 2) — A0-A3, B0-B3 y Cin (dejala en 0)</li>
-          <li>4-5× <b>Salida</b> (tecla 3) — S0-S3 (y opcionalmente el Cout final)</li>
+          <li>5× <b>Salida</b> (tecla 3) — S0-S3 y Cout</li>
         </ul>
-        ${lay("Disposición en el canvas (de izquierda a derecha):", [
-          "Entradas: <b>A0-A3</b> arriba, <b>B0-B3</b> al medio, <b>Cin</b> abajo",
-          "<b>FULLADDER</b> del bit 0",
-          "<b>FULLADDER</b> del bit 1",
-          "<b>FULLADDER</b> del bit 2",
-          "<b>FULLADDER</b> del bit 3",
-          "Salidas <b>S0-S3</b> arriba, <b>Cout</b> abajo",
-        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
-        <p><b>Conexión (la cascada):</b></p>
+        <p><b>Colócalos en este orden (de izquierda a derecha, de arriba abajo):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} A0-A3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} 4× FULLADDER</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} S0-S3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} Cout</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} B0-B3</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} Cin</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
+        <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Bit 0: A0 y B0 a las entradas A/B del primer FULLADDER; su Cin va a una Entrada en 0 (un pin sin conectar queda indeterminado en este simulador) → su S0 a una Salida</li>
-          <li>El <b>Cout del bit 0 → Cin del bit 1</b>. El Cout del 1 → Cin del 2. El del 2 → Cin del 3</li>
-          <li>Cada S de cada FULLADDER a su propia Salida</li>
+          <li>Conectá las Entradas A0-A3 ${nb(1)} a los pines A de los 4 FULLADDER ${nb(4)} (bit 0 al primero, bit 3 al último).</li>
+          <li>Conectá las Entradas B0-B3 ${nb(2)} a los pines B de los 4 FULLADDER ${nb(4)}.</li>
+          <li>Conectá la Entrada Cin ${nb(3)} al pin Cin del primer FULLADDER ${nb(4)}.</li>
+          <li>Encadená los acarreos: el Cout del FULLADDER del bit 0 va al Cin del bit 1, el del bit 1 al bit 2, y el del bit 2 al bit 3.</li>
+          <li>Conectá las salidas S de cada FULLADDER ${nb(4)} a las Salidas S0-S3 ${nb(5)}.</li>
+          <li>Conectá el Cout del último FULLADDER ${nb(4)} a la Salida Cout ${nb(6)}.</li>
         </ol>
-        <p><b>El experimento:</b> cargá 5 en A y 3 en B (en binario: A=0101, B=0011): las
-        salidas deben mostrar 8 (1000). Probá 15+1: todas las salidas en 0 y Cout=1 — el
-        resultado no entra en 4 bits (<b>overflow</b>, desbordamiento).</p>
-        <p style="color:var(--dim); font-size:12px;">💡 Esto es literalmente el corazón del circuito
-        aritmético de una ALU real de 4 bits.</p>`,
-      en: `
-        <p>Now the big piece: <b>4 FULLADDERs in cascade</b>. Each one adds one binary column,
-        just like hand addition: bit 0 (rightmost, worth 1), bit 1 (worth 2), bit 2 (worth
-        4), bit 3 (worth 8) — and the carry travels right to left.</p>
+        <p><b>El experimento:</b> cargá 5 en A y 3 en B (A=0101, B=0011): las Salidas ${nb(5)} deben mostrar 8 (1000). Probá 15+1: S0-S3 = 0 y Cout ${nb(6)} = 1 (overflow).</p>`,
+        en: `
+        <p>Now the big piece: <b>4 FULLADDERs in cascade</b>. Each one adds one binary column, just like hand addition: bit 0 (rightmost, worth 1), bit 1 (worth 2), bit 2 (worth 4), bit 3 (worth 8) — and the carry travels right to left.</p>
         <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>4× your <b>FULLADDER</b> box 🧩 (from lesson 16)</li>
           <li>9× <b>Input</b> (key 2) — A0-A3, B0-B3, and Cin (leave it at 0)</li>
-          <li>4-5× <b>Output</b> (key 3) — S0-S3 (and optionally the final Cout)</li>
+          <li>5× <b>Output</b> (key 3) — S0-S3 and Cout</li>
         </ul>
-        ${lay("Layout on the canvas (left to right):", [
-          "Inputs: <b>A0-A3</b> on top, <b>B0-B3</b> in the middle, <b>Cin</b> below",
-          "<b>FULLADDER</b> for bit 0",
-          "<b>FULLADDER</b> for bit 1",
-          "<b>FULLADDER</b> for bit 2",
-          "<b>FULLADDER</b> for bit 3",
-          "Outputs <b>S0-S3</b> on top, <b>Cout</b> below",
-        ], "Each number is a column. Wires always flow to the right.")}
-        <p><b>Wiring (the cascade):</b></p>
+        <p><b>Place them in this order (left to right, top to bottom):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} A0-A3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} 4× FULLADDER</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} S0-S3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} Cout</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} B0-B3</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} Cin</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
+        <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Bit 0: A0 and B0 into the first FULLADDER's A/B inputs; its Cin connects to an Input at 0 (an unconnected pin stays indeterminate in this simulator) → its S0 to an Output</li>
-          <li>Bit 0's <b>Cout → bit 1's Cin</b>. Bit 1's Cout → bit 2's Cin. Bit 2's → bit 3's</li>
-          <li>Each S to its own Output</li>
+          <li>Wire Inputs A0-A3 ${nb(1)} to the A pins of the 4 FULLADDERs ${nb(4)} (bit 0 to the first, bit 3 to the last).</li>
+          <li>Wire Inputs B0-B3 ${nb(2)} to the B pins of the 4 FULLADDERs ${nb(4)}.</li>
+          <li>Wire Input Cin ${nb(3)} to the Cin pin of the first FULLADDER ${nb(4)}.</li>
+          <li>Chain the carries: bit 0's Cout → bit 1's Cin, bit 1's Cout → bit 2's Cin, bit 2's Cout → bit 3's Cin.</li>
+          <li>Wire each FULLADDER's S output ${nb(4)} to the S0-S3 Outputs ${nb(5)}.</li>
+          <li>Wire the last FULLADDER's Cout ${nb(4)} to the Cout Output ${nb(6)}.</li>
         </ol>
-        <p><b>The experiment:</b> load 5 on A and 3 on B (binary: A=0101, B=0011): the outputs
-        show 8 (1000). Try 15+1: all outputs 0 and Cout=1 — the result doesn't fit in 4 bits
-        (<b>overflow</b>).</p>
-        <p style="color:var(--dim); font-size:12px;">💡 This is literally the heart of a real 4-bit ALU's
-        arithmetic circuit.</p>`,
+        <p><b>The experiment:</b> load 5 on A and 3 on B (A=0101, B=0011): the Outputs ${nb(5)} should show 8 (1000). Try 15+1: S0-S3 = 0 and Cout ${nb(6)} = 1 (overflow).</p>`,
     },
     check() {
       const fa = state.components.filter(c => c.type === "FULLADDER");
@@ -2097,38 +2203,38 @@ const LESSONS = [
     id: "s18",
     title: LL("18. Empaquetá el ADD4", "18. Pack the ADD4"),
     theory: {
-      es: `
-        <p>El sumador de 4 bits es la pieza aritmética central de tu futura ALU. Empaquetalo
-        para usarlo como una única pieza.</p>
-        <p><b>Misión:</b></p>
+        es: `
+        <p>El sumador de 4 bits es la pieza aritmética central de tu futura ALU. Empaquetalo para usarlo como una única pieza.</p>
+        <p><b>Componentes que necesitás:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>1× circuito <b>ADD4</b> armado en la lección 17 (4 FULLADDER en cascada)</li>
+        </ul>
+        <p><b>Colócalos en este orden (de izquierda a derecha, de arriba abajo):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} ADD4</td></tr></table>
+        <p><b>Empaquetar:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Con el sumador de la lección 17 en el canvas</li>
-          <li>📦 Empaquetar (P) → rectángulo → <b>Crear componente</b></li>
-          <li>Nombralo <b>ADD4</b></li>
-          <li>Pines de entrada, <b>en este orden de click</b>: A0, A1, A2, A3, B0, B1, B2, B3, Cin</li>
-          <li>Pines de salida, <b>en este orden</b>: S0, S1, S2, S3, Cout</li>
-          <li><b>Crear componente</b></li>
+          <li>Apretá 📦 Empaquetar (P) y cubrí todo el circuito con el rectángulo.</li>
+          <li>Apretá <b>Crear componente</b> y nombralo <b>ADD4</b>.</li>
+          <li>Pines de entrada, <b>en este orden de click</b>: A0, A1, A2, A3, B0, B1, B2, B3, Cin.</li>
+          <li>Pines de salida, <b>en este orden</b>: S0, S1, S2, S3, Cout.</li>
+          <li>Apretá <b>Crear componente</b> para confirmar.</li>
         </ol>
-        <p style="color:var(--dim); font-size:12px;">💡 El orden de los pines lo define el orden en que hacés click
-        sobre las piezas en el diálogo. Hacé click primero en las Entradas de A (A0→A3), luego las de B, luego Cin.</p>
-        <p>Con tu caja ADD4, sumar 4 bits es usar 1 solo componente. Ya tenés todas las piezas
-        aritméticas para la ALU — que armamos en la lección 20.</p>`,
-      en: `
-        <p>The 4-bit adder is the arithmetic core of your future ALU. Pack it to use it as a
-        single part.</p>
-        <p><b>Mission:</b></p>
+        <p><b>El experimento:</b> colocá tu caja <b>ADD4</b> de la fila 🧩, conectale las 9 Entradas y las 5 Salidas, y probá que suma 4 bits de una sola vez. En la próxima lección vas a usarlo dentro de la ALU.</p>`,
+        en: `
+        <p>The 4-bit adder is the arithmetic core of your future ALU. Pack it to use it as a single part.</p>
+        <p><b>Components you need:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>1× <b>ADD4</b> circuit built in lesson 17 (4 FULLADDERs in cascade)</li>
+        </ul>
+        <p><b>Place them in this order (left to right, top to bottom):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} ADD4</td></tr></table>
+        <p><b>Pack it:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>With the adder from lesson 17 on the canvas</li>
-          <li>📦 Pack (P) → rectangle → <b>Create component</b></li>
-          <li>Name it <b>ADD4</b></li>
-          <li>Input pins, <b>in this click order</b>: A0, A1, A2, A3, B0, B1, B2, B3, Cin</li>
-          <li>Output pins, <b>in this order</b>: S0, S1, S2, S3, Cout</li>
-          <li><b>Create component</b></li>
+          <li>Press 📦 Pack (P) and cover the whole circuit with the rectangle.</li>
+          <li>Press <b>Create component</b> and name it <b>ADD4</b>.</li>
+          <li>Input pins, <b>in this click order</b>: A0, A1, A2, A3, B0, B1, B2, B3, Cin.</li>
+          <li>Output pins, <b>in this order</b>: S0, S1, S2, S3, Cout.</li>
+          <li>Press <b>Create component</b> to confirm.</li>
         </ol>
-        <p style="color:var(--dim); font-size:12px;">💡 Pin order = click order in the dialog. Click the A Inputs
-        first (A0→A3), then B's, then Cin.</p>
-        <p>With your ADD4 box, adding 4 bits takes one component. You have all the arithmetic
-        pieces for the ALU — built in lesson 20.</p>`,
+        <p><b>The experiment:</b> place your <b>ADD4</b> from the 🧩 row, wire the 9 Inputs and 5 Outputs, and test that it adds 4 bits at once. Next lesson you'll use it inside the ALU.</p>`,
     },
     check() {
       const results = [];
@@ -2152,378 +2258,202 @@ const LESSONS = [
     id: "s19",
     title: LL("19. Selector de 4 bits", "19. 4-bit selector"),
     theory: {
-      es: `
-        <p>En la lección 10 armaste un selector MUX2 para elegir entre dos bits simples. Pero en
-        una CPU casi todas las señales viajan en grupos de 4 bits (buses).</p>
-        <p>Para elegir entre dos números completos de 4 bits — el bus A o el bus B — colocamos
-        <b>4 selectores MUX2 en paralelo</b>, todos controlados por una única entrada de selección <b>S</b>.</p>
-        <p>Con S=0 pasan los 4 bits de A; con S=1 pasan los 4 bits de B. Esta pieza es fundamental:
-        la usarás en la ALU para elegir operaciones, en el PC para elegir saltos, y en el bus de datos del CPU.</p>
+        es: `
+        <p>En la lección 10 armaste un selector MUX2 para elegir entre dos bits simples. Pero en una CPU casi todas las señales viajan en grupos de 4 bits (buses).</p>
+        <p>Para elegir entre dos números completos de 4 bits — el bus A o el bus B — colocamos <b>4 selectores MUX2 en paralelo</b>, todos controlados por una única entrada de selección <b>S</b>.</p>
         <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>4× tu caja <b>MUX2</b> 🧩 (de la lección 11)</li>
-          <li>4× <b>Entrada</b> para el bus A (tecla 2) — A0, A1, A2, A3</li>
-          <li>4× <b>Entrada</b> para el bus B (tecla 2) — B0, B1, B2, B3</li>
-          <li>1× <b>Entrada</b> de selección (tecla 2) — S</li>
+          <li>4× <b>Entrada</b> (tecla 2) — A0, A1, A2, A3</li>
+          <li>4× <b>Entrada</b> (tecla 2) — B0, B1, B2, B3</li>
+          <li>1× <b>Entrada</b> (tecla 2) — S (selección)</li>
           <li>4× <b>Salida</b> (tecla 3) — O0, O1, O2, O3</li>
         </ul>
-        ${lay("Disposición en el canvas (de izquierda a derecha):", [
-          "Entradas: <b>A0-A3</b> arriba, <b>B0-B3</b> al medio, <b>S</b> abajo",
-          "4 cajas <b>MUX2</b>, una debajo de otra (bit 0 arriba, bit 3 abajo)",
-          "4 <b>Salidas O0-O3</b> (una al lado de cada MUX2)"
-        ], "Cada número es una columna. La señal S se ramifica hacia la entrada S de los 4 MUX2.")}
+        <p><b>Colócalos en este orden (de izquierda a derecha, de arriba abajo):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} A0-A3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} 4× MUX2</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} O0-O3</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} B0-B3</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} S</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Cada entrada A0-A3 va a la entrada A de su respectivo MUX2</li>
-          <li>Cada entrada B0-B3 va a la entrada B de su respectivo MUX2</li>
-          <li>La entrada de selección S va a la entrada S de las 4 cajas MUX2</li>
-          <li>La salida de cada MUX2 va a su Salida correspondiente (O0-O3)</li>
+          <li>Conectá cada Entrada A0-A3 ${nb(1)} a la entrada A de su MUX2 ${nb(4)}.</li>
+          <li>Conectá cada Entrada B0-B3 ${nb(2)} a la entrada B de su MUX2 ${nb(4)}.</li>
+          <li>Conectá la Entrada S ${nb(3)} a la entrada S de los 4 MUX2 ${nb(4)}.</li>
+          <li>Conectá la salida de cada MUX2 ${nb(4)} a su Salida correspondiente O0-O3 ${nb(5)}.</li>
         </ol>
-        <p><b>El experimento:</b> poné un número en A (p. ej. A=10: A1=1, A3=1) y otro en B (p. ej. B=5: B0=1, B2=1).
-        Con S=0, las salidas muestran 10 (copian A).
-        Con S=1, las salidas muestran 5 (copian B). ¡Elegís 4 bits de un solo golpe!</p>
-        <p style="color:var(--dim); font-size:12px;">💡 Al terminar, empaquetalo como <b>SEL4</b>:<br>
-        📦 Empaquetar (P) → rectángulo → <b>Crear componente</b>.<br>
-        Nombralo <b>SEL4</b>.<br>
-        Pines de entrada, <b>en este orden de click</b>: A0, A1, A2, A3, B0, B1, B2, B3, S.<br>
-        Pines de salida, <b>en este orden</b>: O0, O1, O2, O3.<br>
-        ¡Esta caja es el selector múltiple que conectará los órganos de tu CPU!</p>`,
-      en: `
-        <p>In lesson 10 you built a MUX2 to choose between two single bits. But in a CPU almost
-        all data travels in groups of 4 bits (buses).</p>
-        <p>To choose between two complete 4-bit numbers — bus A or bus B — we place <b>4 MUX2
-        selectors in parallel</b>, all controlled by a single select input <b>S</b>.</p>
-        <p>With S=0 the 4 bits of A pass through; with S=1 the 4 bits of B pass through. This
-        piece is essential: you will use it in the ALU to select operations, in the PC to handle jumps,
-        and in the CPU data bus.</p>
+        <p><b>El experimento:</b> poné A=10 (A1=1, A3=1) y B=5 (B0=1, B2=1). Con S=0, las Salidas ${nb(5)} muestran 10. Con S=1, muestran 5. Elegís 4 bits de un solo golpe.</p>
+        <p><b>Empaquetar:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Apretá 📦 Empaquetar (P) y cubrí todo el circuito con el rectángulo.</li>
+          <li>Apretá <b>Crear componente</b> y nombralo <b>SEL4</b>.</li>
+          <li>Pines de entrada, <b>en este orden de click</b>: A0, A1, A2, A3, B0, B1, B2, B3, S.</li>
+          <li>Pines de salida, <b>en este orden</b>: O0, O1, O2, O3.</li>
+          <li>Apretá <b>Crear componente</b> para confirmar.</li>
+        </ol>`,
+        en: `
+        <p>In lesson 10 you built a MUX2 to choose between two single bits. But in a CPU almost all data travels in groups of 4 bits (buses).</p>
+        <p>To choose between two complete 4-bit numbers — bus A or bus B — we place <b>4 MUX2 selectors in parallel</b>, all controlled by a single select input <b>S</b>.</p>
         <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>4× your <b>MUX2</b> box 🧩 (from lesson 11)</li>
-          <li>4× <b>Input</b> for bus A (key 2) — A0, A1, A2, A3</li>
-          <li>4× <b>Input</b> for bus B (key 2) — B0, B1, B2, B3</li>
-          <li>1× <b>Input</b> for selection (key 2) — S</li>
+          <li>4× <b>Input</b> (key 2) — A0, A1, A2, A3</li>
+          <li>4× <b>Input</b> (key 2) — B0, B1, B2, B3</li>
+          <li>1× <b>Input</b> (key 2) — S (select)</li>
           <li>4× <b>Output</b> (key 3) — O0, O1, O2, O3</li>
         </ul>
-        ${lay("Layout on the canvas (left to right):", [
-          "Inputs: <b>A0-A3</b> on top, <b>B0-B3</b> in the middle, <b>S</b> below",
-          "4 <b>MUX2</b> boxes, stacked (bit 0 on top, bit 3 below)",
-          "4 <b>Outputs O0-O3</b> (one next to each MUX2)"
-        ], "Each number is a column. The S signal branches out to input S of all 4 MUX2 boxes.")}
+        <p><b>Place them in this order (left to right, top to bottom):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} A0-A3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} 4× MUX2</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} O0-O3</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} B0-B3</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} S</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Each input A0-A3 connects to input A of its MUX2</li>
-          <li>Each input B0-B3 connects to input B of its MUX2</li>
-          <li>Select input S connects to input S of all 4 MUX2 boxes</li>
-          <li>Output of each MUX2 connects to its Output (O0-O3)</li>
+          <li>Wire each Input A0-A3 ${nb(1)} to input A of its MUX2 ${nb(4)}.</li>
+          <li>Wire each Input B0-B3 ${nb(2)} to input B of its MUX2 ${nb(4)}.</li>
+          <li>Wire Input S ${nb(3)} to input S of all 4 MUX2s ${nb(4)}.</li>
+          <li>Wire each MUX2 output ${nb(4)} to its corresponding Output O0-O3 ${nb(5)}.</li>
         </ol>
-        <p><b>Experiment:</b> put a number on A (e.g. A=10: A1=1, A3=1) and another on B (e.g. B=5: B0=1, B2=1).
-        With S=0, the outputs show 10 (copying A).
-        With S=1, the outputs show 5 (copying B). You choose 4 bits at once!</p>
-        <p style="color:var(--dim); font-size:12px;">💡 When done, pack it as <b>SEL4</b>:<br>
-        📦 Pack (P) → rectangle → <b>Create component</b>.<br>
-        Name it <b>SEL4</b>.<br>
-        Input pins, <b>in this click order</b>: A0, A1, A2, A3, B0, B1, B2, B3, S.<br>
-        Output pins, <b>in this order</b>: O0, O1, O2, O3.<br>
-        This box is the multi-bit selector that will connect your CPU's organs!</p>`,
+        <p><b>The experiment:</b> set A=10 (A1=1, A3=1) and B=5 (B0=1, B2=1). With S=0, the Outputs ${nb(5)} show 10. With S=1, they show 5. You choose 4 bits at once.</p>
+        <p><b>Pack it:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Press 📦 Pack (P) and cover the whole circuit with the rectangle.</li>
+          <li>Press <b>Create component</b> and name it <b>SEL4</b>.</li>
+          <li>Input pins, <b>in this click order</b>: A0, A1, A2, A3, B0, B1, B2, B3, S.</li>
+          <li>Output pins, <b>in this order</b>: O0, O1, O2, O3.</li>
+          <li>Press <b>Create component</b> to confirm.</li>
+        </ol>`,
     },
     check() {
-      const results = [];
-      const mux2 = state.components.filter(c => c.type === "MUX2");
-      const sel4 = state.components.filter(c => c.type === "SEL4");
-      const sws = state.components.filter(c => c.type === "switch");
-      const outs = state.components.filter(c => c.type === "out");
-
       const hasLib = !!lib["SEL4"];
       const okLib = hasLib ? testPackedSel4() : false;
-
-      if (mux2.length < 4 && hasLib) {
-        return [
-          { name: TXT(LL("Caja SEL4 empaquetada (A×4, B×4, S | O×4)", "SEL4 box packaged (A×4, B×4, S | O×4)")), ok: okLib },
-          { name: TXT(LL("S=0 selecciona el bus A (4 bits)", "S=0 selects bus A (4 bits)")), ok: okLib },
-          { name: TXT(LL("S=1 selecciona el bus B (4 bits)", "S=1 selects bus B (4 bits)")), ok: okLib },
-        ];
-      }
-
-      const nameNeeds = TXT(LL(
-        "Circuito: 4 cajas MUX2 con selección S compartida",
-        "Circuit: 4 MUX2 boxes with shared S select"));
-      const hasComps = mux2.length >= 4 || sel4.length >= 1;
-      results.push({ name: nameNeeds, ok: hasComps && sws.length >= 9 });
-      if (!hasComps || sws.length < 9) return results;
-
-      const muxBoxes = mux2.slice(0, 4);
-      const getDrivingSwitch = (comp, pin) => {
-        const w = state.wires.find(w => (w.a.c === comp.id && w.a.t === pin) || (w.b.c === comp.id && w.b.t === pin));
-        if (!w) return null;
-        const otherId = w.a.c === comp.id ? w.b.c : w.a.c;
-        return sws.find(s => s.id === otherId) ?? null;
-      };
-
-      const sSwitches = muxBoxes.map(m => getDrivingSwitch(m, 2));
-      const sharedS = sSwitches[0];
-      const allSharedS = !!sharedS && sSwitches.every(s => s && s.id === sharedS.id);
-
-      results.push({
-        name: TXT(LL("La señal S está conectada a los 4 MUX2", "Signal S is connected to all 4 MUX2")),
-        ok: allSharedS,
-      });
-
-      const aSws = muxBoxes.map(m => getDrivingSwitch(m, 0));
-      const bSws = muxBoxes.map(m => getDrivingSwitch(m, 1));
-      const outList = muxBoxes.map(m => {
-        const w = state.wires.find(w => (w.a.c === m.id && w.a.t === 3) || (w.b.c === m.id && w.b.t === 3));
-        if (!w) return null;
-        const otherId = w.a.c === m.id ? w.b.c : w.a.c;
-        return outs.find(o => o.id === otherId) ?? null;
-      });
-
-      const savedSw = sws.map(s => ({ s, on: s.on }));
-      let okSel0 = false;
-      let okSel1 = false;
-
-      try {
-        if (allSharedS && aSws.every(Boolean) && bSws.every(Boolean)) {
-          const readVal = (r) => {
-            let v = 0;
-            for (let i = 0; i < 4; i++) {
-              const outC = outList[i];
-              let net;
-              if (outC) net = r.netOf.get(outC.id + ":0");
-              else net = r.netOf.get(muxBoxes[i].id + ":3");
-              const val = net !== undefined ? r.values[net] : -1;
-              if (val === 1) v |= (1 << i);
-              else if (val !== 0) return -1;
-            }
-            return v;
-          };
-
-          sharedS.on = false;
-          for (let i = 0; i < 4; i++) {
-            aSws[i].on = !!((10 >> i) & 1);
-            bSws[i].on = !!((5 >> i) & 1);
-          }
-          const v0 = readVal(simulate());
-
-          sharedS.on = true;
-          const v1 = readVal(simulate());
-
-          if (v0 === 10) okSel0 = true;
-          if (v1 === 5) okSel1 = true;
-        }
-      } catch (e) {
-        okSel0 = false;
-        okSel1 = false;
-      } finally {
-        savedSw.forEach(({ s, on }) => s.on = on);
-        simulate();
-      }
-
-      results.push({ name: TXT(LL("S=0 selecciona el bus A (4 bits)", "S=0 selects bus A (4 bits)")), ok: okSel0 });
-      results.push({ name: TXT(LL("S=1 selecciona el bus B (4 bits)", "S=1 selects bus B (4 bits)")), ok: okSel1 });
-      if (hasLib) {
-        results.push({ name: TXT(LL("Caja SEL4 empaquetada funciona", "Packaged SEL4 box works")), ok: okLib });
-      }
-      return results;
+      return [
+        { name: TXT(LL("Caja SEL4 empaquetada (A×4, B×4, S | O×4)", "SEL4 box packaged (A×4, B×4, S | O×4)")), ok: okLib },
+        { name: TXT(LL("S=0 selecciona el bus A (4 bits)", "S=0 selects bus A (4 bits)")), ok: okLib },
+        { name: TXT(LL("S=1 selecciona el bus B (4 bits)", "S=1 selects bus B (4 bits)")), ok: okLib },
+      ];
     },
   },
   {
     id: "s20",
     title: LL("20. ALU de 4 bits", "20. 4-bit ALU"),
     theory: {
-      es: `
-        <p>La <b>ALU</b> (Unidad Aritmético-Lógica) es donde la CPU "piensa": recibe dos
-        números de 4 bits y un <b>código de operación</b> — u <b>opcode</b>: un número que
-        indica <i>qué hacer</i> — y produce el resultado. Con 1 bit de opcode elegís entre
-        2 operaciones: con OP=0 suma, con OP=1 hace AND.</p>
-        <p><b>La idea central:</b> en vez de decidir <i>qué circuito usar</i>, hacés que A y B pasen
-        por todos los circuitos a la vez (suma y AND) y usás un selector para elegir cuál
-        resultado sale. Es como tener dos cocinas preparando platos distintos y un mozo
-        que te lleva solo el que pediste.</p>
+        es: `
+        <p>La <b>ALU</b> (Unidad Aritmético-Lógica) es donde la CPU "piensa": recibe dos números de 4 bits y un código de operación (<b>opcode</b>) que indica qué hacer. Con OP=0 suma; con OP=1 hace AND bit a bit.</p>
+        <p>La idea es simple: A y B pasan por el sumador y por las compuertas AND a la vez, y un selector SEL4 elige cuál resultado sale.</p>
         <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>1× tu caja <b>ADD4</b> 🧩 (de la lección 18)</li>
+          <li>4× <b>AND</b> (tecla 6)</li>
           <li>1× tu caja <b>SEL4</b> 🧩 (de la lección 19)</li>
-          <li>4× <b>AND</b> (tecla 6) — una por bit</li>
-          <li>9× <b>Entrada</b> (tecla 2): A0-A3, B0-B3, OP, y una Entrada fija en 0 para Cin del ADD4</li>
-          <li>4× <b>Salida</b> (tecla 3): R0-R3</li>
+          <li>8× <b>Entrada</b> (tecla 2) — A0-A3, B0-B3, Cin=0 y OP</li>
+          <li>4× <b>Salida</b> (tecla 3) — R0-R3</li>
         </ul>
-        ${lay("Disposición en el canvas (de izquierda a derecha):", [
-          "Entradas: <b>A0-A3</b> y <b>B0-B3</b> arriba, <b>Cin</b> (0) y <b>OP</b> abajo",
-          "<b>ADD4</b> arriba, 4 compuertas <b>AND</b> abajo (una por bit)",
-          "Caja <b>SEL4</b>",
-          "Salidas <b>R0-R3</b>"
-        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
+        <p><b>Colócalos en este orden (de izquierda a derecha, de arriba abajo):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} A0-A3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} B0-B3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} Cin=0</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} OP</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} ADD4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} 4× AND</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(7)} SEL4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(8)} R0-R3</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Las Entradas de A y B van <i>a la vez</i> al ADD4 <i>y</i> a los 4 AND (cada AND recibe un par Ax, Bx)</li>
-          <li>La entrada Cin del ADD4 se conecta a la Entrada fija en 0</li>
-          <li>La salida Sx del ADD4 va a la entrada Ax de la SEL4; la salida de cada AND va a la entrada Bx de la SEL4</li>
-          <li>OP va a la entrada S de la SEL4 (S=0 pasa A, S=1 pasa B)</li>
-          <li>Las salidas Ox de la SEL4 van a las Salidas R0-R3</li>
+          <li>Conectá las Entradas A0-A3 ${nb(1)} y B0-B3 ${nb(2)} a las entradas A y B del ADD4 ${nb(5)} y a las entradas de los 4 AND ${nb(6)} (cada AND recibe Ax y Bx).</li>
+          <li>Conectá la Entrada Cin=0 ${nb(3)} al pin Cin del ADD4 ${nb(5)}.</li>
+          <li>Conectá la salida S del ADD4 ${nb(5)} a las entradas A0-A3 de la SEL4 ${nb(7)}.</li>
+          <li>Conectá las salidas de los 4 AND ${nb(6)} a las entradas B0-B3 de la SEL4 ${nb(7)}.</li>
+          <li>Conectá la Entrada OP ${nb(4)} a la entrada S de la SEL4 ${nb(7)} (S=0 pasa el ADD4, S=1 pasa los AND).</li>
+          <li>Conectá las salidas O0-O3 de la SEL4 ${nb(7)} a las Salidas R0-R3 ${nb(8)}.</li>
         </ol>
-        <p><b>El experimento:</b> cargá valores en A y B y alterná OP: con OP=0 ves la <b>suma</b>,
-        con OP=1 ves el <b>AND lógico</b> bit a bit.</p>
-        <p style="color:var(--dim); font-size:12px;">💡 Cuando funcione, empaquetala como <b>ALU4</b>:<br>
-        📦 Empaquetar (P) → Nombrala <b>ALU4</b>.<br>
-        Pines de entrada: A0, A1, A2, A3, B0, B1, B2, B3, OP (la Entrada Cin=0 queda adentro).<br>
-        Pines de salida: R0, R1, R2, R3.<br>
-        Es el corazón del bloque de ejecución de tu CPU.</p>`,
-      en: `
-        <p>The <b>ALU</b> (Arithmetic Logic Unit) is where the CPU "thinks": it takes two
-        4-bit numbers and an <b>operation code</b> — <b>opcode</b>: a number saying <i>what to
-        do</i> — and produces the result. With 1 opcode bit you choose between 2 operations:
-        OP=0 adds, OP=1 performs bitwise AND.</p>
-        <p><b>The core idea:</b> instead of deciding <i>which circuit to use</i>, let A and B
-        pass through all the circuits at once (sum and AND) and use a selector to pick which
-        result leaves. Like two kitchens preparing different dishes and a waiter that only
-        brings the one you ordered.</p>
+        <p><b>El experimento:</b> cargá valores en A y B. Con OP=0, las Salidas ${nb(8)} muestran la suma. Con OP=1, muestran el AND lógico bit a bit.</p>
+        <p><b>Empaquetar:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Apretá 📦 Empaquetar (P) y cubrí todo el circuito con el rectángulo.</li>
+          <li>Apretá <b>Crear componente</b> y nombralo <b>ALU4</b>.</li>
+          <li>Pines de entrada, <b>en este orden de click</b>: A0, A1, A2, A3, B0, B1, B2, B3, OP.</li>
+          <li>Pines de salida, <b>en este orden</b>: R0, R1, R2, R3.</li>
+          <li>Apretá <b>Crear componente</b> para confirmar.</li>
+        </ol>`,
+        en: `
+        <p>The <b>ALU</b> (Arithmetic Logic Unit) is where the CPU "thinks": it takes two 4-bit numbers and an operation code (<b>opcode</b>) that tells it what to do. With OP=0 it adds; with OP=1 it performs bitwise AND.</p>
+        <p>The idea is simple: A and B go through the adder and the AND gates at the same time, and a SEL4 selector picks which result comes out.</p>
         <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>1× your <b>ADD4</b> box (from lesson 18)</li>
-          <li>1× your <b>SEL4</b> box (from lesson 19)</li>
-          <li>4× <b>AND</b> (key 6) — one per bit</li>
-          <li>9× <b>Input</b> (key 2): A0-A3, B0-B3, OP, and one constant 0 Input for ADD4's Cin</li>
-          <li>4× <b>Output</b> (key 3): R0-R3</li>
+          <li>1× your <b>ADD4</b> box 🧩 (from lesson 18)</li>
+          <li>4× <b>AND</b> (key 6)</li>
+          <li>1× your <b>SEL4</b> box 🧩 (from lesson 19)</li>
+          <li>8× <b>Input</b> (key 2) — A0-A3, B0-B3, Cin=0, and OP</li>
+          <li>4× <b>Output</b> (key 3) — R0-R3</li>
         </ul>
-        ${lay("Layout on the canvas (left to right):", [
-          "Inputs: <b>A0-A3</b> and <b>B0-B3</b> on top, <b>Cin</b> (0) and <b>OP</b> below",
-          "<b>ADD4</b> on top, 4 <b>AND</b> gates below (one per bit)",
-          "<b>SEL4</b> box",
-          "Outputs <b>R0-R3</b>"
-        ], "Each number is a column. Wires always flow to the right.")}
+        <p><b>Place them in this order (left to right, top to bottom):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} A0-A3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} B0-B3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} Cin=0</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} OP</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} ADD4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} 4× AND</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(7)} SEL4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(8)} R0-R3</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>The A and B Inputs go <i>at once</i> into the ADD4 <i>and</i> into the 4 ANDs (each AND gets one Ax, Bx pair)</li>
-          <li>ADD4's Cin input connects to the constant 0 Input</li>
-          <li>ADD4's Sx output goes to SEL4 input Ax; each AND output goes to SEL4 input Bx</li>
-          <li>OP goes to SEL4 input S (S=0 passes A, S=1 passes B)</li>
-          <li>The SEL4 outputs Ox go to the Outputs R0-R3</li>
+          <li>Wire Inputs A0-A3 ${nb(1)} and B0-B3 ${nb(2)} to the A and B inputs of ADD4 ${nb(5)} and to the inputs of the 4 ANDs ${nb(6)} (each AND gets Ax and Bx).</li>
+          <li>Wire Input Cin=0 ${nb(3)} to ADD4's Cin pin ${nb(5)}.</li>
+          <li>Wire ADD4's S output ${nb(5)} to SEL4's A0-A3 inputs ${nb(7)}.</li>
+          <li>Wire the 4 AND outputs ${nb(6)} to SEL4's B0-B3 inputs ${nb(7)}.</li>
+          <li>Wire Input OP ${nb(4)} to SEL4's S input ${nb(7)} (S=0 passes ADD4, S=1 passes ANDs).</li>
+          <li>Wire SEL4's O0-O3 outputs ${nb(7)} to the R0-R3 Outputs ${nb(8)}.</li>
         </ol>
-        <p><b>The experiment:</b> load A and B values and toggle OP: with OP=0 you see the <b>sum</b>,
-        with OP=1 you see <b>bitwise AND</b>.</p>
-        <p style="color:var(--dim); font-size:12px;">💡 When it works, pack it as <b>ALU4</b>:<br>
-        📦 Pack (P) → Name it <b>ALU4</b>.<br>
-        Input pins: A0, A1, A2, A3, B0, B1, B2, B3, OP (leave the Cin=0 Input inside).<br>
-        Output pins: R0, R1, R2, R3.<br>
-        This is the heart of your CPU's execution stage.</p>`,
+        <p><b>The experiment:</b> load values into A and B. With OP=0, the Outputs ${nb(8)} show the sum. With OP=1, they show the bitwise logical AND.</p>
+        <p><b>Pack it:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Press 📦 Pack (P) and cover the whole circuit with the rectangle.</li>
+          <li>Press <b>Create component</b> and name it <b>ALU4</b>.</li>
+          <li>Input pins, <b>in this click order</b>: A0, A1, A2, A3, B0, B1, B2, B3, OP.</li>
+          <li>Output pins, <b>in this order</b>: R0, R1, R2, R3.</li>
+          <li>Press <b>Create component</b> to confirm.</li>
+        </ol>`,
     },
     check() {
-      const results = [];
-      const add4 = state.components.filter(c => c.type === "ADD4");
-      const sel4 = state.components.filter(c => c.type === "SEL4");
-      const mux2 = state.components.filter(c => c.type === "MUX2");
-      const ands = state.components.filter(c => c.type === "and");
-      const hasSelector = sel4.length >= 1 || mux2.length >= 4;
-      results.push({
-        name: TXT(LL("1 caja ADD4 + 1 SEL4 (o 4 MUX2) + 4 AND", "1 ADD4 + 1 SEL4 (or 4 MUX2) + 4 ANDs")),
-        ok: add4.length === 1 && hasSelector && ands.length >= 4,
-      });
-      if (add4.length && hasSelector) {
-        const keyComps = sel4.length >= 1
-          ? [add4[0], sel4[0], ...(ands.length >= 4 ? ands.slice(0, 4) : ands)]
-          : [add4[0], ...mux2.slice(0, 4), ...(ands.length >= 4 ? ands.slice(0, 4) : ands)];
-        results.push({
-          name: TXT(LL("Todo cableado", "Everything wired")),
-          ok: ands.length >= 4 && keyComps.every(c => state.wires.some(w => w.a.c === c.id || w.b.c === c.id)),
-        });
-      }
-      const def = lib["ALU4"];
-      if (def) {
-        results.push({
-          name: TXT(LL("Caja ALU4: 9 entradas (A×4, B×4, OP) y 4 salidas (R×4)", "ALU4 box: 9 inputs (A×4, B×4, OP) and 4 outputs (R×4)")),
-          ok: def.inputs.length === 9 && def.outputs.length === 4,
-        });
-      }
-      return results;
+      const hasLib = !!lib["ALU4"];
+      const okLib = hasLib ? testPackedALU4() : false;
+      return [
+        { name: TXT(LL("Caja ALU4 empaquetada (A×4, B×4, OP | R×4)", "ALU4 box packaged (A×4, B×4, OP | R×4)")), ok: okLib },
+        { name: TXT(LL("OP=0: suma A + B", "OP=0: adds A + B")), ok: okLib },
+        { name: TXT(LL("OP=1: AND bit a bit", "OP=1: bitwise AND")), ok: okLib },
+      ];
     },
   },
   {
     id: "s21",
     title: LL("21. Program Counter: el dedo del CPU", "21. Program Counter: the CPU's finger"),
     theory: {
-      es: `
-        <p>Ya sabés calcular (ALU) y recordar (registros). Falta la pieza que organiza
-        <i>el orden</i>: el <b>PC</b> (Program Counter, "contador de programa").</p>
-        <p>Un programa es una lista de instrucciones guardadas en memoria, una por dirección.
-        El PC guarda <b>la dirección de la próxima instrucción</b> y avanza de a uno — salvo que
-        una instrucción de salto lo mande a otra dirección. Es como un dedo que recorre una
-        lista de tareas.</p>
+        es: `
+        <p>Ya sabés calcular (ALU) y recordar (registros). Falta la pieza que organiza <i>el orden</i>: el <b>PC</b> (Program Counter). Es un registro que guarda la dirección de la próxima instrucción y avanza de a uno, salvo que un salto lo mande a otra dirección.</p>
         <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>1× tu caja <b>REG4</b> 🧩 (de la lección 13) — guarda la dirección actual</li>
-          <li>1× tu caja <b>ADD4</b> 🧩 (de la lección 18) — suma +1 (B=0001, Cin=0)</li>
+          <li>1× tu caja <b>REG4</b> 🧩 (de la lección 13) — la dirección actual</li>
+          <li>1× tu caja <b>ADD4</b> 🧩 (de la lección 18) — suma +1</li>
           <li>1× tu caja <b>SEL4</b> 🧩 (de la lección 19) — elige entre PC+1 y el destino del salto</li>
-          <li>1× <b>Entrada</b> JUMP (tecla 2) — selector de la SEL4 (1 = saltar)</li>
-          <li>4× <b>Entrada</b> destino D0-D3 (tecla 2) — dirección a la que saltar</li>
-          <li>1× <b>Entrada</b> LOAD (tecla 2) — autoriza al REG4 a cargar (en el CPU será PC_LOAD)</li>
-          <li>1× <b>Entrada</b> CLK (tecla 2) — el pulso de reloj</li>
-          <li>4× <b>Salida</b> (tecla 3) — para ver la dirección actual</li>
+          <li>1× <b>Entrada</b> JUMP (tecla 2)</li>
+          <li>4× <b>Entrada</b> destino D0-D3 (tecla 2)</li>
+          <li>1× <b>Entrada</b> LOAD (tecla 2)</li>
+          <li>1× <b>Entrada</b> CLK (tecla 2)</li>
+          <li>4× <b>Salida</b> (tecla 3)</li>
         </ul>
-        ${lay("Disposición en el canvas (de izquierda a derecha):", [
-          "Entradas: <b>JUMP</b>, <b>D0-D3</b>, <b>LOAD</b> y <b>CLK</b>",
-          "<b>REG4</b> (la dirección actual)",
-          "<b>ADD4</b> (suma +1; B=0001, Cin=0)",
-          "<b>SEL4</b> (A=PC+1, B=destino, S=JUMP)",
-          "<b>Salidas</b> conectadas a Q del REG4"
-        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
+        <p><b>Colócalos en este orden (de izquierda a derecha, de arriba abajo):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} JUMP</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} REG4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} ADD4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(7)} SEL4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(8)} Q0-Q3</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} D0-D3</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} LOAD</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} CLK</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Salida Q del REG4 → a las entradas A del ADD4 y a las 4 Salidas</li>
-          <li>ADD4: B0=1, B1=B2=B3=0 (Entradas fijas), Cin=0; su salida S es PC+1</li>
-          <li>PC+1 → entradas A de la SEL4; D0-D3 → entradas B de la SEL4</li>
-          <li>JUMP → entrada S de la SEL4 (S=0 pasa A, S=1 pasa B)</li>
-          <li>Salida O de la SEL4 → entradas D del REG4</li>
-          <li>LOAD → entrada LOAD del REG4; CLK → entrada CLK del REG4</li>
+          <li>Conectá la salida Q del REG4 ${nb(5)} a las entradas A del ADD4 ${nb(6)} y a las Salidas Q0-Q3 ${nb(8)}.</li>
+          <li>Conectá al ADD4 ${nb(6)} las constantes B0=1, B1=B2=B3=0, Cin=0. Su salida es PC+1.</li>
+          <li>Conectá PC+1 (salida S del ADD4 ${nb(6)}) a las entradas A de la SEL4 ${nb(7)}.</li>
+          <li>Conectá las Entradas D0-D3 ${nb(2)} a las entradas B de la SEL4 ${nb(7)}.</li>
+          <li>Conectá la Entrada JUMP ${nb(1)} a la entrada S de la SEL4 ${nb(7)} (S=0 pasa PC+1, S=1 pasa el destino).</li>
+          <li>Conectá la salida O de la SEL4 ${nb(7)} a las entradas D del REG4 ${nb(5)}.</li>
+          <li>Conectá la Entrada LOAD ${nb(3)} a LOAD del REG4 ${nb(5)} y la Entrada CLK ${nb(4)} a CLK del REG4 ${nb(5)}.</li>
         </ol>
-        <p><b>El experimento:</b></p>
-        <ol style="padding-left:18px; margin:6px 0;">
-          <li><b>RESET:</b> poné JUMP=1, D0-D3=0, LOAD=1 y dale un pulso de CLK: el REG4 carga 0000.</li>
-          <li><b>Contar:</b> JUMP=0, LOAD=1. En cada pulso la dirección avanza 1, 2, 3...</li>
-          <li><b>Salto:</b> cargá una dirección en D0-D3, poné JUMP=1 y LOAD=1, y pulsá: el PC salta ahí.</li>
-        </ol>
-        <p>Ese mecanismo de salto es lo que permitirá a los programas tomar decisiones.
-        Con PC + ALU + RAM tenés los tres órganos principales de una CPU.</p>`,
-      en: `
-        <p>You can compute (ALU) and remember (registers). Missing: the piece that keeps
-        <i>the order</i>: the <b>PC</b> (Program Counter).</p>
-        <p>A program is a list of instructions stored in memory, one per address.
-        The PC holds <b>the address of the next instruction</b> and advances by one — unless a
-        jump instruction sends it to another address. Like a finger walking a to-do list.</p>
+        <p><b>El experimento:</b> poné JUMP=1, D0-D3=0, LOAD=1 y pulsá CLK: el REG4 carga 0000. Después JUMP=0, LOAD=1: en cada pulso la dirección avanza 1, 2, 3. Para saltar, cargá un destino en D0-D3, poné JUMP=1 y pulsá.</p>`,
+        en: `
+        <p>You can compute (ALU) and remember (registers). Missing: the piece that keeps <i>the order</i>: the <b>PC</b> (Program Counter). It is a register that holds the address of the next instruction and advances by one, unless a jump sends it elsewhere.</p>
         <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>1× your <b>REG4</b> box 🧩 (from lesson 13) — holds the current address</li>
-          <li>1× your <b>ADD4</b> box 🧩 (from lesson 18) — adds +1 (B=0001, Cin=0)</li>
-          <li>1× your <b>SEL4</b> box 🧩 (from lesson 19) — chooses between PC+1 and the jump target</li>
-          <li>1× <b>Input</b> JUMP (key 2) — SEL4 selector (1 = jump)</li>
-          <li>4× <b>Input</b> target D0-D3 (key 2) — address to jump to</li>
-          <li>1× <b>Input</b> LOAD (key 2) — allows REG4 to load (in the CPU it will be PC_LOAD)</li>
-          <li>1× <b>Input</b> CLK (key 2) — clock pulse</li>
-          <li>4× <b>Output</b> (key 3) — to see the current address</li>
+          <li>1× your <b>REG4</b> box 🧩 (from lesson 13) — current address</li>
+          <li>1× your <b>ADD4</b> box 🧩 (from lesson 18) — adds +1</li>
+          <li>1× your <b>SEL4</b> box 🧩 (from lesson 19) — chooses between PC+1 and jump target</li>
+          <li>1× <b>Input</b> JUMP (key 2)</li>
+          <li>4× <b>Input</b> target D0-D3 (key 2)</li>
+          <li>1× <b>Input</b> LOAD (key 2)</li>
+          <li>1× <b>Input</b> CLK (key 2)</li>
+          <li>4× <b>Output</b> (key 3)</li>
         </ul>
-        ${lay("Layout on the canvas (left to right):", [
-          "Inputs: <b>JUMP</b>, <b>D0-D3</b>, <b>LOAD</b>, and <b>CLK</b>",
-          "<b>REG4</b> (the current address)",
-          "<b>ADD4</b> (adds +1; B=0001, Cin=0)",
-          "<b>SEL4</b> (A=PC+1, B=target, S=JUMP)",
-          "<b>Outputs</b> connected to REG4 Q"
-        ], "Each number is a column. Wires always flow to the right.")}
+        <p><b>Place them in this order (left to right, top to bottom):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} JUMP</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} REG4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} ADD4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(7)} SEL4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(8)} Q0-Q3</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} D0-D3</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} LOAD</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} CLK</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>REG4 output Q → ADD4 inputs A and the 4 Outputs</li>
-          <li>ADD4: B0=1, B1=B2=B3=0 (constant Inputs), Cin=0; its S output is PC+1</li>
-          <li>PC+1 → SEL4 inputs A; D0-D3 → SEL4 inputs B</li>
-          <li>JUMP → SEL4 input S (S=0 passes A, S=1 passes B)</li>
-          <li>SEL4 output O → REG4 inputs D</li>
-          <li>LOAD → REG4 LOAD input; CLK → REG4 CLK input</li>
+          <li>Wire REG4's Q output ${nb(5)} to ADD4's A inputs ${nb(6)} and to the Q0-Q3 Outputs ${nb(8)}.</li>
+          <li>Wire constants to ADD4 ${nb(6)}: B0=1, B1=B2=B3=0, Cin=0. Its output is PC+1.</li>
+          <li>Wire PC+1 (ADD4's S output ${nb(6)}) to SEL4's A inputs ${nb(7)}.</li>
+          <li>Wire Inputs D0-D3 ${nb(2)} to SEL4's B inputs ${nb(7)}.</li>
+          <li>Wire Input JUMP ${nb(1)} to SEL4's S input ${nb(7)} (S=0 passes PC+1, S=1 passes the target).</li>
+          <li>Wire SEL4's O output ${nb(7)} to REG4's D inputs ${nb(5)}.</li>
+          <li>Wire Input LOAD ${nb(3)} to REG4's LOAD ${nb(5)} and Input CLK ${nb(4)} to REG4's CLK ${nb(5)}.</li>
         </ol>
-        <p><b>The experiment:</b></p>
-        <ol style="padding-left:18px; margin:6px 0;">
-          <li><b>RESET:</b> set JUMP=1, D0-D3=0, LOAD=1 and pulse CLK: REG4 loads 0000.</li>
-          <li><b>Count:</b> JUMP=0, LOAD=1. On each pulse the address advances 1, 2, 3...</li>
-          <li><b>Jump:</b> load an address into D0-D3, set JUMP=1 and LOAD=1, then pulse: the PC jumps there.</li>
-        </ol>
-        <p>That jump mechanism is what will let programs make decisions.
-        With PC + ALU + RAM you have the three main organs of a CPU.</p>`,
+        <p><b>The experiment:</b> set JUMP=1, D0-D3=0, LOAD=1 and pulse CLK: REG4 loads 0000. Then JUMP=0, LOAD=1: on each pulse the address advances 1, 2, 3. To jump, load a target into D0-D3, set JUMP=1, and pulse.</p>`,
     },
     check() {
       const results = [];
@@ -2820,50 +2750,46 @@ const LESSONS = [
     id: "s23",
     title: LL("23. RAM: memoria con dirección", "23. RAM: addressed memory"),
     theory: {
-      es: `
-        <p>Todos tus circuitos con memoria (latches, registros) guardan valores "sin nombre":
-        cada caja tiene su valor fijo y su propia salida. La <b>RAM</b> cambia el paradigma:
-        es un <b>arreglo de celdas numeradas</b>. Le das un número — la <b>dirección</b> — y
-        ella te da (o recibe) el dato de esa posición. Es como un edificio con habitaciones
-        numeradas: la dirección dice <i>cuál habitación</i>, no qué hay adentro.</p>
-        <p>¿Por qué es tan importante? Porque así guarda la CPU sus programas: cada
-        instrucción vive en una dirección, y el PC (lección 21) recorre esas direcciones
-        una a una.</p>
-        <p><b>Cómo funciona una RAM por dentro (versión mini de 4 palabras × 2 bits):</b></p>
+        es: `
+        <p>Todos tus circuitos con memoria (latches, registros) guardan valores "sin nombre". La <b>RAM</b> cambia el paradigma: es un arreglo de celdas numeradas. Le das una dirección y ella te da (o recibe) el dato de esa posición.</p>
+        <p>La idea interna: las líneas de dirección entran a un decodificador que activa exactamente la celda elegida. Cada celda es un DFF con su propia lógica de escritura.</p>
+        <p><b>Componentes que necesitás (para 2 celdas de 1 bit):</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>Las líneas de dirección A0, A1 entran a un <b>decodificador 2→4</b>: un circuito que, de las 4 celdas, activa exactamente la que corresponde a la dirección</li>
-          <li>Cada celda = tu DFF + su mux de escritura (solo escribe si el decodificador la eligió y WE=1)</li>
-          <li>Las salidas de todas las celdas pasan por un mux de lectura, controlado también por la dirección, hacia una salida común</li>
+          <li>1× <b>Entrada</b> de dirección A0 (tecla 2)</li>
+          <li>1× <b>NOT</b> (tecla 5)</li>
+          <li>2× <b>AND</b> (tecla 6)</li>
+          <li>2× tu caja <b>DFF</b> 🧩 (de la lección 9) — las celdas</li>
+          <li>2× <b>Salida</b> (tecla 3)</li>
         </ul>
-        <p><b>Misión de exploración:</b> armá el decodificador y al menos 2 celdas
-        direccionadas. Necesitás: 1 Entrada de dirección (A0) y su NOT (que genera A0-negado),
-        2 AND (que deciden cuál celda se activa), y 2 DFF como celdas. Conectá la salida de
-        cada celda a un indicador y probá: solo la celda direccionada responde.</p>
-        <p style="color:var(--dim); font-size:12px;">💡 Hacer RAM celda por celda no escala: una RAM de
-        16 palabras × 4 bits tendría 64 DFF y decodificador de 4 líneas. Por eso en la próxima
-        lección aparece el <b>chip RAM16</b>: una caja del motor con todo adentro y su vista en hexadecimal.</p>`,
-      en: `
-        <p>All your memory circuits (latches, registers) store "unnamed" values: each box
-        holds its value with its own output. <b>RAM</b> changes the paradigm: it is an
-        <b>array of numbered cells</b>. You give it a number — the <b>address</b> — and it
-        gives (or receives) the data at that position. Like a building with numbered rooms:
-        the address says <i>which room</i>, not what's inside.</p>
-        <p>Why does it matter so much? Because that's how the CPU stores programs: each
-        instruction lives at an address, and the PC (lesson 21) walks those addresses one
-        by one.</p>
-        <p><b>Inside a RAM (mini version, 4 words × 2 bits):</b></p>
+        <p><b>Colócalos en este orden (de izquierda a derecha, de arriba abajo):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} Entrada A0</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} NOT</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} 2× AND</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} 2× DFF</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} 2× Salida</td></tr></table>
+        <p><b>Conexión:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Conectá la Entrada A0 ${nb(1)} a la entrada del NOT ${nb(2)}.</li>
+          <li>Conectá A0 ${nb(1)} y la salida del NOT ${nb(2)} a las entradas de los 2 AND ${nb(3)} (un AND recibe A0, el otro recibe la versión negada de A0).</li>
+          <li>Conectá las salidas de los AND ${nb(3)} a las entradas D de los 2 DFF ${nb(4)}.</li>
+          <li>Conectá las salidas Q de los DFF ${nb(4)} a las 2 Salidas ${nb(5)}.</li>
+        </ol>
+        <p><b>El experimento:</b> alterná A0. Solo la celda direccionada responde. En la próxima lección vas a usar la caja RAM16, que tiene todo esto adentro.</p>`,
+        en: `
+        <p>All your memory circuits (latches, registers) store "unnamed" values. <b>RAM</b> changes the paradigm: it is an array of numbered cells. You give it an address and it gives (or receives) the data at that position.</p>
+        <p>The internal idea: address lines enter a decoder that activates exactly the chosen cell. Each cell is a DFF with its own write logic.</p>
+        <p><b>Components you need (for 2 one-bit cells):</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>Address lines A0, A1 feed a <b>2→4 decoder</b>: a circuit that, out of 4 cells, activates exactly the one matching the address</li>
-          <li>Each cell = your DFF + its write mux (only writes if the decoder picked it and WE=1)</li>
-          <li>All cells' outputs pass through a read mux, also controlled by the address, into a common output</li>
+          <li>1× address <b>Input</b> A0 (key 2)</li>
+          <li>1× <b>NOT</b> (key 5)</li>
+          <li>2× <b>AND</b> (key 6)</li>
+          <li>2× your <b>DFF</b> box 🧩 (from lesson 9) — the cells</li>
+          <li>2× <b>Output</b> (key 3)</li>
         </ul>
-        <p><b>Exploration mission:</b> build the decoder and at least 2 addressed cells.
-        You need: 1 address Input (A0) and its NOT (generating negated-A0), 2 ANDs (deciding
-        which cell activates), and 2 DFFs as cells. Wire each cell's output to an indicator:
-        only the addressed cell responds.</p>
-        <p style="color:var(--dim); font-size:12px;">💡 Hand-building RAM doesn't scale: a 16-word × 4-bit RAM
-        would need 64 DFFs and a 4-line decoder. That's why next lesson brings the <b>RAM16
-        chip</b>: an engine box with everything inside and a hex view.</p>`,
+        <p><b>Place them in this order (left to right, top to bottom):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} Input A0</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} NOT</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} 2× AND</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} 2× DFF</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} 2× Output</td></tr></table>
+        <p><b>Wiring:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Wire Input A0 ${nb(1)} to the NOT input ${nb(2)}.</li>
+          <li>Wire A0 ${nb(1)} and the NOT output ${nb(2)} to the inputs of the 2 ANDs ${nb(3)} (one AND gets A0, the other gets the negated version of A0).</li>
+          <li>Wire the AND outputs ${nb(3)} to the D inputs of the 2 DFFs ${nb(4)}.</li>
+          <li>Wire the DFF Q outputs ${nb(4)} to the 2 Outputs ${nb(5)}.</li>
+        </ol>
+        <p><b>The experiment:</b> toggle A0. Only the addressed cell responds. Next lesson you'll use the RAM16 box, which has all of this inside.</p>`,
     },
     check() {
       const dff = state.components.filter(c => c.type === "DFF");
@@ -2877,48 +2803,38 @@ const LESSONS = [
     id: "s24",
     title: LL("24. RAM16: la memoria del programa", "24. RAM16: program memory"),
     theory: {
-      es: `
-        <p>Para ejecutar programas necesitamos memoria <i>direccionable</i> y fácil de usar.
-        El motor te entrega ahora un componente especial: <b>🧠 RAM16</b> — 16 celdas × 4 bits
-        empaquetadas en una sola caja, con una <b>vista de memoria en hexadecimal</b> en el
-        panel derecho.</p>
-        <p><b>Sus pines, uno por uno:</b></p>
+        es: `
+        <p>Para ejecutar programas necesitamos memoria direccionable y fácil de usar. El motor te entrega <b>🧠 RAM16</b>: 16 celdas de 4 bits en una sola caja, con una vista de memoria en hexadecimal.</p>
+        <p><b>Sus pines:</b> A0-A3 (dirección), D0-D3 (dato a escribir), WE (write enable), CS (chip select), Q0-Q3 (dato leído). La escritura ocurre cuando WE=1 y CS=1, en el flanco de subida de WE.</p>
+        <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li><b>A0-A3</b>: la dirección — qué celda quiero leer o escribir (0 a 15, en binario de 4 bits)</li>
-          <li><b>D0-D3</b>: el dato a escribir (4 bits)</li>
-          <li><b>WE</b> (write enable, "permiso de escritura") y <b>CS</b> (chip select, "chip activado"): la escritura ocurre cuando ambos valen 1, exactamente en el flanco de subida de WE — igual que un flip-flop, escribe en el instante, no mientras</li>
-          <li><b>Q0-Q3</b>: la salida — siempre muestra el contenido de la celda que dice la dirección (modo lectura)</li>
+          <li>1× <b>RAM16</b> (botón 🧠 RAM de la toolbar)</li>
+          <li>4× <b>Entrada</b> para A0-A3 (tecla 2)</li>
         </ul>
-        <p><b>Misión:</b></p>
+        <p><b>Colócalos en este orden (de izquierda a derecha, de arriba abajo):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} A0-A3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} RAM16</td></tr></table>
+        <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Colocá una <b>RAM16</b> (botón 🧠 RAM de la toolbar, junto al Reloj)</li>
-          <li>Hacé <b>doble click</b> sobre ella → en el panel derecho se abre la <b>vista hex</b> con las 16 celdas</li>
-          <li>Escribí valores en las celdas (o apretá "Cargar programa de ejemplo") — cada celda acepta un valor de 0 a 15 (un "nibble": medio byte, 4 bits)</li>
-          <li>Cableá A0-A3 a Entradas y cambiá la dirección: la caja RAM muestra en vivo la <b>addr</b> y el <b>contenido</b> de esa celda, y el Q0-Q3 lo expone a sus salidas</li>
+          <li>Colocá la RAM16 ${nb(2)}.</li>
+          <li>Conectá las Entradas A0-A3 ${nb(1)} a los pines A0-A3 de la RAM16 ${nb(2)}.</li>
+          <li>Hacé doble click sobre la RAM16 ${nb(2)} para abrir el panel hexadecimal y escribí valores en las celdas.</li>
         </ol>
-        <p style="color:var(--dim); font-size:12px;"><i>Ese panel hex es literalmente cómo se ve la memoria
-        de una computadora real mientras ejecuta — y en el bloque 4, cuando construyas el CPU,
-        tus programas van a vivir ahí dentro.</i></p>`,
-      en: `
-        <p>To run programs we need <i>addressable</i>, easy-to-use memory. The engine now
-        gives you a special component: <b>🧠 RAM16</b> — 16 cells × 4 bits packed into one
-        box, with a <b>hex memory view</b> on the right panel.</p>
-        <p><b>Its pins, one by one:</b></p>
+        <p><b>El experimento:</b> cambiá la dirección con A0-A3 ${nb(1)} y mirá cómo la RAM16 muestra el contenido de cada celda en sus salidas Q0-Q3.</p>`,
+        en: `
+        <p>To run programs we need addressable, easy-to-use memory. The engine gives you <b>🧠 RAM16</b>: 16 cells of 4 bits in one box, with a hex memory view.</p>
+        <p><b>Its pins:</b> A0-A3 (address), D0-D3 (data to write), WE (write enable), CS (chip select), Q0-Q3 (read data). Writing happens when WE=1 and CS=1, on WE's rising edge.</p>
+        <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li><b>A0-A3</b>: the address — which cell I want to read or write (0-15, in 4-bit binary)</li>
-          <li><b>D0-D3</b>: the data to write (4 bits)</li>
-          <li><b>WE</b> (write enable) and <b>CS</b> (chip select): writing happens when both are 1, exactly on WE's rising edge — like a flip-flop, it writes at the instant, not while</li>
-          <li><b>Q0-Q3</b>: the output — always shows the addressed cell's content (read mode)</li>
+          <li>1× <b>RAM16</b> (🧠 RAM toolbar button)</li>
+          <li>4× <b>Input</b> for A0-A3 (key 2)</li>
         </ul>
-        <p><b>Mission:</b></p>
+        <p><b>Place them in this order (left to right, top to bottom):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} A0-A3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} RAM16</td></tr></table>
+        <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Place a <b>RAM16</b> (🧠 RAM toolbar button, next to Clock)</li>
-          <li><b>Double click</b> it → the <b>hex view</b> opens on the right panel, 16 cells</li>
-          <li>Type values into the cells (or press "Load demo program") — each cell takes 0-15 (a "nibble": half a byte, 4 bits)</li>
-          <li>Wire A0-A3 to Inputs and change the address: the RAM box live-shows <b>addr</b> + <b>content</b>, and Q0-Q3 expose it</li>
+          <li>Place the RAM16 ${nb(2)}.</li>
+          <li>Wire Inputs A0-A3 ${nb(1)} to RAM16 pins A0-A3 ${nb(2)}.</li>
+          <li>Double-click the RAM16 ${nb(2)} to open the hex panel and type values into cells.</li>
         </ol>
-        <p style="color:var(--dim); font-size:12px;"><i>That hex panel is literally how a real computer's memory looks
-        while running — and in block 4, when you build the CPU, your programs will live in there.</i></p>`,
+        <p><b>The experiment:</b> change the address with A0-A3 ${nb(1)} and watch RAM16 show each cell's content on Q0-Q3.</p>`,
     },
     check() {
       const ram = state.components.filter(c => c.type === "ram");
@@ -2936,123 +2852,84 @@ const LESSONS = [
     id: "s25",
     title: LL("25. Decodificador 2→4 y 3→8", "25. 2→4 and 3→8 Decoders"),
     theory: {
-      es: `
-        <p>En una computadora las instrucciones y direcciones se guardan como números binarios
-        compactos. Pero para ejecutar una acción necesitás que un solo cable específico se encienda.
-        El <b>decodificador</b> es ese traductor: toma N bits de entrada y enciende
-        <b>exactamente una</b> de sus 2<sup>N</sup> salidas.</p>
-        <p><b>Analogía:</b> es como el conserje de un hotel con un casillero de llaves numeradas:
-        si le pedís el número 2, enciende únicamente la luz de la habitación 2 y deja las demás apagadas.</p>
-        <p><b>La idea lógica (para 2 bits: A0 y A1):</b></p>
-        <ul style="padding-left:18px; margin:6px 0;">
-          <li><b>Y0</b> = ¬A1 · ¬A0 (código 00 = 0)</li>
-          <li><b>Y1</b> = ¬A1 · A0 (código 01 = 1)</li>
-          <li><b>Y2</b> = A1 · ¬A0 (código 10 = 2)</li>
-          <li><b>Y3</b> = A1 · A0 (código 11 = 3)</li>
-        </ul>
-        <p><b>Componentes que necesitás para DEC2:</b></p>
+        es: `
+        <p>En una computadora las instrucciones y direcciones se guardan como números binarios compactos. Para ejecutar una acción necesitás que un solo cable específico se encienda. El <b>decodificador</b> es ese traductor: toma N bits de entrada y enciende <b>exactamente una</b> de sus 2<sup>N</sup> salidas.</p>
+        <p><b>Componentes para DEC2:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>2× <b>Entrada</b> (tecla 2): A0 y A1</li>
-          <li>2× <b>NOT</b> (tecla 5): para obtener ¬A0 y ¬A1</li>
-          <li>4× <b>AND</b> (tecla 6): una por salida</li>
-          <li>4× <b>Salida</b> (tecla 3): Y0 a Y3</li>
+          <li>2× <b>NOT</b> (tecla 5)</li>
+          <li>4× <b>AND</b> (tecla 6)</li>
+          <li>4× <b>Salida</b> (tecla 3): Y0-Y3</li>
         </ul>
-        ${lay("Disposición en el canvas (de izquierda a derecha):", [
-          "Entradas <b>A0</b> arriba, <b>A1</b> abajo",
-          "2 compuertas <b>NOT</b> (una para cada entrada)",
-          "4 compuertas <b>AND</b> (para Y0, Y1, Y2 e Y3, de arriba a abajo)",
-          "Salidas <b>Y0 a Y3</b> (de arriba a abajo)",
-        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
-        <p><b>Conexión:</b></p>
+        <p><b>Colócalos en este orden (de izquierda a derecha, de arriba abajo):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} Entrada A0</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} 2× NOT</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} 4× AND</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} 4× Salida</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} Entrada A1</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
+        <p><b>Conexión (DEC2):</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Conectá cada Entrada a un NOT para disponer de A0, ¬A0, A1 y ¬A1</li>
-          <li>Cableá cada compuerta AND con el par correspondiente (ejemplo: AND0 recibe ¬A1 y ¬A0)</li>
-          <li>Conectá la salida de cada AND a su Salida visual (Y0 a Y3)</li>
+          <li>Conectá la Entrada A0 ${nb(1)} a un NOT ${nb(3)} y la Entrada A1 ${nb(2)} al otro NOT ${nb(3)}.</li>
+          <li>Conectá cada par (A0/A0 negado y A1/A1 negado) a las entradas de los 4 AND ${nb(4)} según la tabla: Y0 recibe A1 negado y A0 negado, Y1 A1 negado y A0, Y2 A1 y A0 negado, Y3 A1 y A0.</li>
+          <li>Conectá la salida de cada AND ${nb(4)} a su Salida Y0-Y3 ${nb(5)}.</li>
         </ol>
-        <p><b>El experimento:</b> cambiá A0 y A1 probando las 4 combinaciones (00, 01, 10, 11).
-        Vas a ver cómo la luz activa viaja limpiamente de Y0 a Y3: nunca hay más de una encendida.</p>
-        <p style="color:var(--dim); font-size:12px;">💡 Empaquetala como <b>DEC2</b>:<br>
-        📦 Empaquetar (P) → Nombrala <b>DEC2</b>.<br>
-        Pines de entrada: A0, A1 (en orden de click).<br>
-        Pines de salida: Y0, Y1, Y2, Y3.<br>
-        (Para 3 bits a 8 salidas, agregás A2 y compuertas AND adicionales para empaquetar <b>DEC3</b> con entradas A0, A1, A2 y salidas Y0-Y7).</p>`,
-      en: `
-        <p>In a computer, instructions and addresses are stored as compact binary numbers.
-        Yet to perform an action, you need one specific control line to activate.
-        A <b>decoder</b> is this translator: it takes N input bits and activates
-        <b>exactly one</b> of its 2<sup>N</sup> outputs.</p>
-        <p><b>Analogy:</b> like a hotel concierge at a numbered key rack: ask for room 2,
-        and only the light for key 2 turns on while all others stay dark.</p>
-        <p><b>The logic (for 2 bits: A0 and A1):</b></p>
-        <ul style="padding-left:18px; margin:6px 0;">
-          <li><b>Y0</b> = ¬A1 · ¬A0 (code 00 = 0)</li>
-          <li><b>Y1</b> = ¬A1 · A0 (code 01 = 1)</li>
-          <li><b>Y2</b> = A1 · ¬A0 (code 10 = 2)</li>
-          <li><b>Y3</b> = A1 · A0 (code 11 = 3)</li>
-        </ul>
-        <p><b>Components you need for DEC2:</b></p>
+        <p><b>El experimento (DEC2):</b> probá las 4 combinaciones de A0 y A1. Solo una Salida ${nb(5)} se enciende a la vez.</p>
+        <p><b>Empaquetar DEC2:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Apretá 📦 Empaquetar (P) y cubrí todo el circuito DEC2.</li>
+          <li>Nombralo <b>DEC2</b>. Pines de entrada: A0, A1. Pines de salida: Y0, Y1, Y2, Y3.</li>
+        </ol>
+        <p><b>Para DEC3 (3→8):</b> colocá tu caja DEC2 junto con una Entrada A2 ${nb(6)}, un NOT ${nb(7)}, 4 AND ${nb(8)} y 8 Salidas ${nb(9)}. Usá A2 y A2 negado para seleccionar entre Y0-Y3 (A2=0) y Y4-Y7 (A2=1).</p>
+        <p><b>Colócalos en este orden (de izquierda a derecha, de arriba abajo):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} Entrada A2</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(7)} NOT</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(8)} 4× AND</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(9)} 8× Salida</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">DEC2</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
+        <p><b>Empaquetar DEC3:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Apretá 📦 Empaquetar (P) y cubrí todo el circuito DEC3.</li>
+          <li>Nombralo <b>DEC3</b>. Pines de entrada: A0, A1, A2. Pines de salida: Y0 a Y7.</li>
+        </ol>`,
+        en: `
+        <p>In a computer, instructions and addresses are stored as compact binary numbers. To perform an action, you need one specific control line to activate. A <b>decoder</b> is this translator: it takes N input bits and activates <b>exactly one</b> of its 2<sup>N</sup> outputs.</p>
+        <p><b>Components for DEC2:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>2× <b>Input</b> (key 2): A0 and A1</li>
-          <li>2× <b>NOT</b> (key 5): for ¬A0 and ¬A1</li>
-          <li>4× <b>AND</b> (key 6): one per output</li>
-          <li>4× <b>Output</b> (key 3): Y0 through Y3</li>
+          <li>2× <b>NOT</b> (key 5)</li>
+          <li>4× <b>AND</b> (key 6)</li>
+          <li>4× <b>Output</b> (key 3): Y0-Y3</li>
         </ul>
-        ${lay("Layout on the canvas (left to right):", [
-          "Inputs <b>A0</b> on top, <b>A1</b> below",
-          "2 <b>NOT</b> gates (one for each input)",
-          "4 <b>AND</b> gates (for Y0, Y1, Y2, and Y3, top to bottom)",
-          "Outputs <b>Y0 through Y3</b> (top to bottom)",
-        ], "Each number is a column. Wires always flow to the right.")}
-        <p><b>Wiring:</b></p>
+        <p><b>Place them in this order (left to right, top to bottom):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} Input A0</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} 2× NOT</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} 4× AND</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} 4× Output</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} Input A1</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
+        <p><b>Wiring (DEC2):</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Connect each Input to a NOT to obtain A0, ¬A0, A1, and ¬A1</li>
-          <li>Wire each AND gate with its corresponding pair (e.g. AND0 receives ¬A1 and ¬A0)</li>
-          <li>Connect each AND output to its visual Output (Y0 to Y3)</li>
+          <li>Wire Input A0 ${nb(1)} to one NOT ${nb(3)} and Input A1 ${nb(2)} to the other NOT ${nb(3)}.</li>
+          <li>Wire each pair (A0/A0 negated and A1/A1 negated) to the inputs of the 4 ANDs ${nb(4)} according to the table: Y0 gets A1 negated and A0 negated, Y1 gets A1 negated and A0, Y2 gets A1 and A0 negated, Y3 gets A1 and A0.</li>
+          <li>Wire each AND output ${nb(4)} to its Y0-Y3 Output ${nb(5)}.</li>
         </ol>
-        <p><b>The experiment:</b> test all 4 combinations on A0 and A1 (00, 01, 10, 11).
-        Watch the active light shift cleanly from Y0 to Y3: there is never more than one active.</p>
-        <p style="color:var(--dim); font-size:12px;">💡 Pack it as <b>DEC2</b>:<br>
-        📦 Pack (P) → Name it <b>DEC2</b>.<br>
-        Input pins: A0, A1 (in click order).<br>
-        Output pins: Y0, Y1, Y2, Y3.<br>
-        (For 3 bits to 8 outputs, add A2 and extra ANDs to pack <b>DEC3</b> with inputs A0, A1, A2 and outputs Y0-Y7).</p>`,
+        <p><b>The experiment (DEC2):</b> test all 4 combinations of A0 and A1. Only one Output ${nb(5)} lights at a time.</p>
+        <p><b>Pack DEC2:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Press 📦 Pack (P) and cover the whole DEC2 circuit.</li>
+          <li>Name it <b>DEC2</b>. Input pins: A0, A1. Output pins: Y0, Y1, Y2, Y3.</li>
+        </ol>
+        <p><b>For DEC3 (3→8):</b> place your DEC2 box together with an A2 Input ${nb(6)}, a NOT ${nb(7)}, 4 ANDs ${nb(8)}, and 8 Outputs ${nb(9)}. Use A2 and A2 negated to select between Y0-Y3 (A2=0) and Y4-Y7 (A2=1).</p>
+        <p><b>Place them in this order (left to right, top to bottom):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} Input A2</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(7)} NOT</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(8)} 4× AND</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(9)} 8× Output</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">DEC2</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
+        <p><b>Pack DEC3:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Press 📦 Pack (P) and cover the whole DEC3 circuit.</li>
+          <li>Name it <b>DEC3</b>. Input pins: A0, A1, A2. Output pins: Y0 through Y7.</li>
+        </ol>`,
     },
     check() {
-      const sws = state.components.filter(c => c.type === "switch");
-      const outs = state.components.filter(c => c.type === "out");
-      const ands = state.components.filter(c => c.type === "and");
-
-      const is3 = (outs.length >= 8 || ands.length >= 8) && sws.length >= 3;
-      const is2 = !is3 && (outs.length >= 4 || ands.length >= 4) && sws.length >= 2;
-
-      const nameCircuit = TXT(LL("Circuito: 2 o 3 Entradas y 4 u 8 Salidas/AND", "Circuit: 2 or 3 Inputs and 4 or 8 Outputs/ANDs"));
-      if (!is3 && !is2 && !lib["DEC2"] && !lib["DEC3"]) {
-        return [{ name: nameCircuit, ok: false }];
-      }
-
       function testDecoderBox(pkgName, nIn, nOut) {
         const def = lib[pkgName];
-        if (!def) return false;
-        if (def.inputs.length !== nIn || def.outputs.length !== nOut) return false;
+        if (!def || def.inputs.length !== nIn || def.outputs.length !== nOut) return false;
         if (typeof registerPackedType === "function" && !TYPE_DEFS[pkgName]) {
           registerPackedType(def);
         }
-
         const savedComponents = state.components;
         const savedWires = state.wires;
         const savedNextId = state.nextId;
         const savedGateOuts = new Map(gateOuts);
-
         let ok = true;
         try {
           state.components = [];
           state.wires = [];
           state.nextId = 1;
           gateOuts.clear();
-
           const box = { id: state.nextId++, type: pkgName, x: 0, y: 0, rot: 0, on: false };
           state.components.push(box);
-
           const bSws = [];
           for (let i = 0; i < nIn; i++) {
             const sw = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
@@ -3060,7 +2937,6 @@ const LESSONS = [
             state.wires.push({ id: state.nextId++, a: { c: sw.id, t: 0 }, b: { c: box.id, t: i } });
             bSws.push(sw);
           }
-
           const bOuts = [];
           for (let j = 0; j < nOut; j++) {
             const out = { id: state.nextId++, type: "out", x: 0, y: 0, rot: 0, on: false };
@@ -3068,7 +2944,6 @@ const LESSONS = [
             state.wires.push({ id: state.nextId++, a: { c: box.id, t: nIn + j }, b: { c: out.id, t: 0 } });
             bOuts.push(out);
           }
-
           for (let v = 0; v < nOut; v++) {
             for (let bit = 0; bit < nIn; bit++) {
               bSws[bit].on = !!((v >> bit) & 1);
@@ -3076,10 +2951,7 @@ const LESSONS = [
             const r = simulate();
             const vals = bOuts.map(o => r.values[r.netOf.get(o.id + ":0")]);
             const activeCount = vals.filter(x => x === 1).length;
-            if (activeCount !== 1 || vals[v] !== 1) {
-              ok = false;
-              break;
-            }
+            if (activeCount !== 1 || vals[v] !== 1) { ok = false; break; }
           }
         } catch (e) {
           ok = false;
@@ -3093,411 +2965,140 @@ const LESSONS = [
         }
         return ok;
       }
-
-      const results = [];
-
-      if (is3 || is2) {
-        const nIn = is3 ? 3 : 2;
-        const nOut = is3 ? 8 : 4;
-        const targetOuts = outs.length >= nOut ? outs.slice(0, nOut) : ands.slice(0, nOut);
-
-        const readOut = (r, node) =>
-          node.type === "out" ? r.values[r.netOf.get(node.id + ":0")] : r.values[r.netOf.get(node.id + ":2")];
-
-        const switchCombos = [];
-        if (sws.length === nIn) {
-          switchCombos.push(sws);
-        } else {
-          const getCombos = (arr, k, start = 0, current = []) => {
-            if (current.length === k) { switchCombos.push([...current]); return; }
-            for (let i = start; i < arr.length; i++) {
-              current.push(arr[i]);
-              getCombos(arr, k, i + 1, current);
-              current.pop();
-            }
-          };
-          getCombos(sws, nIn);
-        }
-
-        let okOneHot = false;
-        let okDistinct = false;
-        const savedSw = sws.map(s => s.on);
-
-        for (const combo of switchCombos) {
-          sws.forEach(s => { if (!combo.includes(s)) s.on = false; });
-          let comboOneHot = true;
-          const activeIndices = new Set();
-
-          for (let val = 0; val < nOut; val++) {
-            for (let bit = 0; bit < nIn; bit++) {
-              combo[bit].on = !!((val >> bit) & 1);
-            }
-            const r = simulate();
-            const outVals = targetOuts.map(o => readOut(r, o));
-            const active = [];
-            for (let i = 0; i < outVals.length; i++) {
-              if (outVals[i] === 1) active.push(i);
-              else if (outVals[i] === -1) comboOneHot = false;
-            }
-            if (active.length !== 1) {
-              comboOneHot = false;
-            } else {
-              activeIndices.add(active[0]);
-            }
-          }
-
-          if (comboOneHot) okOneHot = true;
-          if (comboOneHot && activeIndices.size === nOut) {
-            okDistinct = true;
-            break;
-          }
-        }
-
-        sws.forEach((s, i) => s.on = savedSw[i]);
-        simulate();
-
-        results.push({
-          name: TXT(LL(
-            is3 ? "Decodificador 3→8 (3 Entradas, 8 Salidas)" : "Decodificador 2→4 (2 Entradas, 4 Salidas)",
-            is3 ? "3→8 Decoder (3 Inputs, 8 Outputs)" : "2→4 Decoder (2 Inputs, 4 Outputs)"
-          )),
-          ok: true,
-        });
-        results.push({
-          name: TXT(LL("Exactamente una salida activa por combinación", "Exactly one active output per combination")),
-          ok: okOneHot,
-        });
-        results.push({
-          name: TXT(LL("Cada valor enciende una salida distinta (biyección)", "Each value activates a distinct output (bijection)")),
-          ok: okDistinct,
-        });
-      } else if (lib["DEC2"] || lib["DEC3"]) {
-        results.push({
-          name: TXT(LL("Decodificador empaquetado", "Decoder packed")),
-          ok: true,
-        });
-      }
-
-      if (lib["DEC2"]) {
-        results.push({
-          name: TXT(LL("Caja DEC2: la entrada v enciende Yv", "DEC2 box: input v activates Yv")),
-          ok: testDecoderBox("DEC2", 2, 4),
-        });
-      }
-      if (lib["DEC3"]) {
-        results.push({
-          name: TXT(LL("Caja DEC3: la entrada v enciende Yv", "DEC3 box: input v activates Yv")),
-          ok: testDecoderBox("DEC3", 3, 8),
-        });
-      }
-
-      return results;
+      const okDec2 = !!lib["DEC2"] ? testDecoderBox("DEC2", 2, 4) : false;
+      const okDec3 = !!lib["DEC3"] ? testDecoderBox("DEC3", 3, 8) : false;
+      return [
+        { name: TXT(LL("Caja DEC2 empaquetada (2 entradas, 4 salidas)", "DEC2 box packaged (2 inputs, 4 outputs)")), ok: okDec2 },
+        { name: TXT(LL("Caja DEC3 empaquetada (3 entradas, 8 salidas)", "DEC3 box packaged (3 inputs, 8 outputs)")), ok: okDec3 },
+        { name: TXT(LL("Ambos decodificadores listos para el CPU", "Both decoders ready for the CPU")), ok: okDec2 && okDec3 },
+      ];
     },
   },
   {
     id: "s26",
     title: LL("26. Contador de pasos y RESET (RING3)", "26. Step counter and RESET (RING3)"),
     theory: {
-      es: `
-        <p>Una computadora no puede hacer todo en un solo instante: necesita un compás rítmico
-        y ordenado. En nuestra CPU, cada instrucción se ejecuta en <b>3 pasos</b>:</p>
-        <ul style="padding-left:18px; margin:6px 0;">
-          <li><b>T0</b>: Buscar la instrucción en la memoria (Fetch OP) y avanzar el PC</li>
-          <li><b>T1</b>: Buscar el argumento (Fetch ARG) y avanzar el PC</li>
-          <li><b>T2</b>: Ejecutar la operación (Execute)</li>
-        </ul>
-        <p>Para generar estas fases usamos un <b>contador de anillo</b> (<i>ring counter</i>):
-        un único bit <code>1</code> que circula cíclicamente T<sub>0</sub> → T<sub>1</sub> → T<sub>2</sub> → T<sub>0</sub>.</p>
-        <p><b>El problema del arranque y el milagro del RESET:</b><br>
-        Al encender la computadora, todos los flip-flops arrancan en estado desconocido
-        (cables grises con valor <code>-1</code>). Si conectamos un lazo directo, el circuito
-        nunca arranca porque <code>-1</code> retroalimentado sigue siendo <code>-1</code>.</p>
-        <p>La línea <b>RESET</b> rompe ese bloqueo gracias a las compuertas:</p>
-        <ul style="padding-left:18px; margin:6px 0;">
-          <li>D<sub>T0</sub> = RESET + T<sub>2</sub>: con RESET=1, la compuerta OR calcula OR(1, -1) = 1. ¡Garantiza un 1 limpio en T0!</li>
-          <li>D<sub>T1</sub> = ¬RESET · T<sub>0</sub>: con RESET=1 (¬RESET=0), la compuerta AND calcula AND(0, -1) = 0.</li>
-          <li>D<sub>T2</sub> = ¬RESET · T<sub>1</sub>: calcula AND(0, -1) = 0.</li>
-        </ul>
-        <p>¡Un solo pulso de reloj con RESET=1 inicializa el contador en <code>100</code>!</p>
+        es: `
+        <p>Una computadora no puede hacer todo en un solo instante: necesita un compás rítmico. En nuestra CPU, cada instrucción se ejecuta en 3 pasos: <b>T0</b> (buscar instrucción), <b>T1</b> (buscar argumento) y <b>T2</b> (ejecutar).</p>
+        <p>Para generar estas fases usamos un <b>contador de anillo</b>: un único 1 que circula T0 → T1 → T2 → T0. La línea RESET rompe el estado indeterminado de arranque y fuerza el 1 en T0.</p>
         <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>3× tu caja <b>DFF</b> 🧩 (de la lección 9)</li>
-          <li>1× <b>OR</b> (tecla 7) — para inyectar RESET en T0</li>
-          <li>2× <b>AND</b> (tecla 6) — para condicionar T1 y T2 al RESET</li>
-          <li>1× <b>NOT</b> (tecla 5) — para obtener ¬RESET</li>
-          <li>2× <b>Entrada</b> (tecla 2): RESET y CLK (o un Reloj ⏱ tecla 4)</li>
+          <li>1× <b>OR</b> (tecla 7)</li>
+          <li>2× <b>AND</b> (tecla 6)</li>
+          <li>1× <b>NOT</b> (tecla 5)</li>
+          <li>2× <b>Entrada</b> (tecla 2): RESET y CLK</li>
           <li>3× <b>Salida</b> (tecla 3): T0, T1, T2</li>
         </ul>
-        ${lay("Disposición en el canvas (de izquierda a derecha):", [
-          "Entradas: <b>RESET</b> arriba, <b>CLK</b> abajo",
-          "Compuerta <b>NOT</b> (¬RESET)",
-          "<b>OR</b> arriba (T0), <b>AND1</b> al medio (T1), <b>AND2</b> abajo (T2)",
-          "3 cajas <b>DFF</b>: <b>DFF0</b>, <b>DFF1</b> y <b>DFF2</b> (de arriba a abajo)",
-          "Salidas <b>T0</b>, <b>T1</b> y <b>T2</b> (de arriba a abajo)",
-        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
+        <p><b>Colócalos en este orden (de izquierda a derecha, de arriba abajo):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} RESET</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} NOT</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} OR</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} 3× DFF</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(7)} 3× Salida</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} CLK</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} 2× AND</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Conectá CLK a la entrada de reloj (CLK) de los 3 DFF</li>
-          <li>Conectá RESET a la entrada del NOT para tener ¬RESET</li>
-          <li>DFF0 (T0): su entrada D recibe la salida de la OR entre RESET y la salida Q del DFF2 (T2)</li>
-          <li>DFF1 (T1): su entrada D recibe la salida de la AND entre ¬RESET y la salida Q del DFF0 (T0)</li>
-          <li>DFF2 (T2): su entrada D recibe la salida de la AND entre ¬RESET y la salida Q del DFF1 (T1)</li>
-          <li>Conectá la salida Q de cada DFF a su Salida correspondiente (T0, T1, T2)</li>
+          <li>Conectá la Entrada CLK ${nb(2)} a las entradas CLK de los 3 DFF ${nb(6)}.</li>
+          <li>Conectá la Entrada RESET ${nb(1)} a la entrada del NOT ${nb(3)} y a una entrada de la OR ${nb(4)}.</li>
+          <li>Conectá la salida del NOT ${nb(3)} a una entrada de cada AND ${nb(5)}.</li>
+          <li>Conectá la salida Q del DFF2 a la otra entrada de la OR ${nb(4)}. La salida de la OR ${nb(4)} va a la entrada D del DFF0.</li>
+          <li>Conectá la salida Q del DFF0 a una entrada del primer AND ${nb(5)}. Su salida va a la entrada D del DFF1.</li>
+          <li>Conectá la salida Q del DFF1 a una entrada del segundo AND ${nb(5)}. Su salida va a la entrada D del DFF2.</li>
+          <li>Conectá las salidas Q de los 3 DFF ${nb(6)} a las Salidas T0, T1 y T2 ${nb(7)}.</li>
         </ol>
-        <p><b>El experimento:</b><br>
-        1. Con <code>RESET = 1</code>, dale un pulso al reloj: T0 se pone en 1 y T1, T2 en 0.<br>
-        2. Bajá <code>RESET = 0</code> y dale pulsos: verás el 1 viajar T<sub>0</sub> → T<sub>1</sub> → T<sub>2</sub> → T<sub>0</sub>...</p>
-        <p style="color:var(--dim); font-size:12px;">💡 Empaquetalo como <b>RING3</b>:<br>
-        📦 Empaquetar (P) → Nombralo <b>RING3</b>.<br>
-        Pines de entrada: RESET, CLK (en orden de click).<br>
-        Pines de salida: T0, T1, T2.<br>
-        Este contador será el director de orquesta de tu CPU.</p>`,
-      en: `
-        <p>A computer cannot do everything in a single moment: it needs a rhythmic, orderly beat.
-        In our CPU, every instruction executes in <b>3 steps</b>:</p>
-        <ul style="padding-left:18px; margin:6px 0;">
-          <li><b>T0</b>: Fetch the instruction from memory (Fetch OP) and advance the PC</li>
-          <li><b>T1</b>: Fetch the argument (Fetch ARG) and advance the PC</li>
-          <li><b>T2</b>: Execute the operation (Execute)</li>
-        </ul>
-        <p>To generate these phases we use a <b>ring counter</b>:
-        a single <code>1</code> bit that circles T<sub>0</sub> → T<sub>1</sub> → T<sub>2</sub> → T<sub>0</sub>.</p>
-        <p><b>Startup problem and the power of RESET:</b><br>
-        At power-on, all flip-flops start in an unknown state (gray wires with value <code>-1</code>).
-        If directly looped, the circuit never starts because feeding back <code>-1</code> remains <code>-1</code>.</p>
-        <p>The <b>RESET</b> line breaks this deadlock thanks to boolean absorption:</p>
-        <ul style="padding-left:18px; margin:6px 0;">
-          <li>D<sub>T0</sub> = RESET + T<sub>2</sub>: with RESET=1, the OR gate computes OR(1, -1) = 1. A clean 1 is guaranteed into T0!</li>
-          <li>D<sub>T1</sub> = ¬RESET · T<sub>0</sub>: with RESET=1 (¬RESET=0), the AND gate computes AND(0, -1) = 0.</li>
-          <li>D<sub>T2</sub> = ¬RESET · T<sub>1</sub>: computes AND(0, -1) = 0.</li>
-        </ul>
-        <p>A single clock pulse with RESET=1 cleanly sets the counter to <code>100</code>!</p>
+        <p><b>El experimento:</b> con RESET=1, pulsá CLK: T0=1, T1=0, T2=0. Con RESET=0, cada pulso mueve el 1 al siguiente paso.</p>
+        <p><b>Empaquetar:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Apretá 📦 Empaquetar (P) y cubrí todo el circuito.</li>
+          <li>Nombralo <b>RING3</b>. Pines de entrada: RESET, CLK. Pines de salida: T0, T1, T2.</li>
+        </ol>`,
+        en: `
+        <p>A computer cannot do everything in a single moment: it needs a rhythmic beat. In our CPU, every instruction executes in 3 steps: <b>T0</b> (fetch instruction), <b>T1</b> (fetch argument), and <b>T2</b> (execute).</p>
+        <p>To generate these phases we use a <b>ring counter</b>: a single 1 that circles T0 → T1 → T2 → T0. The RESET line breaks the indeterminate startup state and forces the 1 into T0.</p>
         <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>3× your <b>DFF</b> box 🧩 (from lesson 9)</li>
-          <li>1× <b>OR</b> (key 7) — injects RESET into T0</li>
-          <li>2× <b>AND</b> (key 6) — gates T1 and T2 with RESET</li>
-          <li>1× <b>NOT</b> (key 5) — yields ¬RESET</li>
-          <li>2× <b>Input</b> (key 2): RESET and CLK (or a Clock ⏱ key 4)</li>
+          <li>1× <b>OR</b> (key 7)</li>
+          <li>2× <b>AND</b> (key 6)</li>
+          <li>1× <b>NOT</b> (key 5)</li>
+          <li>2× <b>Input</b> (key 2): RESET and CLK</li>
           <li>3× <b>Output</b> (key 3): T0, T1, T2</li>
         </ul>
-        ${lay("Layout on the canvas (left to right):", [
-          "Inputs: <b>RESET</b> on top, <b>CLK</b> below",
-          "<b>NOT</b> gate (¬RESET)",
-          "<b>OR</b> on top (T0), <b>AND1</b> in the middle (T1), <b>AND2</b> below (T2)",
-          "3 <b>DFF</b> boxes: <b>DFF0</b>, <b>DFF1</b>, and <b>DFF2</b> (top to bottom)",
-          "Outputs <b>T0</b>, <b>T1</b>, and <b>T2</b> (top to bottom)",
-        ], "Each number is a column. Wires always flow to the right.")}
+        <p><b>Place them in this order (left to right, top to bottom):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} RESET</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} NOT</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} OR</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} 3× DFF</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(7)} 3× Output</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} CLK</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} 2× AND</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Connect CLK to the clock input (CLK) of all 3 DFFs</li>
-          <li>Connect RESET to the NOT input to get ¬RESET</li>
-          <li>DFF0 (T0): input D receives the output of the OR between RESET and output Q of DFF2 (T2)</li>
-          <li>DFF1 (T1): input D receives the output of the AND between ¬RESET and output Q of DFF0 (T0)</li>
-          <li>DFF2 (T2): input D receives the output of the AND between ¬RESET and output Q of DFF1 (T1)</li>
-          <li>Connect output Q of each DFF to its respective visual Output (T0, T1, T2)</li>
+          <li>Wire Input CLK ${nb(2)} to the CLK inputs of the 3 DFFs ${nb(6)}.</li>
+          <li>Wire Input RESET ${nb(1)} to the NOT input ${nb(3)} and to one input of the OR ${nb(4)}.</li>
+          <li>Wire the NOT output ${nb(3)} to one input of each AND ${nb(5)}.</li>
+          <li>Wire DFF2's Q output to the other input of the OR ${nb(4)}. The OR output ${nb(4)} goes to DFF0's D input.</li>
+          <li>Wire DFF0's Q output to one input of the first AND ${nb(5)}. Its output goes to DFF1's D input.</li>
+          <li>Wire DFF1's Q output to one input of the second AND ${nb(5)}. Its output goes to DFF2's D input.</li>
+          <li>Wire the 3 DFF Q outputs ${nb(6)} to the T0, T1, and T2 Outputs ${nb(7)}.</li>
         </ol>
-        <p><b>The experiment:</b><br>
-        1. With <code>RESET = 1</code>, pulse the clock: T0 turns on (1) and T1, T2 turn off (0).<br>
-        2. Set <code>RESET = 0</code> and pulse the clock: watch the 1 step T<sub>0</sub> → T<sub>1</sub> → T<sub>2</sub> → T<sub>0</sub>...</p>
-        <p style="color:var(--dim); font-size:12px;">💡 Pack it as <b>RING3</b>:<br>
-        📦 Pack (P) → Name it <b>RING3</b>.<br>
-        Input pins: RESET, CLK (in click order).<br>
-        Output pins: T0, T1, T2.<br>
-        This counter is the conductor of your CPU.</p>`,
+        <p><b>The experiment:</b> with RESET=1, pulse CLK: T0=1, T1=0, T2=0. With RESET=0, each pulse moves the 1 to the next step.</p>
+        <p><b>Pack it:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Press 📦 Pack (P) and cover the whole circuit.</li>
+          <li>Name it <b>RING3</b>. Input pins: RESET, CLK. Output pins: T0, T1, T2.</li>
+        </ol>`,
     },
     check() {
-      const dff = state.components.filter(c => c.type === "DFF");
-      const nameComps = TXT(LL("Circuito: 3 DFF y compuertas de control", "Circuit: 3 DFFs and control gates"));
-      if (dff.length < 3) {
-        return [{ name: nameComps, ok: false }];
-      }
-
-      const { netOf } = buildNets();
-      let clkComp = null;
-      for (const d of dff) {
-        const netClk = netOf.get(d.id + ":1");
-        if (netClk === undefined) continue;
-        clkComp = state.components.find(c =>
-          (c.type === "switch" || c.type === "clock") &&
-          netOf.get(c.id + ":0") === netClk
-        );
-        if (clkComp) break;
-      }
-      if (!clkComp) {
-        for (const d of dff) {
-          const w = state.wires.find(w => (w.a.c === d.id && w.a.t === 1) || (w.b.c === d.id && w.b.t === 1));
-          if (!w) continue;
-          const otherId = w.a.c === d.id ? w.b.c : w.a.c;
-          clkComp = state.components.find(c => c.id === otherId && (c.type === "switch" || c.type === "clock"));
-          if (clkComp) break;
-        }
-      }
-
-      const nameClk = TXT(LL("Reloj conectado al pin CLK de los DFF", "Clock wired to DFF CLK pin"));
-      if (!clkComp) {
-        return [{ name: nameComps, ok: true }, { name: nameClk, ok: false }];
-      }
-
-      const swClk = clkComp.type === "switch" ? clkComp : null;
-      const clock = clkComp.type === "clock" ? clkComp : null;
-      const clockPrev = clock ? (globalClockState.get(clock.id) ?? false) : false;
-      const clkSet = v => {
-        if (swClk) swClk.on = v;
-        else if (clock) globalClockState.set(clock.id, v);
-      };
-      const pulse = () => {
-        clkSet(true);
-        simulate();
-        clkSet(false);
-        return simulate();
-      };
-
-      const sws = state.components.filter(c => c.type === "switch");
-      const candidateResets = sws.filter(s => s !== swClk);
-
-      const savedSw = sws.map(s => s.on);
-      const savedGateOuts = new Map(gateOuts);
-
-      const targetDffs = dff.slice(0, 3);
-      const read3Q = r => targetDffs.map(d => r.values[r.netOf.get(d.id + ":2")]);
-
-      let okReset = false;
-      let okCount = false;
-
-      for (const swReset of candidateResets) {
-        gateOuts.clear();
-        sws.forEach(s => s.on = false);
-        swReset.on = true;
-        clkSet(false);
-        simulate();
-
-        pulse();
-        const q0 = read3Q(simulate());
-
-        const t0Idx = q0.indexOf(1);
-        if (t0Idx === -1 || q0.filter(v => v === 0).length !== 2) {
-          continue;
-        }
-
-        okReset = true;
-
-        swReset.on = false;
-        clkSet(false);
-        simulate();
-
-        pulse();
-        const q1 = read3Q(simulate());
-        pulse();
-        const q2 = read3Q(simulate());
-        pulse();
-        const q3 = read3Q(simulate());
-
-        const idx1 = q1.indexOf(1);
-        const idx2 = q2.indexOf(1);
-        const idx3 = q3.indexOf(1);
-
-        const oneHot = q => q.filter(v => v === 1).length === 1 && q.filter(v => v === 0).length === 2;
-
-        if (oneHot(q1) && oneHot(q2) && oneHot(q3)) {
-          if (idx1 !== t0Idx && idx2 !== t0Idx && idx2 !== idx1 && idx3 === t0Idx) {
-            okCount = true;
-            break;
-          }
-        }
-      }
-
-      sws.forEach((s, i) => s.on = savedSw[i]);
-      if (clock) globalClockState.set(clock.id, clockPrev);
-      gateOuts.clear();
-      for (const [k, v] of savedGateOuts) gateOuts.set(k, v);
-      simulate();
-
-      const results = [
-        { name: nameComps, ok: true },
-        { name: nameClk, ok: true },
-        { name: TXT(LL("RESET: con RESET=1 un pulso inicializa T0=1, T1=0, T2=0", "RESET: with RESET=1 a pulse sets T0=1, T1=0, T2=0")), ok: okReset },
-        { name: TXT(LL("Con RESET=0 el contador cicla 3 pasos (T1 → T2 → T0)", "With RESET=0 counter cycles 3 steps (T1 → T2 → T0)")), ok: okCount },
+      const hasLib = !!lib["RING3"];
+      const okLib = hasLib ? testPackedRING3() : false;
+      return [
+        { name: TXT(LL("Caja RING3 empaquetada (RESET, CLK | T0, T1, T2)", "RING3 box packaged (RESET, CLK | T0, T1, T2)")), ok: okLib },
+        { name: TXT(LL("RESET inicializa T0=1, T1=0, T2=0", "RESET initializes T0=1, T1=0, T2=0")), ok: okLib },
+        { name: TXT(LL("Con RESET=0 el contador cicla T0 → T1 → T2", "With RESET=0 the counter cycles T0 → T1 → T2")), ok: okLib },
       ];
-
-      if (lib["RING3"]) {
-        results.push({
-          name: TXT(LL("Caja RING3: 2 entradas (RESET, CLK) y 3 salidas (T0-T2)", "RING3 box: 2 inputs (RESET, CLK) and 3 outputs (T0-T2)")),
-          ok: lib["RING3"].inputs.length === 2 && lib["RING3"].outputs.length === 3,
-        });
-      }
-
-      return results;
     },
   },
   {
     id: "s27",
     title: LL("27. Registro con LOAD y la etapa de búsqueda (Fetch)", "27. Register with LOAD and the Fetch stage"),
     theory: {
-      es: `
-        <p>Ya tenés la memoria (<b>RAM16</b>), el contador de pasos (<b>RING3</b>) y el
-        decodificador (<b>DEC3</b>). Pero la RAM tiene un <b>solo puerto de salida</b>, así que
-        una instrucción ocupa <b>dos celdas consecutivas</b>. Necesitás dos registros con LOAD
-        para guardar el opcode y el argumento por separado.</p>
-        <p>Un registro con <b>LOAD</b> es como una caja fuerte con botón: solo abre y carga
-        un nuevo dato si <code>LOAD=1</code> coincide con un pulso de reloj. Si
-        <code>LOAD=0</code>, mantiene lo que tiene.</p>
+        es: `
+        <p>Ya tenés la memoria (<b>RAM16</b>), el contador de pasos (<b>RING3</b>) y registros con LOAD. En esta lección armás la etapa <b>Fetch</b>: el PC le dice a la RAM qué dirección leer, y los registros OP y ARG capturan la instrucción y su argumento.</p>
         <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>2× tu caja <b>REG4</b> 🧩 (de la lección 13): nombralas <b>OP</b> y <b>ARG</b></li>
-          <li>1× tu caja <b>RAM16</b> 🧩 (de la lección 24)</li>
-          <li>1× tu caja <b>PC</b> 🧩 (de la lección 21) — direcciona la RAM</li>
-          <li>1× tu caja <b>RING3</b> 🧩 (de la lección 26) — marca T0, T1, T2</li>
+          <li>1× <b>RAM16</b> 🧠 (de la lección 24) con CS=1 y WE=0</li>
+          <li>1× tu caja <b>RING3</b> 🧩 (de la lección 26)</li>
+          <li>3× tu caja <b>REG4</b> 🧩 (de la lección 13): PC, OP y ARG</li>
+          <li>1× tu caja <b>ADD4</b> 🧩 (de la lección 18) — incrementador PC+1</li>
+          <li>1× tu caja <b>SEL4</b> 🧩 (de la lección 19) — selector de salto del PC</li>
+          <li>2× <b>Entrada</b> (tecla 2): RESET y CLK</li>
         </ul>
-        ${lay("Disposición en el canvas:", [
-          "<b>RAM16</b> en el centro. Sus salidas Q0-Q3 se ramifican hacia ambos registros",
-          "<b>OP</b> y <b>ARG</b> abajo de la RAM, uno al lado del otro",
-          "<b>PC</b> conectado a las entradas de dirección A0-A3 de la RAM",
-          "<b>RING3</b>: su T0 va a LOAD de OP; su T1 va a LOAD de ARG"
-        ], "Los cables siempre van hacia la derecha o hacia abajo.")}
+        <p><b>Colócalos en este orden (de izquierda a derecha, de arriba abajo):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} RESET</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} RAM16</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} 3× REG4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} ADD4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} SEL4</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} CLK</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Salidas Q0-Q3 de la RAM → entradas D0-D3 de OP <i>y</i> de ARG (en paralelo)</li>
-          <li>Salida T0 de RING3 → entrada LOAD de OP</li>
-          <li>Salida T1 de RING3 → entrada LOAD de ARG</li>
-          <li>Salidas del PC → entradas A0-A3 de la RAM (WE=0, CS=1)</li>
-          <li>Reloj del RING3 y del PC conectados entre sí (CLK común)</li>
+          <li>Conectá RESET ${nb(1)} y CLK ${nb(2)} a los pines RESET y CLK del RING3 ${nb(3)}.</li>
+          <li>Conectá las salidas Q del REG4 PC ${nb(4)} a las entradas A0-A3 de la RAM16 ${nb(3)} y al ADD4 ${nb(5)}.</li>
+          <li>Conectá al ADD4 ${nb(5)} las constantes B0=1, B1=B2=B3=0 y Cin=0. Su salida es PC+1.</li>
+          <li>Conectá PC+1 a las entradas A de la SEL4 ${nb(6)} y las salidas Q del REG4 ARG a las entradas B de la SEL4 ${nb(6)}.</li>
+          <li>Conectá la salida O de la SEL4 ${nb(6)} a las entradas D del REG4 PC ${nb(4)}.</li>
+          <li>Conectá las salidas Q0-Q3 de la RAM16 ${nb(3)} a las entradas D de los REG4 OP y ARG ${nb(4)}.</li>
+          <li>Conectá T0 del RING3 ${nb(3)} a LOAD del REG4 OP ${nb(4)}; T1 a LOAD del REG4 ARG ${nb(4)}.</li>
+          <li>Conectá CLK ${nb(2)} a CLK de todos los REG4 ${nb(4)}.</li>
         </ol>
-        <p><b>El experimento:</b> escribí en la RAM celda 0 = 1 y celda 1 = 5. Con RESET=1,
-        pulsá una vez para inicializar. Después dejá RESET=0: en T0 OP carga 1; en T1 ARG
-        carga 5; en T2 ambos retienen su valor.</p>`,
-      en: `
-        <p>You already have memory (<b>RAM16</b>), the step counter (<b>RING3</b>), and the
-        decoder (<b>DEC3</b>). But RAM has only one <b>data output port</b>, so one instruction
-        spans <b>two consecutive cells</b>. You need two LOAD registers to store the opcode and
-        argument separately.</p>
-        <p>A register with <b>LOAD</b> is like a safe-deposit box with a button: it only opens
-        and loads a new value when <code>LOAD=1</code> matches a clock pulse. If
-        <code>LOAD=0</code>, it keeps what it has.</p>
+        <p><b>El experimento:</b> escribí en RAM celda 0 = 1 y celda 1 = 5. RESET=1, pulsá una vez, RESET=0. En T0 OP carga 1; en T1 ARG carga 5; en T2 ambos retienen el valor.</p>`,
+        en: `
+        <p>You already have memory (<b>RAM16</b>), the step counter (<b>RING3</b>), and LOAD registers. In this lesson you build the <b>Fetch</b> stage: the PC tells RAM which address to read, and the OP and ARG registers capture the instruction and its argument.</p>
         <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>2× your <b>REG4</b> box 🧩 (from lesson 13): name them <b>OP</b> and <b>ARG</b></li>
-          <li>1× your <b>RAM16</b> box 🧩 (from lesson 24)</li>
-          <li>1× your <b>PC</b> box 🧩 (from lesson 21) — addresses RAM</li>
-          <li>1× your <b>RING3</b> box 🧩 (from lesson 26) — marks T0, T1, T2</li>
+          <li>1× <b>RAM16</b> 🧠 (from lesson 24) with CS=1 and WE=0</li>
+          <li>1× your <b>RING3</b> box 🧩 (from lesson 26)</li>
+          <li>3× your <b>REG4</b> box 🧩 (from lesson 13): PC, OP, and ARG</li>
+          <li>1× your <b>ADD4</b> box 🧩 (from lesson 18) — PC+1 incrementer</li>
+          <li>1× your <b>SEL4</b> box 🧩 (from lesson 19) — PC jump selector</li>
+          <li>2× <b>Input</b> (key 2): RESET and CLK</li>
         </ul>
-        ${lay("Layout on the canvas:", [
-          "<b>RAM16</b> in the center. Its Q0-Q3 outputs branch to both registers",
-          "<b>OP</b> and <b>ARG</b> below RAM, side by side",
-          "<b>PC</b> connected to RAM address inputs A0-A3",
-          "<b>RING3</b>: T0 goes to OP LOAD; T1 goes to ARG LOAD"
-        ], "Wires always flow right or down.")}
+        <p><b>Place them in this order (left to right, top to bottom):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} RESET</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} RAM16</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} 3× REG4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} ADD4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} SEL4</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} CLK</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>RAM Q0-Q3 outputs → D0-D3 inputs of OP <i>and</i> ARG (in parallel)</li>
-          <li>RING3 T0 output → OP LOAD input</li>
-          <li>RING3 T1 output → ARG LOAD input</li>
-          <li>PC outputs → RAM A0-A3 address inputs (WE=0, CS=1)</li>
-          <li>RING3 clock and PC clock connected together (common CLK)</li>
+          <li>Wire RESET ${nb(1)} and CLK ${nb(2)} to the RESET and CLK pins of RING3 ${nb(3)}.</li>
+          <li>Wire the PC REG4's Q outputs ${nb(4)} to RAM16's A0-A3 inputs ${nb(3)} and to ADD4 ${nb(5)}.</li>
+          <li>Wire constants to ADD4 ${nb(5)}: B0=1, B1=B2=B3=0, Cin=0. Its output is PC+1.</li>
+          <li>Wire PC+1 to SEL4's A inputs ${nb(6)} and the ARG REG4's Q outputs to SEL4's B inputs ${nb(6)}.</li>
+          <li>Wire SEL4's O output ${nb(6)} to the PC REG4's D inputs ${nb(4)}.</li>
+          <li>Wire RAM16's Q0-Q3 outputs ${nb(3)} to the D inputs of the OP and ARG REG4s ${nb(4)}.</li>
+          <li>Wire RING3's T0 ${nb(3)} to OP REG4's LOAD ${nb(4)}; T1 to ARG REG4's LOAD ${nb(4)}.</li>
+          <li>Wire CLK ${nb(2)} to CLK of all REG4s ${nb(4)}.</li>
         </ol>
-        <p><b>The experiment:</b> write RAM cell 0 = 1 and cell 1 = 5. With RESET=1, pulse
-        once to initialize. Then leave RESET=0: at T0 OP loads 1; at T1 ARG loads 5; at T2
-        both hold their values.</p>`,
+        <p><b>The experiment:</b> write RAM cell 0 = 1 and cell 1 = 5. RESET=1, pulse once, RESET=0. At T0 OP loads 1; at T1 ARG loads 5; at T2 both hold their values.</p>`,
     },
     check() {
       const results = [];
@@ -3751,145 +3352,70 @@ const LESSONS = [
     id: "s28",
     title: LL("28. Unidad de control", "28. Control Unit"),
     theory: {
-      es: `
-        <p>Una computadora no ejecuta todas sus piezas al mismo tiempo: necesita un
-        <b>director de orquesta</b> que coordine qué instrumento toca en cada instante.
-        Ese bloque central es la <b>Unidad de Control</b>.</p>
-        <p><b>La analogía de la mesa de mezclas teatral:</b><br>
-        Pensá en la mesa de control de un teatro. El contador de pasos (<b>T0, T1, T2</b>)
-        marca qué escena se está representando, y el registro de instrucción (<b>OP</b>)
-        indica qué obra o qué actor está en el escenario. Según la escena y el actor, el
-        operador de luces abre el micrófono del actor correcto (señales <code>LOAD</code>)
-        y apunta el reflector adecuado (señales <code>SEL</code>). Si el actor no tiene parlamento
-        en esa escena, su micrófono permanece en silencio.</p>
-        <p><b>¿Por qué es indispensable en la CPU?</b><br>
-        Sin la Unidad de Control, los registros no sabrían cuándo capturar información ni qué
-        datos escuchar; la memoria no sabría si debe leerse o escribirse; y el procesador no
-        podría distinguir entre sumar dos números (ADD), guardar en memoria, o saltar a otra parte (JMP).</p>
-        <p><b>Las 7 señales de control de nuestra CPU:</b></p>
+        es: `
+        <p>Una computadora no ejecuta todas sus piezas al mismo tiempo: necesita un <b>director de orquesta</b>. La <b>Unidad de Control</b> mira el paso actual (T0, T1, T2) y el opcode (OP0-OP2), y enciende las señales correctas en cada instante.</p>
+        <p><b>Las 7 señales de control:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li><b>PC_LOAD</b> = T<sub>0</sub> + T<sub>1</sub> + (T<sub>2</sub> · JMP): avanza el Program Counter en la búsqueda de instrucción (T0) y argumento (T1), o carga una nueva dirección de salto en T2 si la instrucción es JMP.</li>
-          <li><b>JMP_SEL</b> = T<sub>2</sub> · JMP: conmuta el selector del PC para que tome la dirección del salto (desde ARG) en vez de la siguiente dirección secuencial (PC+1).</li>
-          <li><b>A_LOAD</b> = T<sub>2</sub> · (LDA + ADD + AND): habilita la escritura en el Acumulador A durante T2 para guardar un valor inmediato (LDA) o el resultado de la ALU (ADD, AND).</li>
-          <li><b>A_SEL</b> = ADD + AND: selecciona qué entra a A; en 0 toma ARG (para LDA) y en 1 toma el resultado de la ALU (para ADD y AND).</li>
-          <li><b>B_LOAD</b> = T<sub>2</sub> · LDB: habilita la escritura en el registro B durante T2 para capturar el segundo operando.</li>
-          <li><b>OUT_LOAD</b> = T<sub>2</sub> · OUT: copia el valor actual del Acumulador A al registro de salida visual OUT durante T2.</li>
-          <li><b>HALT_SET</b> = T<sub>2</sub> · HALT: activa el flip-flop de parada que detiene el reloj maestro de la CPU al terminar el programa.</li>
+          <li><b>PC_LOAD</b> — avanza el PC en T0 y T1, o carga un salto en T2 cuando la instrucción es JMP.</li>
+          <li><b>JMP_SEL</b> — elige el destino del salto en T2 cuando la instrucción es JMP.</li>
+          <li><b>A_LOAD</b> — escribe en el acumulador A durante T2 de LDA, ADD o AND.</li>
+          <li><b>A_SEL</b> — 0 toma ARG (LDA), 1 toma la ALU (ADD/AND).</li>
+          <li><b>B_LOAD</b> — escribe en B durante T2 de LDB.</li>
+          <li><b>OUT_LOAD</b> — copia A a OUT durante T2 de OUT.</li>
+          <li><b>HALT_SET</b> — detiene el reloj durante T2 de HALT.</li>
         </ul>
-        <p><b>Matriz de control (Paso × Instrucción):</b></p>
-        <table style="border-collapse:collapse;margin:8px 0;font-family:monospace;font-size:12px;">
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;font-weight:600;">Paso · instrucción</td><td style="border:1px solid var(--border);padding:2px 8px;font-weight:600;">Señales en 1</td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T0 · buscar OP</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">PC_LOAD</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T1 · buscar ARG</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">PC_LOAD</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T2 · NOP</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">(ninguna)</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T2 · LDA</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">A_LOAD</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T2 · LDB</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">B_LOAD</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T2 · ADD</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">A_LOAD, A_SEL</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T2 · AND</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">A_LOAD, A_SEL</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T2 · OUT</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">OUT_LOAD</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T2 · JMP</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">PC_LOAD, JMP_SEL</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T2 · HALT</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">HALT_SET</span></td></tr>
-        </table>
         <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>1× tu caja <b>DEC3</b> 🧩 (de la lección 25)</li>
-          <li>4× <b>OR</b> (tecla 7)</li>
-          <li>6× <b>Entrada</b> (tecla 2): OP0, OP1, OP2 (código OP) y T0, T1, T2 (paso)</li>
+          <li>3× <b>OR</b> (tecla 7)</li>
+          <li>4× <b>AND</b> (tecla 6)</li>
+          <li>6× <b>Entrada</b> (tecla 2): OP0, OP1, OP2, T0, T1, T2</li>
           <li>7× <b>Salida</b> (tecla 3): PC_LOAD, JMP_SEL, A_LOAD, A_SEL, B_LOAD, OUT_LOAD, HALT_SET</li>
         </ul>
-        ${lay("Disposición en el canvas (de izquierda a derecha):", [
-          "Entradas: <b>OP0-OP2</b> arriba, <b>T0-T2</b> abajo",
-          "Decodificador <b>DEC3</b>",
-          "Compuertas <b>OR</b> (A_SEL) y <b>AND</b>s con T2 (JMP_SEL, B_LOAD, OUT_LOAD, HALT_SET)",
-          "Compuertas <b>OR</b> (para PC_LOAD) y <b>AND</b> (para A_LOAD)",
-          "Salidas de control (<b>PC_LOAD</b>, <b>JMP_SEL</b>, <b>A_LOAD</b>, <b>A_SEL</b>, <b>B_LOAD</b>, <b>OUT_LOAD</b>, <b>HALT_SET</b>)",
-        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
-        <p><b>Conexión paso a paso:</b></p>
+        <p><b>Colócalos en este orden (de izquierda a derecha, de arriba abajo):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} OP0-OP2</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} DEC3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} PC_LOAD</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} A_LOAD / A_SEL</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(8)} 7× Salidas</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} T0-T2</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} JMP_SEL</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(7)} B_LOAD / OUT_LOAD / HALT_SET</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
+        <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Conectá las Entradas OP0, OP1, OP2 a los pines de entrada A0, A1, A2 de la caja <code>DEC3</code>. Recordá que sus salidas son Y0 (NOP), Y1 (LDA), Y2 (LDB), Y3 (ADD), Y4 (AND), Y5 (OUT), Y6 (JMP) e Y7 (HALT).</li>
-          <li><b>PC_LOAD y JMP_SEL:</b> colocá una AND para calcular <code>T2 · JMP</code> (conectá T2 y la salida Y6 del DEC3). Su salida va a la Salida <code>JMP_SEL</code>. Colocá una OR entre T1 y <code>T2 · JMP</code>, y otra OR entre T0 y el resultado anterior: conectá su salida a <code>PC_LOAD</code>.</li>
-          <li><b>A_LOAD y A_SEL:</b> colocá una OR entre Y3 (ADD) y Y4 (AND); conectá su salida a <code>A_SEL</code>. Colocá otra OR entre Y1 (LDA) y la salida de <code>A_SEL</code>. Luego colocá una AND entre T2 y esa OR: conectá su salida a <code>A_LOAD</code>.</li>
-          <li><b>B_LOAD:</b> colocá una AND entre T2 y la salida Y2 (LDB) del DEC3; conectá su salida a <code>B_LOAD</code>.</li>
-          <li><b>OUT_LOAD:</b> colocá una AND entre T2 y la salida Y5 (OUT) del DEC3; conectá su salida a <code>OUT_LOAD</code>.</li>
-          <li><b>HALT_SET:</b> colocá una AND entre T2 y la salida Y7 (HALT) del DEC3; conectá su salida a <code>HALT_SET</code>.</li>
+          <li>Conectá las Entradas OP0-OP2 ${nb(1)} a los pines A0-A2 de la DEC3 ${nb(3)}.</li>
+          <li><b>PC_LOAD ${nb(4)}:</b> es la OR de T0 ${nb(2)}, T1 ${nb(2)} y JMP_SEL ${nb(5)}.</li>
+          <li><b>JMP_SEL ${nb(5)}:</b> es T2 ${nb(2)} AND con la salida Y6 (JMP) de la DEC3 ${nb(3)}.</li>
+          <li><b>A_SEL ${nb(6)}:</b> es la OR de Y3 (ADD) e Y4 (AND) de la DEC3 ${nb(3)}.</li>
+          <li><b>A_LOAD ${nb(6)}:</b> es T2 ${nb(2)} AND con la OR de Y1 (LDA) y A_SEL ${nb(6)}.</li>
+          <li><b>B_LOAD, OUT_LOAD y HALT_SET ${nb(7)}:</b> cada uno es T2 ${nb(2)} AND con Y2 (LDB), Y5 (OUT) e Y7 (HALT) de la DEC3 ${nb(3)}.</li>
+          <li>Conectá cada señal a su Salida correspondiente del grupo ${nb(8)}.</li>
         </ol>
-        <p><b>El experimento:</b><br>
-        1. Encendé solo <code>T0 = 1</code>: verás que únicamente se enciende <code>PC_LOAD</code>.<br>
-        2. Encendé solo <code>T1 = 1</code>: verás que también se enciende <code>PC_LOAD</code>.<br>
-        3. Encendé <code>T2 = 1</code> (dejá T0 y T1 en 0) y probá diferentes combinaciones en OP0-OP2:<br>
-        - OP = 001 (LDA): se activa <code>A_LOAD</code> con <code>A_SEL = 0</code>.<br>
-        - OP = 011 (ADD): se activan <code>A_LOAD</code> y <code>A_SEL = 1</code>.<br>
-        - OP = 110 (JMP): se activan <code>PC_LOAD</code> y <code>JMP_SEL</code>.<br>
-        - OP = 111 (HALT): se activa únicamente <code>HALT_SET</code>.</p>`,
-      en: `
-        <p>A computer does not activate every part at once: it needs an
-        <b>orchestra conductor</b> to coordinate which instrument plays at each exact moment.
-        That central block is the <b>Control Unit</b>.</p>
-        <p><b>The theater mixing console analogy:</b><br>
-        Think of the sound and lighting booth in a theater. The step counter (<b>T0, T1, T2</b>)
-        marks which scene is taking place, and the instruction register (<b>OP</b>) indicates
-        which actor or play is on stage. Depending on the scene and actor, the operator opens
-        the microphone for the right actor (<code>LOAD</code> signals) and aims the spotlight
-        (<code>SEL</code> signals). If an actor has no lines in that scene, their microphone stays muted.</p>
-        <p><b>Why is it essential in the CPU?</b><br>
-        Without the Control Unit, registers would not know when to capture data nor which bus to listen to;
-        memory would not know whether to read or write; and the processor could not distinguish between
-        adding two numbers (ADD), storing a byte, or jumping to another code address (JMP).</p>
-        <p><b>The 7 control signals in our CPU:</b></p>
+        <p><b>El experimento:</b> con solo T0=1, se enciende PC_LOAD. Con T2=1 y OP=001 (LDA), se enciende A_LOAD. Con T2 y OP=011 (ADD), se encienden A_LOAD y A_SEL. Con T2 y OP=111 (HALT), se enciende HALT_SET.</p>`,
+        en: `
+        <p>A computer does not activate every part at once: it needs an <b>orchestra conductor</b>. The <b>Control Unit</b> looks at the current step (T0, T1, T2) and the opcode (OP0-OP2), and turns on the right signals at each instant.</p>
+        <p><b>The 7 control signals:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li><b>PC_LOAD</b> = T<sub>0</sub> + T<sub>1</sub> + (T<sub>2</sub> · JMP): advances the Program Counter during instruction fetch (T0) and argument fetch (T1), or loads a jump target during T2 if the opcode is JMP.</li>
-          <li><b>JMP_SEL</b> = T<sub>2</sub> · JMP: switches the PC input multiplexer to load the target address from ARG instead of the next sequential address (PC+1).</li>
-          <li><b>A_LOAD</b> = T<sub>2</sub> · (LDA + ADD + AND): enables write into Accumulator A during T2 to store either an immediate value (LDA) or the ALU result (ADD, AND).</li>
-          <li><b>A_SEL</b> = ADD + AND: selects the Accumulator A input source; 0 takes ARG (for LDA) and 1 takes the ALU result (for ADD and AND).</li>
-          <li><b>B_LOAD</b> = T<sub>2</sub> · LDB: enables write into register B during T2 to capture the second operand.</li>
-          <li><b>OUT_LOAD</b> = T<sub>2</sub> · OUT: copies the current value of Accumulator A into visual register OUT during T2.</li>
-          <li><b>HALT_SET</b> = T<sub>2</sub> · HALT: sets the halt latch to shut down the CPU master clock when execution finishes.</li>
+          <li><b>PC_LOAD</b> — advances the PC in T0 and T1, or loads a jump in T2 when the instruction is JMP.</li>
+          <li><b>JMP_SEL</b> — selects the jump target in T2 when the instruction is JMP.</li>
+          <li><b>A_LOAD</b> — writes to accumulator A during T2 of LDA, ADD, or AND.</li>
+          <li><b>A_SEL</b> — 0 takes ARG (LDA), 1 takes the ALU (ADD/AND).</li>
+          <li><b>B_LOAD</b> — writes to B during T2 of LDB.</li>
+          <li><b>OUT_LOAD</b> — copies A to OUT during T2 of OUT.</li>
+          <li><b>HALT_SET</b> — stops the clock during T2 of HALT.</li>
         </ul>
-        <p><b>Control Matrix (Step × Instruction):</b></p>
-        <table style="border-collapse:collapse;margin:8px 0;font-family:monospace;font-size:12px;">
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;font-weight:600;">Step · instruction</td><td style="border:1px solid var(--border);padding:2px 8px;font-weight:600;">Signals at 1</td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T0 · fetch OP</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">PC_LOAD</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T1 · fetch ARG</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">PC_LOAD</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T2 · NOP</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">(none)</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T2 · LDA</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">A_LOAD</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T2 · LDB</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">B_LOAD</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T2 · ADD</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">A_LOAD, A_SEL</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T2 · AND</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">A_LOAD, A_SEL</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T2 · OUT</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">OUT_LOAD</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T2 · JMP</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">PC_LOAD, JMP_SEL</span></td></tr>
-          <tr><td style="border:1px solid var(--border);padding:2px 8px;">T2 · HALT</td><td style="border:1px solid var(--border);padding:2px 8px;"><span style="color:var(--accent);">HALT_SET</span></td></tr>
-        </table>
         <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
           <li>1× your <b>DEC3</b> box 🧩 (from lesson 25)</li>
-          <li>4× <b>OR</b> (key 7)</li>
-          <li>6× <b>Input</b> (key 2): OP0, OP1, OP2 (opcode) and T0, T1, T2 (timing phase)</li>
+          <li>3× <b>OR</b> (key 7)</li>
+          <li>4× <b>AND</b> (key 6)</li>
+          <li>6× <b>Input</b> (key 2): OP0, OP1, OP2, T0, T1, T2</li>
           <li>7× <b>Output</b> (key 3): PC_LOAD, JMP_SEL, A_LOAD, A_SEL, B_LOAD, OUT_LOAD, HALT_SET</li>
         </ul>
-        ${lay("Layout on the canvas (left to right):", [
-          "Inputs: <b>OP0-OP2</b> on top, <b>T0-T2</b> below",
-          "Decoder <b>DEC3</b>",
-          "Gates: <b>OR</b> (A_SEL) and <b>AND</b>s with T2 (JMP_SEL, B_LOAD, OUT_LOAD, HALT_SET)",
-          "Gates: <b>OR</b>s (for PC_LOAD) and <b>AND</b> (for A_LOAD)",
-          "Control Outputs (<b>PC_LOAD</b>, <b>JMP_SEL</b>, <b>A_LOAD</b>, <b>A_SEL</b>, <b>B_LOAD</b>, <b>OUT_LOAD</b>, <b>HALT_SET</b>)",
-        ], "Each number is a column. Wires always flow to the right.")}
-        <p><b>Step-by-step wiring:</b></p>
+        <p><b>Place them in this order (left to right, top to bottom):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} OP0-OP2</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} DEC3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} PC_LOAD</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} A_LOAD / A_SEL</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(8)} 7× Outputs</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} T0-T2</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} JMP_SEL</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(7)} B_LOAD / OUT_LOAD / HALT_SET</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
+        <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Connect Inputs OP0, OP1, OP2 to pins A0, A1, A2 of the <code>DEC3</code> box. Recall its outputs are Y0 (NOP), Y1 (LDA), Y2 (LDB), Y3 (ADD), Y4 (AND), Y5 (OUT), Y6 (JMP), and Y7 (HALT).</li>
-          <li><b>PC_LOAD and JMP_SEL:</b> place an AND gate for <code>T2 · JMP</code> (connect T2 and DEC3 output Y6). Its output goes to Output <code>JMP_SEL</code>. Place an OR gate between T1 and <code>T2 · JMP</code>, and another OR gate between T0 and that OR: connect its output to <code>PC_LOAD</code>.</li>
-          <li><b>A_LOAD and A_SEL:</b> place an OR gate between Y3 (ADD) and Y4 (AND); connect its output to <code>A_SEL</code>. Place another OR gate between Y1 (LDA) and the output of <code>A_SEL</code>. Place an AND gate between T2 and that OR: connect its output to <code>A_LOAD</code>.</li>
-          <li><b>B_LOAD:</b> place an AND gate between T2 and DEC3 output Y2 (LDB); connect its output to <code>B_LOAD</code>.</li>
-          <li><b>OUT_LOAD:</b> place an AND gate between T2 and DEC3 output Y5 (OUT); connect its output to <code>OUT_LOAD</code>.</li>
-          <li><b>HALT_SET:</b> place an AND gate between T2 and DEC3 output Y7 (HALT); connect its output to <code>HALT_SET</code>.</li>
+          <li>Wire Inputs OP0-OP2 ${nb(1)} to pins A0-A2 of DEC3 ${nb(3)}.</li>
+          <li><b>PC_LOAD ${nb(4)}:</b> OR of T0 ${nb(2)}, T1 ${nb(2)}, and JMP_SEL ${nb(5)}.</li>
+          <li><b>JMP_SEL ${nb(5)}:</b> T2 ${nb(2)} ANDed with DEC3 output Y6 (JMP) ${nb(3)}.</li>
+          <li><b>A_SEL ${nb(6)}:</b> OR of DEC3 outputs Y3 (ADD) and Y4 (AND) ${nb(3)}.</li>
+          <li><b>A_LOAD ${nb(6)}:</b> T2 ${nb(2)} ANDed with the OR of Y1 (LDA) and A_SEL ${nb(6)}.</li>
+          <li><b>B_LOAD, OUT_LOAD, and HALT_SET ${nb(7)}:</b> each is T2 ${nb(2)} ANDed with Y2 (LDB), Y5 (OUT), and Y7 (HALT) of DEC3 ${nb(3)}.</li>
+          <li>Wire each signal to its corresponding Output in the group ${nb(8)}.</li>
         </ol>
-        <p><b>The experiment:</b><br>
-        1. Turn on only <code>T0 = 1</code>: verify that only <code>PC_LOAD</code> turns on.<br>
-        2. Turn on only <code>T1 = 1</code>: verify that only <code>PC_LOAD</code> turns on.<br>
-        3. Turn on <code>T2 = 1</code> (leave T0 and T1 at 0) and test different codes on OP0-OP2:<br>
-        - OP = 001 (LDA): <code>A_LOAD</code> turns on with <code>A_SEL = 0</code>.<br>
-        - OP = 011 (ADD): both <code>A_LOAD</code> and <code>A_SEL = 1</code> turn on.<br>
-        - OP = 110 (JMP): both <code>PC_LOAD</code> and <code>JMP_SEL</code> turn on.<br>
-        - OP = 111 (HALT): only <code>HALT_SET</code> turns on.</p>`,
+        <p><b>The experiment:</b> with only T0=1, PC_LOAD turns on. With T2=1 and OP=001 (LDA), A_LOAD turns on. With T2 and OP=011 (ADD), A_LOAD and A_SEL turn on. With T2 and OP=111 (HALT), HALT_SET turns on.</p>`,
     },
     check() {
       const sws = state.components.filter(c => c.type === "switch");
@@ -3904,7 +3430,7 @@ const LESSONS = [
       if (!dec || sws.length < 6 || outs.length < 7) {
         return [
           { name: nameComps, ok: false },
-          { name: TXT(LL("PC_LOAD y JMP_SEL: activos en Fetch (T0, T1) y en salto (T2·JMP)", "PC_LOAD and JMP_SEL: active during Fetch (T0, T1) and jump (T2·JMP)")), ok: false },
+          { name: TXT(LL("PC_LOAD y JMP_SEL: activos en Fetch (T0, T1) y en salto (T2 si OP=JMP)", "PC_LOAD and JMP_SEL: active during Fetch (T0, T1) and jump (T2 when OP=JMP)")), ok: false },
           { name: TXT(LL("A_LOAD y A_SEL: carga condicional en LDA, ADD, AND; selector en ADD y AND", "A_LOAD and A_SEL: conditional load on LDA, ADD, AND; select on ADD and AND")), ok: false },
           { name: TXT(LL("B_LOAD, OUT_LOAD y HALT_SET: activos en T2 según la instrucción", "B_LOAD, OUT_LOAD, and HALT_SET: active in T2 according to instruction")), ok: false },
         ];
@@ -4070,8 +3596,8 @@ const LESSONS = [
         { name: nameComps, ok: true },
         {
           name: TXT(LL(
-            "PC_LOAD y JMP_SEL: activos en Fetch (T0, T1) y en salto (T2·JMP)",
-            "PC_LOAD and JMP_SEL: active during Fetch (T0, T1) and jump (T2·JMP)"
+            "PC_LOAD y JMP_SEL: activos en Fetch (T0, T1) y en salto (T2 si OP=JMP)",
+            "PC_LOAD and JMP_SEL: active during Fetch (T0, T1) and jump (T2 when OP=JMP)"
           )),
           ok: okPcJmp,
         },
@@ -4100,90 +3626,56 @@ const LESSONS = [
       "Connect all built modules to execute your first complete program: Sum (5 + 3 = 8)."
     ),
     theory: {
-      es: `
-        <p><b>¿Qué es?</b> Es el momento en que el auto arranca y rueda solo: todos los módulos
-        se unen para ejecutar un programa grabado en memoria, paso a paso, al ritmo del reloj.</p>
-        <p><b>¿Por qué importa?</b> Hasta ahora probaste piezas aisladas. Ahora el circuito adquiere
-        la capacidad central de la computación: seguir una secuencia de instrucciones automáticamente.</p>
+        es: `
+        <p>Es el momento en que el auto arranca y rueda solo: todos los módulos se unen para ejecutar un programa grabado en memoria, paso a paso, al ritmo del reloj.</p>
         <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>1× <b>RAM16</b> 🧠 (de la lección 24) con CS=1 y WE=0</li>
-          <li>1× tu caja <b>RING3</b> 🧩 (de la lección 26)</li>
-          <li>1× tu caja <b>DEC3</b> 🧩 (de la lección 25)</li>
-          <li>5× tu caja <b>REG4</b> 🧩: OP, ARG, A (acumulador), B y OUT</li>
-          <li>1× tu caja <b>ALU4</b> 🧩 (de la lección 20)</li>
-          <li>1× tu caja <b>ADD4</b> 🧩 (de la lección 18) — incrementador PC+1</li>
-          <li>2× tu caja <b>SEL4</b> 🧩 (de la lección 19): una para el PC y otra para la entrada del acumulador A</li>
-          <li>1× tu caja <b>DFF</b> 🧩 — la bandera de parada H</li>
+          <li>1× <b>RAM16</b> 🧠 (CS=1, WE=0)</li>
+          <li>1× tu caja <b>RING3</b> 🧩</li>
+          <li>1× tu caja <b>DEC3</b> 🧩</li>
+          <li>5× tu caja <b>REG4</b> 🧩: OP, ARG, A, B, OUT</li>
+          <li>1× tu caja <b>ALU4</b> 🧩</li>
+          <li>1× tu caja <b>ADD4</b> 🧩 — PC+1</li>
+          <li>2× tu caja <b>SEL4</b> 🧩 — PC y entrada de A</li>
+          <li>1× tu caja <b>DFF</b> 🧩 — bandera H</li>
           <li>Compuertas AND, OR y NOT para la Unidad de Control y el reloj</li>
-          <li>Entradas RESET y CLK, y 4× Salida conectadas a OUT</li>
+          <li>Entradas RESET y CLK; 4× Salida conectadas a OUT</li>
         </ul>
-        ${lay("Disposición en el canvas:", [
-          "Entradas RESET y CLK, y la bandera <b>H</b> con su lógica de reloj",
-          "<b>PC</b> (REG4 + ADD4 + SEL4) y <b>RAM16</b>",
-          "Registros <b>OP</b> arriba y <b>ARG</b> abajo",
-          "<b>DEC3</b> y compuertas de control",
-          "<b>ALU4</b>, SEL4 de entrada de A, y registros <b>A</b> y <b>B</b>",
-          "Registro <b>OUT</b> con 4 Salidas"
-        ], "Cada bloque es una columna. Los cables siempre van hacia la derecha.")}
+        <p><b>Colócalos en este orden (de izquierda a derecha, de arriba abajo):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} RESET / CLK</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} RAM16</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} RING3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} DEC3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} 5× REG4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} ADD4</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(7)} ALU4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(8)} 2× SEL4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(9)} DFF H</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(10)} compuertas ctrl</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(11)} 4× Salida</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li><b>Reloj:</b> el DFF de H recibe CLK directo. Su D recibe <code>¬RESET · (H + T2·HALT)</code>.
-          El reloj que alimenta a todo el CPU es <code>CPU_CLK = CLK · (¬H + RESET)</code>.</li>
-          <li><b>PC y RAM:</b> REG4 guarda la dirección. Su Q va a RAM A0-A3 y a ADD4 A. El ADD4 suma +1 (B=0001, Cin=0).
-          SEL4 del PC elige PC+1 (entrada A) o ARG (entrada B); su salida va a D del REG4. LOAD del PC es <code>T0 + T1 + T2·JMP</code>.</li>
-          <li><b>Fetch:</b> RAM Q0-Q3 van en paralelo a OP.D y ARG.D. OP.LOAD = T0; ARG.LOAD = T1.</li>
-          <li><b>Control:</b> OP.Q0-Q2 entran en DEC3. Generá <code>PC_LOAD</code>, <code>A_SEL = ADD + AND</code>,
-          <code>A_LOAD = T2·(LDA+ADD+AND)</code>, <code>B_LOAD = T2·LDB</code>, <code>OUT_LOAD = T2·OUT</code> y
-          <code>HALT_SET = T2·HALT</code>.</li>
-          <li><b>Datos:</b> ARG va a B.D (con B_LOAD). SEL4 de A recibe ARG en A y ALU4 en B; su salida va a A.D.
-          A y B entran en ALU4; su selector OP recibe AND del DEC3. A va a OUT.D; OUT.Q va a las Salidas.</li>
+          <li><b>Reloj:</b> el DFF H ${nb(9)} recibe CLK directo. Su entrada D se enciende cuando la bandera H ya está activa o cuando la instrucción HALT lo pide, a menos que RESET esté forzando un reinicio. El reloj que alimenta al resto del CPU se detiene mientras H esté activa (salvo que RESET lo reinicie).</li>
+          <li><b>PC:</b> el REG4 PC ${nb(5)} guarda la dirección. Su Q va a RAM16 ${nb(2)} y al ADD4 ${nb(6)} (B=0001, Cin=0). La SEL4 del PC ${nb(8)} elige PC+1 o ARG; su salida va a D del REG4 PC ${nb(5)}. LOAD del PC es PC_LOAD.</li>
+          <li><b>Fetch:</b> RAM16 Q ${nb(2)} va en paralelo a OP.D y ARG.D ${nb(5)}. OP.LOAD=T0; ARG.LOAD=T1.</li>
+          <li><b>Control:</b> OP.Q0-Q2 entran en DEC3 ${nb(4)}. Generá PC_LOAD, A_SEL, A_LOAD, B_LOAD, OUT_LOAD y HALT_SET según la matriz de la lección 28.</li>
+          <li><b>Datos:</b> ARG va a B.D ${nb(5)}. La SEL4 de A ${nb(8)} recibe ARG en A y ALU4 en B; su salida va a A.D. A y B alimentan ALU4 ${nb(7)}; su selector OP recibe A_SEL. A va a OUT.D; OUT.Q va a las Salidas ${nb(11)}.</li>
         </ol>
-        <p><b>El experimento:</b> cargá en RAM el programa Suma <code>1 5 2 3 3 0 5 0 7 0</code>.
-        RESET=1, un pulso, RESET=0. Encendé el reloj: a los 12 pulsos OUT muestra <b>8</b> y
-        a los 15 HALT detiene el reloj.</p>`,
-      en: `
-        <p><b>What is it?</b> The moment the car starts and drives on its own: all modules join to
-        execute a program stored in memory, step by step, to the beat of the clock.</p>
-        <p><b>Why does it matter?</b> Until now you tested pieces in isolation. Now the circuit gains
-        the central capability of computing: automatically following a sequence of instructions.</p>
+        <p><b>El experimento:</b> cargá en RAM el programa Suma <code>1 5 2 3 3 0 5 0 7 0</code>. RESET=1, un pulso, RESET=0. A los 12 pulsos OUT ${nb(11)} muestra <b>8</b>; a los 15 HALT detiene el reloj.</p>`,
+        en: `
+        <p>This is the moment the car starts and drives on its own: all modules join to execute a stored program, step by step, to the beat of the clock.</p>
         <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>1× <b>RAM16</b> 🧠 (from lesson 24) with CS=1 and WE=0</li>
-          <li>1× your <b>RING3</b> box 🧩 (from lesson 26)</li>
-          <li>1× your <b>DEC3</b> box 🧩 (from lesson 25)</li>
-          <li>5× your <b>REG4</b> box 🧩: OP, ARG, A (accumulator), B, and OUT</li>
-          <li>1× your <b>ALU4</b> box 🧩 (from lesson 20)</li>
-          <li>1× your <b>ADD4</b> box 🧩 (from lesson 18) — PC+1 incrementer</li>
-          <li>2× your <b>SEL4</b> box 🧩 (from lesson 19): one for the PC and one for the A accumulator input</li>
-          <li>1× your <b>DFF</b> box 🧩 — the H halt flag</li>
+          <li>1× <b>RAM16</b> 🧠 (CS=1, WE=0)</li>
+          <li>1× your <b>RING3</b> box 🧩</li>
+          <li>1× your <b>DEC3</b> box 🧩</li>
+          <li>5× your <b>REG4</b> box 🧩: OP, ARG, A, B, OUT</li>
+          <li>1× your <b>ALU4</b> box 🧩</li>
+          <li>1× your <b>ADD4</b> box 🧩 — PC+1</li>
+          <li>2× your <b>SEL4</b> box 🧩 — PC and A input</li>
+          <li>1× your <b>DFF</b> box 🧩 — H halt flag</li>
           <li>AND, OR, and NOT gates for the Control Unit and clock gating</li>
-          <li>RESET and CLK Inputs, and 4 Outputs connected to OUT</li>
+          <li>RESET and CLK Inputs; 4 Outputs connected to OUT</li>
         </ul>
-        ${lay("Layout on the canvas:", [
-          "RESET and CLK Inputs, plus the <b>H</b> halt flag with its clock logic",
-          "<b>PC</b> (REG4 + ADD4 + SEL4) and <b>RAM16</b>",
-          "Registers <b>OP</b> on top and <b>ARG</b> below",
-          "<b>DEC3</b> and control gates",
-          "<b>ALU4</b>, A-input SEL4, and registers <b>A</b> and <b>B</b>",
-          "Register <b>OUT</b> with 4 Outputs"
-        ], "Each block is a column. Wires always flow to the right.")}
+        <p><b>Place them in this order (left to right, top to bottom):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} RESET / CLK</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} RAM16</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} RING3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} DEC3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} 5× REG4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} ADD4</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(7)} ALU4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(8)} 2× SEL4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(9)} DFF H</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(10)} control gates</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(11)} 4× Output</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li><b>Clock:</b> the H DFF gets CLK directly. Its D receives <code>¬RESET · (H + T2·HALT)</code>.
-          The clock feeding the whole CPU is <code>CPU_CLK = CLK · (¬H + RESET)</code>.</li>
-          <li><b>PC and RAM:</b> REG4 stores the address. Its Q goes to RAM A0-A3 and to ADD4 A. ADD4 adds +1 (B=0001, Cin=0).
-          The PC SEL4 chooses PC+1 (input A) or ARG (input B); its output goes to REG4 D. PC LOAD is <code>T0 + T1 + T2·JMP</code>.</li>
-          <li><b>Fetch:</b> RAM Q0-Q3 go in parallel to OP.D and ARG.D. OP.LOAD = T0; ARG.LOAD = T1.</li>
-          <li><b>Control:</b> OP.Q0-Q2 feed DEC3. Generate <code>PC_LOAD</code>, <code>A_SEL = ADD + AND</code>,
-          <code>A_LOAD = T2·(LDA+ADD+AND)</code>, <code>B_LOAD = T2·LDB</code>, <code>OUT_LOAD = T2·OUT</code>, and
-          <code>HALT_SET = T2·HALT</code>.</li>
-          <li><b>Datapath:</b> ARG goes to B.D (with B_LOAD). The A SEL4 receives ARG on A and ALU4 on B; its output goes to A.D.
-          A and B feed ALU4; its OP selector receives AND from DEC3. A goes to OUT.D; OUT.Q goes to the Outputs.</li>
+          <li><b>Clock:</b> the H DFF ${nb(9)} gets CLK directly. Its D input turns on when the H flag is already active or when the HALT instruction requests it, unless RESET is forcing a restart. The clock that feeds the rest of the CPU stops while H is active (unless RESET restarts it).</li>
+          <li><b>PC:</b> the PC REG4 ${nb(5)} stores the address. Its Q goes to RAM16 ${nb(2)} and to ADD4 ${nb(6)} (B=0001, Cin=0). The PC SEL4 ${nb(8)} chooses PC+1 or ARG; its output goes to the PC REG4's D ${nb(5)}. PC LOAD is PC_LOAD.</li>
+          <li><b>Fetch:</b> RAM16 Q ${nb(2)} goes in parallel to OP.D and ARG.D ${nb(5)}. OP.LOAD=T0; ARG.LOAD=T1.</li>
+          <li><b>Control:</b> OP.Q0-Q2 feed DEC3 ${nb(4)}. Generate PC_LOAD, A_SEL, A_LOAD, B_LOAD, OUT_LOAD, and HALT_SET per lesson 28's matrix.</li>
+          <li><b>Datapath:</b> ARG goes to B.D ${nb(5)}. The A SEL4 ${nb(8)} receives ARG on A and ALU4 on B; its output goes to A.D. A and B feed ALU4 ${nb(7)}; its OP selector receives A_SEL. A goes to OUT.D; OUT.Q goes to the Outputs ${nb(11)}.</li>
         </ol>
-        <p><b>The experiment:</b> load the Sum program <code>1 5 2 3 3 0 5 0 7 0</code> into RAM.
-        RESET=1, one pulse, RESET=0. Turn on the clock: after 12 pulses OUT shows <b>8</b>, and
-        after 15 HALT stops the clock.</p>`,
+        <p><b>The experiment:</b> load the Sum program <code>1 5 2 3 3 0 5 0 7 0</code> into RAM. RESET=1, one pulse, RESET=0. After 12 pulses OUT ${nb(11)} shows <b>8</b>; after 15 HALT stops the clock.</p>`,
     },
     
     check() {
@@ -4357,70 +3849,26 @@ const LESSONS = [
       "Program an infinite loop (Counter) with JMP, verify clean stopping with HALT, and celebrate your complete computer."
     ),
     theory: {
-      es: `
-        <p><b>¿Qué es?</b><br>
-        Es el pedal de freno que apaga el motor al llegar a destino (<code>HALT</code>)
-        y la rotonda que te permite dar otra vuelta a la pista (<code>JMP</code>).
-        El procesador ya no está atrapado en un camino de ida: ahora puede decidir hacia dónde ir y cuándo parar.</p>
-        <p><b>¿Por qué importa?</b><br>
-        Sin saltos, un procesador sólo podría ejecutar una lista fija de órdenes y apagarse al final de la memoria.
-        Con <code>JMP</code>, una computadora puede repetir bucles indefinidamente, contar, esperar eventos y ejecutar
-        algoritmos de cualquier longitud. Y con <code>HALT</code>, se detiene de forma limpia sin desbordar la memoria.</p>
-        <p><b>El programa Contador en acción:</b><br>
-        Cargá en la RAM: <code>1 0 2 1 3 0 5 0 6 4</code></p>
-        <ul style="padding-left:18px; margin:6px 0;">
-          <li>Direcciones 0, 1: <code>LDA 0</code> (inicializa el acumulador A con 0)</li>
-          <li>Direcciones 2, 3: <code>LDB 1</code> (carga el incremento 1 en el registro B)</li>
-          <li>Direcciones 4, 5: <code>ADD 0</code> (suma A + B y guarda el resultado en A)</li>
-          <li>Direcciones 6, 7: <code>OUT 0</code> (copia A al registro de salida OUT)</li>
-          <li>Direcciones 8, 9: <code>JMP 4</code> (¡salta de regreso a la dirección 4!)</li>
-        </ul>
-        <p>En la dirección 4 vuelve a sumar 1, vuelve a mostrarlo en OUT, y vuelve a saltar:
-        OUT contará <b>1, 2, 3, 4, 5... 15, 0, 1...</b> en un ciclo infinito.</p>
-        <p><b>Repaso del camino recorrido:</b><br>
-        Comenzamos en la lección 1 con un simple transistor y compuertas lógicas (NOT, AND, OR).
-        Construimos memoria a partir del retraso de señal (latches y DFF), empaquetamos registros (REG4),
-        sumadores (ADD4) y una unidad aritmético-lógica (ALU4).
-        Añadimos memoria direccionable (RAM16), un contador de pasos (RING3) y un decodificador de instrucciones (DEC3).
-        Ahora, con saltos y control de parada, tu creación es una computadora digital completa y funcional construida desde cero.</p>
-        <p><b>El experimento:</b><br>
-        1. Cargá el programa Contador: <code>1 0 2 1 3 0 5 0 6 4</code>.<br>
-        2. Con <code>RESET = 1</code>, dale un pulso de reloj y bajá <code>RESET = 0</code>.<br>
-        3. Encendé el reloj: observá cómo OUT cuenta 1, 2, 3... cíclicamente.<br>
-        4. Probá luego cargar el programa Suma (<code>1 5 2 3 3 0 5 0 7 0</code>): tras dar 8, HALT congela el reloj.
-        Al activar <code>RESET = 1</code>, la CPU se reinicia limpiamente desde la dirección 0.</p>`,
-      en: `
-        <p><b>What is it?</b><br>
-        It is the brake pedal that shuts off the engine upon reaching your destination (<code>HALT</code>)
-        and the roundabout that lets you take another lap around the track (<code>JMP</code>).
-        The processor is no longer confined to a one-way trip: it can now choose where to go and when to stop.</p>
-        <p><b>Why does it matter?</b><br>
-        Without jumps, a processor could only execute a fixed sequence of instructions and shut down at the end of memory.
-        With <code>JMP</code>, a computer can repeat loops indefinitely, count, wait for events, and run
-        algorithms of any length. And with <code>HALT</code>, it stops cleanly without overflowing memory.</p>
-        <p><b>The Counter program in action:</b><br>
-        Load into RAM: <code>1 0 2 1 3 0 5 0 6 4</code></p>
-        <ul style="padding-left:18px; margin:6px 0;">
-          <li>Addresses 0, 1: <code>LDA 0</code> (initializes accumulator A with 0)</li>
-          <li>Addresses 2, 3: <code>LDB 1</code> (loads increment 1 into register B)</li>
-          <li>Addresses 4, 5: <code>ADD 0</code> (computes A + B and stores result in A)</li>
-          <li>Addresses 6, 7: <code>OUT 0</code> (copies A to register OUT)</li>
-          <li>Addresses 8, 9: <code>JMP 4</code> (jumps back to address 4!)</li>
-        </ul>
-        <p>At address 4 it adds 1 again, displays it on OUT, and jumps again:
-        OUT will count <b>1, 2, 3, 4, 5... 15, 0, 1...</b> in an infinite loop.</p>
-        <p><b>Retrospective of what we built:</b><br>
-        We started in lesson 1 with a single transistor and basic logic gates (NOT, AND, OR).
-        We built memory from feedback loops (latches and DFF), packaged registers (REG4),
-        adders (ADD4), and an arithmetic-logic unit (ALU4).
-        We added addressable memory (RAM16), a step sequencer (RING3), and an instruction decoder (DEC3).
-        Now, with jumps and halt control, your creation is a fully functional digital computer built entirely from scratch.</p>
-        <p><b>The experiment:</b><br>
-        1. Load the Counter program: <code>1 0 2 1 3 0 5 0 6 4</code>.<br>
-        2. With <code>RESET = 1</code>, pulse the clock once and return <code>RESET = 0</code>.<br>
-        3. Turn on the clock: watch OUT count 1, 2, 3... cyclically.<br>
-        4. Then load the Sum program (<code>1 5 2 3 3 0 5 0 7 0</code>): after reaching 8, HALT freezes the clock.
-        Activating <code>RESET = 1</code> cleanly restarts the CPU from address 0.</p>`,
+        es: `
+        <p>Es el pedal de freno (<b>HALT</b>) y la rotonda (<b>JMP</b>) de tu computadora. El procesador ya no está atrapado en un camino de ida: ahora puede decidir hacia dónde ir y cuándo parar.</p>
+        <p><b>Componentes que necesitás:</b> los mismos de la lección 29: RAM16, RING3, DEC3, 5× REG4, ALU4, ADD4, 2× SEL4, DFF H, compuertas de control, RESET, CLK y 4× Salida.</p>
+        <p><b>Colócalos en este orden (de izquierda a derecha, de arriba abajo):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} RESET / CLK</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} RAM16</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} RING3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} DEC3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} 5× REG4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} ADD4</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(7)} ALU4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(8)} 2× SEL4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(9)} DFF H</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(10)} compuertas ctrl</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(11)} 4× Salida</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
+        <p><b>Conexión:</b> idéntica a la lección 29. Verificá especialmente que PC_LOAD se active en T2 cuando OP=JMP (salto) y que HALT_SET se active cuando OP=HALT.</p>
+        <p><b>El experimento:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Cargá el programa Contador <code>1 0 2 1 3 0 5 0 6 4</code>. Con RESET=1, pulsá una vez; luego RESET=0. Encendé el reloj: OUT ${nb(11)} cuenta 1, 2, 3... cíclicamente gracias al JMP.</li>
+          <li>Cargá el programa Suma <code>1 5 2 3 3 0 5 0 7 0</code>. Tras mostrar 8, HALT congela el reloj. RESET=1 reinicia la ejecución desde la dirección 0.</li>
+        </ol>`,
+        en: `
+        <p>It is the brake pedal (<b>HALT</b>) and the roundabout (<b>JMP</b>) of your computer. The processor is no longer confined to a one-way trip: it can now choose where to go and when to stop.</p>
+        <p><b>Components you need:</b> same as lesson 29: RAM16, RING3, DEC3, 5× REG4, ALU4, ADD4, 2× SEL4, DFF H, control gates, RESET, CLK, and 4 Outputs.</p>
+        <p><b>Place them in this order (left to right, top to bottom):</b></p><table style="border-collapse:collapse;margin:6px 0;font-size:12px;"><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(1)} RESET / CLK</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(2)} RAM16</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(3)} RING3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(4)} DEC3</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(5)} 5× REG4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(6)} ADD4</td></tr><tr><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(7)} ALU4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(8)} 2× SEL4</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(9)} DFF H</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(10)} control gates</td><td style="border:1px solid var(--border);padding:4px 5px;line-height:1.3;">${nb(11)} 4× Output</td><td style="border:1px dashed #262b38;padding:4px 5px;"></td></tr></table>
+        <p><b>Wiring:</b> identical to lesson 29. Verify especially that PC_LOAD activates in T2 when OP=JMP (jump) and that HALT_SET activates when OP=HALT.</p>
+        <p><b>The experiment:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Load the Counter program <code>1 0 2 1 3 0 5 0 6 4</code>. With RESET=1, pulse once; then RESET=0. Turn on the clock: OUT ${nb(11)} counts 1, 2, 3... cyclically thanks to JMP.</li>
+          <li>Load the Sum program <code>1 5 2 3 3 0 5 0 7 0</code>. After showing 8, HALT freezes the clock. RESET=1 restarts execution from address 0.</li>
+        </ol>`,
     },
     check() {
       const ramComp = state.components.find(c => c.type === "ram");
