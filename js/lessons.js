@@ -66,6 +66,214 @@ function lay(title, items, note) {
   items.forEach((it, i) => { h += `<li style="display:flex;gap:8px;align-items:baseline;padding:3px 0;">${badge(i + 1)}<span>${it}</span></li>`; });
   return h + "</ul>";
 }
+function testPackedReg1() {
+  const def = lib["REG1"];
+  if (!def || def.inputs.length !== 3 || def.outputs.length !== 1) return false;
+  if (typeof registerPackedType === "function" && !TYPE_DEFS["REG1"]) {
+    registerPackedType(def);
+  }
+  const savedComponents = state.components;
+  const savedWires = state.wires;
+  const savedNextId = state.nextId;
+  const savedGateOuts = new Map(gateOuts);
+  let ok = false;
+  try {
+    state.components = [];
+    state.wires = [];
+    state.nextId = 1;
+    gateOuts.clear();
+    const reg = { id: state.nextId++, type: "REG1", x: 0, y: 0, rot: 0, on: false };
+    state.components.push(reg);
+    const dSw = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+    state.components.push(dSw);
+    state.wires.push({ id: state.nextId++, a: { c: dSw.id, t: 0 }, b: { c: reg.id, t: 0 } });
+    const loadSw = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+    state.components.push(loadSw);
+    state.wires.push({ id: state.nextId++, a: { c: loadSw.id, t: 0 }, b: { c: reg.id, t: 1 } });
+    const clkSw = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+    state.components.push(clkSw);
+    state.wires.push({ id: state.nextId++, a: { c: clkSw.id, t: 0 }, b: { c: reg.id, t: 2 } });
+    const out = { id: state.nextId++, type: "out", x: 0, y: 0, rot: 0, on: false };
+    state.components.push(out);
+    state.wires.push({ id: state.nextId++, a: { c: reg.id, t: 3 }, b: { c: out.id, t: 0 } });
+    const pulse = () => {
+      clkSw.on = true; simulate();
+      clkSw.on = false; return simulate();
+    };
+    const readVal = r => {
+      const net = r.netOf.get(out.id + ":0");
+      return net !== undefined ? r.values[net] : -1;
+    };
+    loadSw.on = true; dSw.on = true;
+    pulse();
+    const v1 = readVal(simulate());
+    loadSw.on = false; dSw.on = false;
+    pulse();
+    const v2 = readVal(simulate());
+    loadSw.on = true; dSw.on = false;
+    pulse();
+    const v3 = readVal(simulate());
+    loadSw.on = false; dSw.on = true;
+    pulse();
+    const v4 = readVal(simulate());
+    if (v1 === 1 && v2 === 1 && v3 === 0 && v4 === 0) ok = true;
+  } catch (e) {
+    ok = false;
+  } finally {
+    state.components = savedComponents;
+    state.wires = savedWires;
+    state.nextId = savedNextId;
+    gateOuts.clear();
+    for (const [k, v] of savedGateOuts) gateOuts.set(k, v);
+    simulate();
+  }
+  return ok;
+}
+function testPackedReg4() {
+  const def = lib["REG4"];
+  if (!def || def.inputs.length !== 6 || def.outputs.length !== 4) return false;
+  if (typeof registerPackedType === "function" && !TYPE_DEFS["REG4"]) {
+    registerPackedType(def);
+  }
+  const savedComponents = state.components;
+  const savedWires = state.wires;
+  const savedNextId = state.nextId;
+  const savedGateOuts = new Map(gateOuts);
+  let ok = false;
+  try {
+    state.components = [];
+    state.wires = [];
+    state.nextId = 1;
+    gateOuts.clear();
+    const reg = { id: state.nextId++, type: "REG4", x: 0, y: 0, rot: 0, on: false };
+    state.components.push(reg);
+    const dSws = [];
+    for (let i = 0; i < 4; i++) {
+      const sw = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+      state.components.push(sw);
+      state.wires.push({ id: state.nextId++, a: { c: sw.id, t: 0 }, b: { c: reg.id, t: i } });
+      dSws.push(sw);
+    }
+    const loadSw = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+    state.components.push(loadSw);
+    state.wires.push({ id: state.nextId++, a: { c: loadSw.id, t: 0 }, b: { c: reg.id, t: 4 } });
+    const clkSw = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+    state.components.push(clkSw);
+    state.wires.push({ id: state.nextId++, a: { c: clkSw.id, t: 0 }, b: { c: reg.id, t: 5 } });
+    const outs = [];
+    for (let j = 0; j < 4; j++) {
+      const o = { id: state.nextId++, type: "out", x: 0, y: 0, rot: 0, on: false };
+      state.components.push(o);
+      state.wires.push({ id: state.nextId++, a: { c: reg.id, t: 6 + j }, b: { c: o.id, t: 0 } });
+      outs.push(o);
+    }
+    const pulse = () => {
+      clkSw.on = true; simulate();
+      clkSw.on = false; return simulate();
+    };
+    const readVal = r => {
+      let v = 0;
+      for (let i = 0; i < 4; i++) {
+        const net = r.netOf.get(outs[i].id + ":0");
+        const val = net !== undefined ? r.values[net] : -1;
+        if (val === 1) v |= (1 << i);
+        else if (val !== 0) return -1;
+      }
+      return v;
+    };
+    loadSw.on = true;
+    for (let i = 0; i < 4; i++) dSws[i].on = !!((5 >> i) & 1);
+    pulse();
+    const v1 = readVal(simulate());
+    loadSw.on = false;
+    for (let i = 0; i < 4; i++) dSws[i].on = !!((9 >> i) & 1);
+    pulse();
+    const v2 = readVal(simulate());
+    if (v1 === 5 && v2 === 5) ok = true;
+  } catch (e) {
+    ok = false;
+  } finally {
+    state.components = savedComponents;
+    state.wires = savedWires;
+    state.nextId = savedNextId;
+    gateOuts.clear();
+    for (const [k, v] of savedGateOuts) gateOuts.set(k, v);
+    simulate();
+  }
+  return ok;
+}
+function testPackedSel4() {
+  const def = lib["SEL4"];
+  if (!def || def.inputs.length !== 9 || def.outputs.length !== 4) return false;
+  if (typeof registerPackedType === "function" && !TYPE_DEFS["SEL4"]) {
+    registerPackedType(def);
+  }
+  const savedComponents = state.components;
+  const savedWires = state.wires;
+  const savedNextId = state.nextId;
+  const savedGateOuts = new Map(gateOuts);
+  let ok = false;
+  try {
+    state.components = [];
+    state.wires = [];
+    state.nextId = 1;
+    gateOuts.clear();
+    const sel = { id: state.nextId++, type: "SEL4", x: 0, y: 0, rot: 0, on: false };
+    state.components.push(sel);
+    const aSws = [], bSws = [];
+    for (let i = 0; i < 4; i++) {
+      const swA = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+      state.components.push(swA);
+      state.wires.push({ id: state.nextId++, a: { c: swA.id, t: 0 }, b: { c: sel.id, t: i } });
+      aSws.push(swA);
+    }
+    for (let i = 0; i < 4; i++) {
+      const swB = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+      state.components.push(swB);
+      state.wires.push({ id: state.nextId++, a: { c: swB.id, t: 0 }, b: { c: sel.id, t: 4 + i } });
+      bSws.push(swB);
+    }
+    const sSw = { id: state.nextId++, type: "switch", x: 0, y: 0, rot: 0, on: false };
+    state.components.push(sSw);
+    state.wires.push({ id: state.nextId++, a: { c: sSw.id, t: 0 }, b: { c: sel.id, t: 8 } });
+    const outs = [];
+    for (let j = 0; j < 4; j++) {
+      const o = { id: state.nextId++, type: "out", x: 0, y: 0, rot: 0, on: false };
+      state.components.push(o);
+      state.wires.push({ id: state.nextId++, a: { c: sel.id, t: 9 + j }, b: { c: o.id, t: 0 } });
+      outs.push(o);
+    }
+    const readVal = r => {
+      let v = 0;
+      for (let i = 0; i < 4; i++) {
+        const net = r.netOf.get(outs[i].id + ":0");
+        const val = net !== undefined ? r.values[net] : -1;
+        if (val === 1) v |= (1 << i);
+        else if (val !== 0) return -1;
+      }
+      return v;
+    };
+    sSw.on = false;
+    for (let i = 0; i < 4; i++) aSws[i].on = !!((10 >> i) & 1);
+    for (let i = 0; i < 4; i++) bSws[i].on = !!((5 >> i) & 1);
+    const r0 = simulate();
+    const v0 = readVal(r0);
+    sSw.on = true;
+    const r1 = simulate();
+    const v1 = readVal(r1);
+    if (v0 === 10 && v1 === 5) ok = true;
+  } catch (e) {
+    ok = false;
+  } finally {
+    state.components = savedComponents;
+    state.wires = savedWires;
+    state.nextId = savedNextId;
+    gateOuts.clear();
+    for (const [k, v] of savedGateOuts) gateOuts.set(k, v);
+    simulate();
+  }
+  return ok;
+}
 const LL = (es, en) => ({ es, en });  // bilingual pair
 const TXT = (o) => o[i18nLang()] ?? o.es;
 
@@ -860,205 +1068,7 @@ const LESSONS = [
   },
   {
     id: "s10",
-    title: LL("10. Registro de 4 bits", "10. 4-bit register"),
-    theory: {
-      es: `
-        <p>Una CPU necesita guardar <i>palabras</i> completas — varios bits que viajan juntos,
-        como los 4 dígitos de un número. Eso es un <b>registro</b>, y la receta es sorprendentemente
-        simple: <b>N flip-flops en paralelo, todos compartiendo el mismo reloj</b>. Cada
-        flip-flop guarda un bit; juntos, guardan la palabra.</p>
-        <p>Pero falta un detalle: así como está, el registro cargaría el dato en <i>todos</i>
-        los flancos, sin control. Necesitamos decidir <b>cuándo cargar</b> y cuándo mantener.
-        La solución es un <b>MUX de LOAD</b> delante de cada flip-flop, que elige entre dos
-        opciones:</p>
-        <ul style="padding-left:18px; margin:6px 0;">
-          <li><b>LOAD=1</b>: pasa el dato nuevo (se carga en el próximo flanco)</li>
-          <li><b>LOAD=0</b>: pasa la propia salida Q del flip-flop — se "reescribe a sí mismo" y por eso queda congelado</li>
-        </ul>
-        <p style="font-family:monospace; font-size:12px; color:var(--dim)">
-        La celda (lo que se repite por cada bit):<br>
-        D' = (D y LOAD) o (Q y ¬LOAD) &nbsp;→&nbsp; D' entra al DFF → Q</p>
-        <p><b>Componentes que necesitás (por cada bit):</b></p>
-        <ul style="padding-left:18px; margin:6px 0;">
-          <li>1× <b>Entrada</b> de dato (tecla 2)</li>
-          <li>2× <b>AND</b>, 1× <b>OR</b> (teclas 6 y 7) — el mux de LOAD</li>
-          <li>1× tu caja <b>DFF</b> 🧩 (de la lección 9)</li>
-          <li>1× <b>Salida</b> (tecla 3)</li>
-        </ul>
-        ${lay('Disposición en el canvas (de izquierda a derecha):', [
-          'Bit 0 arriba, bit 1 debajo, bit 2…; <b>LOAD</b> y <b>CLK</b> abajo del todo, compartidos',
-          '<b>NOT</b> (¬LOAD)',
-          'Por cada bit: <b>AND (D·LOAD)</b> arriba, <b>AND (Q·¬LOAD)</b> debajo',
-          'Por cada bit: <b>OR</b> del mux',
-          'Por cada bit: caja <b>DFF</b>',
-          'Por cada bit: <b>Salida Q</b>'
-        ], 'Cada número es una columna. El único cable que va hacia la izquierda es el de <b>Q</b> al AND (Q·¬LOAD): es la memoria que se reescribe a sí misma.')}
-        <p>Y compartidos entre todos los bits: 1× <b>NOT</b> (tecla 5) para ¬LOAD,
-        1× <b>Entrada</b> de CLK, 1× <b>Entrada</b> de LOAD
-        (o un ⏱ reloj, tecla 4, si preferís que avance solo).</p>
-        <p><b>Misión (mínimo 2 bits — podés hacer 4):</b></p>
-        <ol style="padding-left:18px; margin:6px 0;">
-          <li>Poné una Entrada LOAD y una Entrada CLK</li>
-          <li>Por cada bit: (dato y LOAD) → un AND; (Q y ¬LOAD) → otro AND; ambos → un OR; el OR → el pin D del DFF</li>
-        </ol>
-        <p><b>El experimento:</b> cargá un valor (LOAD=1 + flanco de CLK), luego LOAD=0 y
-        cambiá las Entradas de dato: el registro <b>no cambia</b>. Acabás de construir la
-        memoria de trabajo del CPU.</p>`,
-      en: `
-        <p>A CPU needs to store <i>words</i> — several bits travelling together, like the 4
-        digits of a number. That is a <b>register</b>: N flip-flops in parallel, all sharing
-        the same clock. Each flip-flop holds one bit; together they hold the word.</p>
-        <p>One more detail: as is, the register would load data on <i>every</i> edge. We need
-        to decide <b>when to load</b> and when to hold. The fix is a <b>LOAD mux</b> in front
-        of each flip-flop, choosing between:</p>
-        <ul style="padding-left:18px; margin:6px 0;">
-          <li><b>LOAD=1</b>: passes the new data (loads on the next edge)</li>
-          <li><b>LOAD=0</b>: passes the flip-flop's own Q output — it "rewrites itself", so it stays frozen</li>
-        </ul>
-        <p style="font-family:monospace; font-size:12px; color:var(--dim)">
-        The cell (repeated per bit):<br>
-        D' = (D and LOAD) or (Q and ¬LOAD) &nbsp;→&nbsp; D' feeds the DFF → Q</p>
-        <p><b>Components you need (per bit):</b></p>
-        <ul style="padding-left:18px; margin:6px 0;">
-          <li>1× data <b>Input</b> (key 2)</li>
-          <li>2× <b>AND</b>, 1× <b>OR</b> (keys 6, 7) — the LOAD mux</li>
-          <li>1× your <b>DFF</b> box 🧩 (from lesson 9)</li>
-          <li>1× <b>Output</b> (key 3)</li>
-        </ul>
-        ${lay('Layout on the canvas (left to right):', [
-          'Bit 0 on top, bit 1 below, bit 2…; <b>LOAD</b> and <b>CLK</b> at the bottom, shared',
-          '<b>NOT</b> (¬LOAD)',
-          'Per bit: <b>AND (D·LOAD)</b> on top, <b>AND (Q·¬LOAD)</b> below',
-          'Per bit: <b>OR</b> of the mux',
-          'Per bit: <b>DFF</b> box',
-          'Per bit: <b>Output Q</b>'
-        ], 'Each number is a column. The only wire that flows left is <b>Q</b> to the AND (Q·¬LOAD): that is the memory rewriting itself.')}
-        <p>Shared by all bits: 1× <b>NOT</b> (key 5) for ¬LOAD,
-        1× CLK <b>Input</b>, 1× LOAD <b>Input</b> (or a ⏱ clock, key 4).</p>
-        <p><b>Mission (2 bits is enough — do 4 if you like):</b></p>
-        <ol style="padding-left:18px; margin:6px 0;">
-          <li>Add one LOAD Input and one CLK Input</li>
-          <li>Each bit: (data and LOAD) → an AND; (Q and ¬LOAD) → another AND; both → an OR; the OR → the DFF's D pin</li>
-        </ol>
-        <p><b>The experiment:</b> load a value (LOAD=1 + clock edge), then LOAD=0 and change
-        the data Inputs: the register <b>doesn't move</b>. You just built the CPU's working
-        memory.</p>`,
-    },
-    check() {
-      const results = [];
-      const dff = state.components.filter(c => c.type === "DFF");
-      const ors = state.components.filter(c => c.type === "or");
-      const sws = state.components.filter(c => c.type === "switch");
-      const nameNeeds = TXT(LL(
-        "Registro: al menos 2 cajas DFF en paralelo, sus mux de LOAD (OR) y Entradas de LOAD/CLK",
-        "At least 2 DFF boxes in parallel, their LOAD muxes (ORs) and LOAD/CLK Inputs"));
-      results.push({ name: nameNeeds, ok: dff.length >= 2 && ors.length >= 2 && sws.length >= 3 });
-      if (dff.length >= 2) {
-        // Functional test on a DFF wired as: mux OR → pin D, switch
-        // (or clock) → pin CLK. The lesson doesn't fix a creation order
-        // for the inputs, so discover what feeds each mux input from the
-        // wiring instead of assuming indexes.
-        const wired = dff.filter(d =>
-          state.wires.some(w => (w.a.c === d.id && w.a.t === 0) || (w.b.c === d.id && w.b.t === 0)) &&
-          state.wires.some(w => (w.a.c === d.id && w.a.t === 1) || (w.b.c === d.id && w.b.t === 1)));
-        results.push({
-          name: TXT(LL("Cada DFF tiene cable en sus pines D y CLK", "Each DFF has wires on its D and CLK pins")),
-          ok: wired.length === dff.length,
-        });
-        const d = wired[0];
-        if (d) {
-          // what drives pin CLK: a switch or a clock component
-          const wC = state.wires.find(w => (w.a.c === d.id && w.a.t === 1) || (w.b.c === d.id && w.b.t === 1));
-          const clkC = state.components.find(c => c.id === (wC.a.c === d.id ? wC.b.c : wC.a.c));
-          const swClk = clkC && clkC.type === "switch" ? clkC : null;
-          const clock = clkC && clkC.type === "clock" ? clkC : null;
-          results.push({
-            name: TXT(LL("Hay un NOT para ¬LOAD (tecla 5)", "There is a NOT for ¬LOAD (key 5)")),
-            ok: lessonCount("not") >= 1,
-          });
-          // Gather the switches feeding the cell: walk one level back
-          // from the OR that drives pin D — through its ANDs (data,
-          // LOAD) — plus any switches wired straight into the OR. The
-          // AND fed by the DFF's own Q (feedback) contributes no switch,
-          // so it can't pollute the set.
-          if (swClk || clock) {
-            const qv = r => r.values[r.netOf.get(d.id + ":2")];
-            const feeders = new Set();   // switch ids feeding the cell
-            const andsAll = state.components.filter(c => c.type === "and");
-            const wD2 = state.wires.find(w => (w.a.c === d.id && w.a.t === 0) || (w.b.c === d.id && w.b.t === 0));
-            const orC = state.components.find(c => c.id === (wD2.a.c === d.id ? wD2.b.c : wD2.a.c) && c.type === "or");
-            if (orC) {
-              for (const and of andsAll) {
-                // ANDs whose OUTPUT reaches that OR
-                const toOr = state.wires.some(w =>
-                  (w.a.c === orC.id || w.b.c === orC.id) &&
-                  ((w.a.c === and.id && w.a.t === 2) || (w.b.c === and.id && w.b.t === 2)));
-                if (!toOr) continue;
-                for (const t of [0, 1]) {
-                  const w = state.wires.find(w => (w.a.c === and.id && w.a.t === t) || (w.b.c === and.id && w.b.t === t));
-                  if (!w) continue;
-                  const otherC = w.a.c === and.id ? w.b.c : w.a.c;
-                  const sw = state.components.find(c => c.id === otherC && c.type === "switch");
-                  if (sw) feeders.add(sw.id);
-                }
-              }
-              // also switches wired straight into the OR (simpler variants)
-              for (const t of [0, 1]) {
-                const w = state.wires.find(w => (w.a.c === orC.id && w.a.t === t) || (w.b.c === orC.id && w.b.t === t));
-                if (!w) continue;
-                const otherC = w.a.c === orC.id ? w.b.c : w.a.c;
-                const sw = state.components.find(c => c.id === otherC && c.type === "switch");
-                if (sw) feeders.add(sw.id);
-              }
-            }
-            const cellSws = sws.filter(s => feeders.has(s.id));
-            if (cellSws.length >= 2) {
-              // Simulate the cell with REAL edges: raise CLK then lower it
-              // (falling edge → DFF must load). Test 1 (load): LOAD=1 + D=1,
-              // edge → Q must be 1. Test 2 (hold): all switches off
-              // (LOAD=0, D=0), raise and lower CLK again → Q must STILL be
-              // 1 (it rewrites itself, not a new value). cellSws[0]/[1] can
-              // be (LOAD, D) or (D, LOAD) in either order: with both at 1
-              // the edge loads 1 either way, and with both at 0 the hold
-              // test works either way.
-              const clockPrev = clock ? (globalClockState.get(clock.id) ?? false) : false;
-              const clkSet = v => {
-                if (swClk) swClk.on = v;
-                else globalClockState.set(clock.id, v);
-              };
-              let okLoadHold = false;
-              for (const [sA, sB] of [[cellSws[0], cellSws[1]], [cellSws[1], cellSws[0]]]) {
-                sws.forEach(s => s.on = false);
-                clkSet(false);
-                sA.on = true; sB.on = true; // LOAD=1, D=1 (either order)
-                simulate();
-                clkSet(true);  // raise CLK
-                simulate();
-                clkSet(false); // falling edge: must load Q=1
-                const qLoad = qv(simulate());
-                sws.forEach(s => s.on = false); // LOAD=0, D=0
-                clkSet(true);  // raise CLK (LOAD=0: Q feeds back, no change)
-                simulate();
-                clkSet(false); // falling edge
-                const qHold = qv(simulate());
-                sws.forEach(s => s.on = false);
-                if (qLoad === 1 && qHold === 1) { okLoadHold = true; break; }
-              }
-              if (clock) { globalClockState.set(clock.id, clockPrev); clockAcc.set(clock.id, 0); }
-              results.push({
-                name: TXT(LL("LOAD=1 + flanco carga D; LOAD=0 lo mantiene", "LOAD=1 + edge loads D; LOAD=0 holds it")),
-                ok: okLoadHold,
-              });
-            }
-          }
-        }
-      }
-      return results;
-    },
-  },
-  {
-    id: "s11",
-    title: LL("11. MUX: el selector", "11. MUX: the selector"),
+    title: LL("10. MUX: el selector", "10. MUX: the selector"),
     theory: {
       es: `
         <p>Un <b>multiplexor (MUX)</b> es el "desvío ferroviario" de las señales: tiene 2
@@ -1165,8 +1175,8 @@ const LESSONS = [
     },
   },
   {
-    id: "s12",
-    title: LL("12. Empaquetá el MUX2", "12. Pack the MUX2"),
+    id: "s11",
+    title: LL("11. Empaquetá el MUX2", "11. Pack the MUX2"),
     theory: {
       es: `
         <p>El MUX se va a usar a montones en la CPU — <i>decenas</i>: para elegir qué registro
@@ -1174,7 +1184,7 @@ const LESSONS = [
         lección anterior para nunca más volver a dibujar sus 4 compuertas.</p>
         <p><b>Misión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Con el MUX de la lección 11 en el canvas</li>
+          <li>Con el MUX de la lección 10 en el canvas</li>
           <li>📦 Empaquetar (P) → rectángulo sobre todo → <b>Crear componente</b></li>
           <li>Nombralo <b>MUX2</b></li>
           <li>Pines de entrada: las 3 Entradas, <b>en este orden</b>: A, B, S (el orden de click define el orden de los pines)</li>
@@ -1189,7 +1199,7 @@ const LESSONS = [
         from the previous lesson so you never draw its 4 gates again.</p>
         <p><b>Mission:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>With the MUX from lesson 11 on the canvas</li>
+          <li>With the MUX from lesson 10 on the canvas</li>
           <li>📦 Pack (P) → rectangle over everything → <b>Create component</b></li>
           <li>Name it <b>MUX2</b></li>
           <li>Input pins: the 3 Inputs, <b>in this order</b>: A, B, S (click order = pin order)</li>
@@ -1241,8 +1251,399 @@ const LESSONS = [
     },
   },
   {
+    id: "s12",
+    title: LL("12. Registro de 1 bit", "12. 1-bit register"),
+    theory: {
+      es: `
+        <p>Un flip-flop copia su entrada en cada flanco de reloj. Pero en una CPU no querés
+        sobreescribir tus datos todo el tiempo; necesitás decidir <b>cuándo cargar</b> un dato nuevo
+        y <b>cuándo conservar</b> el anterior.</p>
+        <p>La solución es poner un selector <b>MUX2</b> a la entrada: si <b>LOAD=1</b> (cargar),
+        deja pasar el dato nuevo D; si <b>LOAD=0</b> (mantener), reconecta la propia salida Q del
+        flip-flop hacia su entrada. Al alimentarse de sí mismo, el bit queda congelado.</p>
+        <p><b>Componentes que necesitás:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>1× tu caja <b>DFF</b> 🧩 (de la lección 9)</li>
+          <li>1× tu caja <b>MUX2</b> 🧩 (de la lección 11)</li>
+          <li>3× <b>Entrada</b> (tecla 2) — D, LOAD y CLK</li>
+          <li>1× <b>Salida</b> (tecla 3) — Q</li>
+        </ul>
+        ${lay("Disposición en el canvas (de izquierda a derecha):", [
+          "Entradas: <b>D</b> arriba, <b>LOAD</b> al medio, <b>CLK</b> abajo",
+          "Caja <b>MUX2</b>",
+          "Caja <b>DFF</b>",
+          "<b>Salida Q</b>"
+        ], "El único cable hacia la izquierda es la salida <b>Q</b> del DFF que vuelve a la entrada <b>A</b> del MUX2: la memoria manteniéndose a sí misma.")}
+        <p><b>Conexión:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Salida Q del DFF → entrada A del MUX2 (camino para mantener)</li>
+          <li>Entrada D → entrada B del MUX2 (camino para cargar)</li>
+          <li>Entrada LOAD → entrada S (selector) del MUX2</li>
+          <li>Salida del MUX2 → entrada D del DFF</li>
+          <li>Entrada CLK → entrada CLK del DFF</li>
+          <li>Salida Q del DFF → la Salida</li>
+        </ol>
+        <p><b>El experimento:</b> con LOAD=1 y D=1, da un pulso de CLK (subí y bajá): la salida pasa a 1.
+        Con LOAD=0 y D=0, da otro pulso: la salida <b>sigue en 1</b>. Solo carga cuando LOAD=1.</p>
+        <p style="color:var(--dim); font-size:12px;">💡 Al terminar, empaquetalo como <b>REG1</b>:<br>
+        📦 Empaquetar (P) → rectángulo → <b>Crear componente</b>.<br>
+        Nombralo <b>REG1</b>.<br>
+        Pines de entrada, <b>en este orden de click</b>: D, LOAD, CLK.<br>
+        Pin de salida: Q.<br>
+        En la próxima lección vas a usar 4 de estos para armar un registro de 4 bits.</p>`,
+      en: `
+        <p>A flip-flop copies its input on every clock edge. But in a CPU you don't want to
+        overwrite data every single cycle; you need to choose <b>when to load</b> new data and
+        <b>when to hold</b> what is already there.</p>
+        <p>The solution is a <b>MUX2</b> at the input: if <b>LOAD=1</b> (load), it lets new
+        data D through; if <b>LOAD=0</b> (hold), it feeds the flip-flop's own Q output back into
+        its input. By feeding itself, the stored bit stays frozen.</p>
+        <p><b>Components you need:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>1× your <b>DFF</b> box 🧩 (from lesson 9)</li>
+          <li>1× your <b>MUX2</b> box 🧩 (from lesson 11)</li>
+          <li>3× <b>Input</b> (key 2) — D, LOAD, and CLK</li>
+          <li>1× <b>Output</b> (key 3) — Q</li>
+        </ul>
+        ${lay("Layout on the canvas (left to right):", [
+          "Inputs: <b>D</b> on top, <b>LOAD</b> in the middle, <b>CLK</b> below",
+          "<b>MUX2</b> box",
+          "<b>DFF</b> box",
+          "<b>Output Q</b>"
+        ], "The only wire flowing to the left is the DFF's <b>Q</b> output feeding back to MUX2's <b>A</b> input: memory holding itself.")}
+        <p><b>Wiring:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>DFF output Q → MUX2 input A (hold path)</li>
+          <li>Input D → MUX2 input B (load path)</li>
+          <li>Input LOAD → MUX2 input S (select)</li>
+          <li>MUX2 output → DFF input D</li>
+          <li>Input CLK → DFF input CLK</li>
+          <li>DFF output Q → the Output</li>
+        </ol>
+        <p><b>The experiment:</b> with LOAD=1 and D=1, pulse CLK (toggle up and down): the output becomes 1.
+        With LOAD=0 and D=0, pulse CLK again: the output <b>stays 1</b>. It only loads when LOAD=1.</p>
+        <p style="color:var(--dim); font-size:12px;">💡 When done, pack it as <b>REG1</b>:<br>
+        📦 Pack (P) → rectangle → <b>Create component</b>.<br>
+        Name it <b>REG1</b>.<br>
+        Input pins, <b>in this click order</b>: D, LOAD, CLK.<br>
+        Output pin: Q.<br>
+        Next lesson you will use 4 of these to build a 4-bit register.</p>`,
+    },
+    check() {
+      const results = [];
+      const dff = state.components.filter(c => c.type === "DFF");
+      const mux2 = state.components.filter(c => c.type === "MUX2");
+      const reg1Comp = state.components.filter(c => c.type === "REG1");
+      const sws = state.components.filter(c => c.type === "switch");
+      const clkComps = state.components.filter(c => c.type === "clock");
+      const outs = state.components.filter(c => c.type === "out");
+
+      const hasLib = !!lib["REG1"];
+      const okLib = hasLib ? testPackedReg1() : false;
+
+      if ((dff.length === 0 || mux2.length === 0) && hasLib) {
+        return [
+          { name: TXT(LL("Caja REG1 empaquetada (D, LOAD, CLK | Q)", "REG1 box packaged (D, LOAD, CLK | Q)")), ok: okLib },
+          { name: TXT(LL("LOAD=1 + pulso carga D", "LOAD=1 + pulse loads D")), ok: okLib },
+          { name: TXT(LL("LOAD=0 + pulso mantiene el valor", "LOAD=0 + pulse holds value")), ok: okLib },
+        ];
+      }
+
+      const nameNeeds = TXT(LL(
+        "Circuito: 1 DFF, 1 MUX2, Entradas (D, LOAD, CLK) y Salida",
+        "Circuit: 1 DFF, 1 MUX2, Inputs (D, LOAD, CLK) and Output"));
+      const hasBasicComps = (dff.length >= 1 && mux2.length >= 1 && (sws.length >= 2 || (sws.length >= 1 && clkComps.length >= 1))) || reg1Comp.length >= 1;
+      results.push({ name: nameNeeds, ok: hasBasicComps });
+      if (!hasBasicComps) return results;
+
+      const targetDff = dff[0];
+      const outC = outs[0];
+      const qv = (r) => {
+        if (outC) {
+          const net = r.netOf.get(outC.id + ":0");
+          if (net !== undefined) return r.values[net];
+        }
+        if (targetDff) {
+          const net = r.netOf.get(targetDff.id + ":2");
+          if (net !== undefined) return r.values[net];
+        }
+        return -1;
+      };
+
+      const clockComp = clkComps[0] ?? null;
+      let okLoad = false;
+      let okHold = false;
+
+      let clkSw = null;
+      if (targetDff) {
+        const wC = state.wires.find(w => (w.a.c === targetDff.id && w.a.t === 1) || (w.b.c === targetDff.id && w.b.t === 1));
+        if (wC) {
+          const otherId = wC.a.c === targetDff.id ? wC.b.c : wC.a.c;
+          clkSw = sws.find(s => s.id === otherId) ?? null;
+        }
+      }
+
+      const savedSw = sws.map(s => ({ s, on: s.on }));
+      const savedClock = clockComp ? (globalClockState.get(clockComp.id) ?? false) : false;
+
+      const pulseWith = (cSw) => {
+        if (cSw) {
+          cSw.on = true; simulate();
+          cSw.on = false; return simulate();
+        } else if (clockComp) {
+          globalClockState.set(clockComp.id, true); simulate();
+          globalClockState.set(clockComp.id, false); return simulate();
+        }
+        return simulate();
+      };
+
+      const candidateClk = clkSw ? [clkSw] : (clockComp ? [null] : sws);
+      outerLoop:
+      for (const curClk of candidateClk) {
+        const dataCandidates = sws.filter(s => s !== curClk);
+        for (let i = 0; i < dataCandidates.length; i++) {
+          for (let j = 0; j < dataCandidates.length; j++) {
+            if (i === j) continue;
+            const curLoad = dataCandidates[i];
+            const curD = dataCandidates[j];
+
+            sws.forEach(s => s.on = false);
+            if (clockComp) globalClockState.set(clockComp.id, false);
+            simulate();
+
+            curLoad.on = true; curD.on = true;
+            pulseWith(curClk);
+            const r1 = qv(simulate());
+
+            curLoad.on = false; curD.on = false;
+            pulseWith(curClk);
+            const r2 = qv(simulate());
+
+            curLoad.on = true; curD.on = false;
+            pulseWith(curClk);
+            const r3 = qv(simulate());
+
+            curLoad.on = false; curD.on = true;
+            pulseWith(curClk);
+            const r4 = qv(simulate());
+
+            if (r1 === 1 && r3 === 0) okLoad = true;
+            if (r1 === 1 && r2 === 1 && r3 === 0 && r4 === 0) {
+              okLoad = true;
+              okHold = true;
+              break outerLoop;
+            }
+          }
+        }
+      }
+
+      savedSw.forEach(({ s, on }) => s.on = on);
+      if (clockComp) globalClockState.set(clockComp.id, savedClock);
+      simulate();
+
+      results.push({ name: TXT(LL("LOAD=1 + pulso carga D", "LOAD=1 + pulse loads D")), ok: okLoad });
+      results.push({ name: TXT(LL("LOAD=0 + pulso mantiene el valor", "LOAD=0 + pulse holds value")), ok: okHold });
+      if (hasLib) {
+        results.push({ name: TXT(LL("Caja REG1 empaquetada funciona", "Packaged REG1 box works")), ok: okLib });
+      }
+      return results;
+    },
+  },
+  {
     id: "s13",
-    title: LL("13. Half adder: sumar bits", "13. Half adder: adding bits"),
+    title: LL("13. Registro de 4 bits", "13. 4-bit register"),
+    theory: {
+      es: `
+        <p>Una CPU procesa números completos de varios bits (palabras), como los 4 bits de un dato
+        o una instrucción. Para guardar 4 bits a la vez, no reinventamos la rueda: colocamos
+        <b>4 registros REG1 en paralelo</b>.</p>
+        <p>Todos comparten la misma entrada de <b>LOAD</b> y el mismo pulso de <b>CLK</b>. Así, con una
+        sola orden, la CPU carga o congela los 4 dígitos juntos en el mismo instante.</p>
+        <p><b>Componentes que necesitás:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>4× tu caja <b>REG1</b> 🧩 (de la lección 12)</li>
+          <li>4× <b>Entrada</b> de datos (tecla 2) — D0, D1, D2, D3</li>
+          <li>1× <b>Entrada</b> de LOAD (tecla 2) — compartida</li>
+          <li>1× <b>Entrada</b> de CLK (tecla 2) — compartida (o un ⏱ reloj, tecla 4)</li>
+          <li>4× <b>Salida</b> (tecla 3) — Q0, Q1, Q2, Q3</li>
+        </ul>
+        ${lay("Disposición en el canvas (de izquierda a derecha):", [
+          "Entradas <b>D0-D3</b> arriba; <b>LOAD</b> y <b>CLK</b> abajo",
+          "4 cajas <b>REG1</b>, una debajo de otra (bit 0 arriba, bit 3 abajo)",
+          "4 <b>Salidas Q0-Q3</b> (una a la derecha de cada REG1)"
+        ], "Los cables de datos van en línea recta. Las líneas de LOAD y CLK se ramifican hacia las 4 cajas.")}
+        <p><b>Conexión:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Cada entrada D0-D3 va al pin D (pin 0) de su respectiva caja REG1</li>
+          <li>La entrada LOAD va al pin LOAD (pin 1) de las 4 cajas REG1</li>
+          <li>La entrada CLK va al pin CLK (pin 2) de las 4 cajas REG1</li>
+          <li>La salida Q (pin 3) de cada REG1 va a su Salida (Q0-Q3)</li>
+        </ol>
+        <p><b>El experimento:</b> poné LOAD=1, colocá un 5 en binario (D0=1, D1=0, D2=1, D3=0) y da un pulso de CLK:
+        las salidas muestran 5. Poné LOAD=0, cambiá las entradas D a cualquier otro número y da otro pulso:
+        las salidas <b>se quedan en 5</b>.</p>
+        <p style="color:var(--dim); font-size:12px;">💡 Al terminar, empaquetalo como <b>REG4</b>:<br>
+        📦 Empaquetar (P) → rectángulo → <b>Crear componente</b>.<br>
+        Nombralo <b>REG4</b>.<br>
+        Pines de entrada, <b>en este orden de click</b>: D0, D1, D2, D3, LOAD, CLK.<br>
+        Pines de salida, <b>en este orden</b>: Q0, Q1, Q2, Q3.<br>
+        ¡Este registro de 4 bits será el acumulador y la memoria de trabajo de tu CPU!</p>`,
+      en: `
+        <p>A CPU processes multi-bit words, like the 4 bits of a number or instruction. To store
+        4 bits at once, we don't start from scratch: we place <b>4 REG1 registers in parallel</b>.</p>
+        <p>All 4 share the same <b>LOAD</b> command and the same <b>CLK</b> pulse. With a single
+        signal, the CPU loads or freezes all 4 digits together at the exact same instant.</p>
+        <p><b>Components you need:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>4× your <b>REG1</b> box 🧩 (from lesson 12)</li>
+          <li>4× data <b>Input</b> (key 2) — D0, D1, D2, D3</li>
+          <li>1× <b>Input</b> for LOAD (key 2) — shared</li>
+          <li>1× <b>Input</b> for CLK (key 2) — shared (or a ⏱ clock, key 4)</li>
+          <li>4× <b>Output</b> (key 3) — Q0, Q1, Q2, Q3</li>
+        </ul>
+        ${lay("Layout on the canvas (left to right):", [
+          "Inputs <b>D0-D3</b> on top; <b>LOAD</b> and <b>CLK</b> below",
+          "4 <b>REG1</b> boxes, stacked (bit 0 on top, bit 3 below)",
+          "4 <b>Outputs Q0-Q3</b> (one next to each REG1)"
+        ], "Data wires run straight across. The LOAD and CLK lines branch out to all 4 boxes.")}
+        <p><b>Wiring:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Each input D0-D3 goes to the D pin (pin 0) of its REG1 box</li>
+          <li>The LOAD input connects to the LOAD pin (pin 1) of all 4 REG1 boxes</li>
+          <li>The CLK input connects to the CLK pin (pin 2) of all 4 REG1 boxes</li>
+          <li>The Q pin (pin 3) of each REG1 connects to its Output (Q0-Q3)</li>
+        </ol>
+        <p><b>Experiment:</b> set LOAD=1, enter binary 5 (D0=1, D1=0, D2=1, D3=0), and pulse CLK: outputs show 5.
+        Set LOAD=0, change D to any other number, and pulse CLK again: outputs <b>stay at 5</b>.</p>
+        <p style="color:var(--dim); font-size:12px;">💡 When done, pack it as <b>REG4</b>:<br>
+        📦 Pack (P) → rectangle → <b>Create component</b>.<br>
+        Name it <b>REG4</b>.<br>
+        Input pins, <b>in this click order</b>: D0, D1, D2, D3, LOAD, CLK.<br>
+        Output pins, <b>in this order</b>: Q0, Q1, Q2, Q3.<br>
+        This 4-bit register will be your CPU's accumulator and working memory!</p>`,
+    },
+    check() {
+      const results = [];
+      const reg1 = state.components.filter(c => c.type === "REG1");
+      const reg4 = state.components.filter(c => c.type === "REG4");
+      const sws = state.components.filter(c => c.type === "switch");
+      const clkComps = state.components.filter(c => c.type === "clock");
+      const outs = state.components.filter(c => c.type === "out");
+
+      const hasLib = !!lib["REG4"];
+      const okLib = hasLib ? testPackedReg4() : false;
+
+      if (reg1.length < 4 && hasLib) {
+        return [
+          { name: TXT(LL("Caja REG4 empaquetada (D0-D3, LOAD, CLK | Q0-Q3)", "REG4 box packaged (D0-D3, LOAD, CLK | Q0-Q3)")), ok: okLib },
+          { name: TXT(LL("Carga valor de 4 bits con LOAD=1", "Loads 4-bit value with LOAD=1")), ok: okLib },
+          { name: TXT(LL("Mantiene valor de 4 bits con LOAD=0", "Holds 4-bit value with LOAD=0")), ok: okLib },
+        ];
+      }
+
+      const nameNeeds = TXT(LL(
+        "Circuito: 4 cajas REG1 con LOAD y CLK compartidos",
+        "Circuit: 4 REG1 boxes with shared LOAD and CLK"));
+      const hasComps = reg1.length >= 4 || reg4.length >= 1;
+      results.push({ name: nameNeeds, ok: hasComps && (sws.length >= 5 || (sws.length >= 4 && clkComps.length >= 1)) });
+      if (!hasComps) return results;
+
+      const savedSw = sws.map(s => ({ s, on: s.on }));
+      const clockComp = clkComps[0] ?? null;
+      const savedClock = clockComp ? (globalClockState.get(clockComp.id) ?? false) : false;
+
+      let okLoad = false;
+      let okHold = false;
+
+      try {
+        const regBoxes = reg1.slice(0, 4);
+        const getDrivingSwitch = (regComp, pin) => {
+          const w = state.wires.find(w => (w.a.c === regComp.id && w.a.t === pin) || (w.b.c === regComp.id && w.b.t === pin));
+          if (!w) return null;
+          const otherId = w.a.c === regComp.id ? w.b.c : w.a.c;
+          return sws.find(s => s.id === otherId) ?? null;
+        };
+
+        const loadSwCandidate = getDrivingSwitch(regBoxes[0], 1);
+        const clkSwCandidate = getDrivingSwitch(regBoxes[0], 2);
+
+        const dataSws = regBoxes.map(r => getDrivingSwitch(r, 0));
+        const outList = regBoxes.map(regComp => {
+          const w = state.wires.find(w => (w.a.c === regComp.id && w.a.t === 3) || (w.b.c === regComp.id && w.b.t === 3));
+          if (!w) return null;
+          const otherId = w.a.c === regComp.id ? w.b.c : w.a.c;
+          return outs.find(o => o.id === otherId) ?? null;
+        });
+
+        const pulse = () => {
+          if (clkSwCandidate) {
+            clkSwCandidate.on = true; simulate();
+            clkSwCandidate.on = false; return simulate();
+          } else if (clockComp) {
+            globalClockState.set(clockComp.id, true); simulate();
+            globalClockState.set(clockComp.id, false); return simulate();
+          }
+          return simulate();
+        };
+
+        const readVal = (r) => {
+          let v = 0;
+          for (let i = 0; i < 4; i++) {
+            const outC = outList[i];
+            let net;
+            if (outC) net = r.netOf.get(outC.id + ":0");
+            else net = r.netOf.get(regBoxes[i].id + ":3");
+            const val = net !== undefined ? r.values[net] : -1;
+            if (val === 1) v |= (1 << i);
+            else if (val !== 0) return -1;
+          }
+          return v;
+        };
+
+        if (loadSwCandidate && (clkSwCandidate || clockComp) && dataSws.every(Boolean)) {
+          loadSwCandidate.on = true;
+          for (let i = 0; i < 4; i++) dataSws[i].on = !!((5 >> i) & 1);
+          pulse();
+          const v1 = readVal(simulate());
+
+          loadSwCandidate.on = false;
+          for (let i = 0; i < 4; i++) dataSws[i].on = !!((10 >> i) & 1);
+          pulse();
+          const v2 = readVal(simulate());
+
+          loadSwCandidate.on = true;
+          for (let i = 0; i < 4; i++) dataSws[i].on = !!((10 >> i) & 1);
+          pulse();
+          const v3 = readVal(simulate());
+
+          loadSwCandidate.on = false;
+          for (let i = 0; i < 4; i++) dataSws[i].on = false;
+          pulse();
+          const v4 = readVal(simulate());
+
+          if (v1 === 5 && v3 === 10) okLoad = true;
+          if (v1 === 5 && v2 === 5 && v3 === 10 && v4 === 10) okHold = true;
+        }
+      } catch (e) {
+        okLoad = false;
+        okHold = false;
+      } finally {
+        savedSw.forEach(({ s, on }) => s.on = on);
+        if (clockComp) globalClockState.set(clockComp.id, savedClock);
+        simulate();
+      }
+
+      results.push({ name: TXT(LL("Carga valor de 4 bits con LOAD=1", "Loads 4-bit value with LOAD=1")), ok: okLoad });
+      results.push({ name: TXT(LL("Mantiene valor de 4 bits con LOAD=0", "Holds 4-bit value with LOAD=0")), ok: okHold });
+      if (hasLib) {
+        results.push({ name: TXT(LL("Caja REG4 empaquetada funciona", "Packaged REG4 box works")), ok: okLib });
+      }
+      return results;
+    },
+  },
+  {
+    id: "s14",
+    title: LL("14. Half adder: sumar bits", "14. Half adder: adding bits"),
     theory: {
       es: `
         <p>Llegó la hora de que tu circuito <b>calcule</b>. Primero, un repaso rápido de
@@ -1320,8 +1721,8 @@ const LESSONS = [
     },
   },
   {
-    id: "s14",
-    title: LL("14. Sumador completo (full adder)", "14. Full adder"),
+    id: "s15",
+    title: LL("15. Sumador completo (full adder)", "15. Full adder"),
     theory: {
       es: `
         <p>El half adder tiene una limitación: solo suma <i>una columna</i>. Pero cuando sumás
@@ -1433,8 +1834,8 @@ const LESSONS = [
     },
   },
   {
-    id: "s15",
-    title: LL("15. Empaquetá el FULLADDER", "15. Pack the FULLADDER"),
+    id: "s16",
+    title: LL("16. Empaquetá el FULLADDER", "16. Pack the FULLADDER"),
     theory: {
       es: `
         <p>Para sumar números de 4 bits vas a encadenar 4 full adders, donde el acarreo de
@@ -1442,7 +1843,7 @@ const LESSONS = [
         siguiente. Primero, empaquetá el de la lección anterior.</p>
         <p><b>Misión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Con el full adder de la lección 14 en el canvas</li>
+          <li>Con el full adder de la lección 15 en el canvas</li>
           <li>📦 Empaquetar (P) → rectángulo → <b>Crear componente</b></li>
           <li>Nombralo <b>FULLADDER</b></li>
           <li>Pines de entrada, <b>en este orden de click</b>: A, B, Cin</li>
@@ -1459,7 +1860,7 @@ const LESSONS = [
         from the previous lesson.</p>
         <p><b>Mission:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>With the full adder from lesson 14 on the canvas</li>
+          <li>With the full adder from lesson 15 on the canvas</li>
           <li>📦 Pack (P) → rectangle → <b>Create component</b></li>
           <li>Name it <b>FULLADDER</b></li>
           <li>Input pins, <b>in this click order</b>: A, B, Cin</li>
@@ -1488,8 +1889,8 @@ const LESSONS = [
     },
   },
   {
-    id: "s16",
-    title: LL("16. Sumador de 4 bits", "16. 4-bit adder"),
+    id: "s17",
+    title: LL("17. Sumador de 4 bits", "17. 4-bit adder"),
     theory: {
       es: `
         <p>Ahora la gran pieza: <b>4 FULLADDER en cascada</b>. Cada uno suma una columna
@@ -1498,7 +1899,7 @@ const LESSONS = [
         derecha a izquierda.</p>
         <p><b>Componentes que necesitás:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>4× tu caja <b>FULLADDER</b> 🧩 (de la lección 15)</li>
+          <li>4× tu caja <b>FULLADDER</b> 🧩 (de la lección 16)</li>
           <li>9× <b>Entrada</b> (tecla 2) — A0-A3, B0-B3 y Cin (dejala en 0)</li>
           <li>4-5× <b>Salida</b> (tecla 3) — S0-S3 (y opcionalmente el Cout final)</li>
         </ul>
@@ -1527,7 +1928,7 @@ const LESSONS = [
         4), bit 3 (worth 8) — and the carry travels right to left.</p>
         <p><b>Components you need:</b></p>
         <ul style="padding-left:18px; margin:6px 0;">
-          <li>4× your <b>FULLADDER</b> box 🧩 (from lesson 15)</li>
+          <li>4× your <b>FULLADDER</b> box 🧩 (from lesson 16)</li>
           <li>9× <b>Input</b> (key 2) — A0-A3, B0-B3, and Cin (leave it at 0)</li>
           <li>4-5× <b>Output</b> (key 3) — S0-S3 (and optionally the final Cout)</li>
         </ul>
@@ -1584,15 +1985,15 @@ const LESSONS = [
     },
   },
   {
-    id: "s17",
-    title: LL("17. Empaquetá el ADD4", "17. Pack the ADD4"),
+    id: "s18",
+    title: LL("18. Empaquetá el ADD4", "18. Pack the ADD4"),
     theory: {
       es: `
         <p>El sumador de 4 bits es la pieza aritmética central de tu futura ALU. Empaquetalo
         para usarlo como una única pieza.</p>
         <p><b>Misión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>Con el sumador de la lección 16 en el canvas</li>
+          <li>Con el sumador de la lección 17 en el canvas</li>
           <li>📦 Empaquetar (P) → rectángulo → <b>Crear componente</b></li>
           <li>Nombralo <b>ADD4</b></li>
           <li>Pines de entrada, <b>en este orden de click</b>: A0, A1, A2, A3, B0, B1, B2, B3, Cin</li>
@@ -1602,13 +2003,13 @@ const LESSONS = [
         <p style="color:var(--dim); font-size:12px;">💡 El orden de los pines lo define el orden en que hacés click
         sobre las piezas en el diálogo. Hacé click primero en las Entradas de A (A0→A3), luego las de B, luego Cin.</p>
         <p>Con tu caja ADD4, sumar 4 bits es usar 1 solo componente. Ya tenés todas las piezas
-        aritméticas para la ALU — que armamos en la lección 18.</p>`,
+        aritméticas para la ALU — que armamos en la lección 20.</p>`,
       en: `
         <p>The 4-bit adder is the arithmetic core of your future ALU. Pack it to use it as a
         single part.</p>
         <p><b>Mission:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
-          <li>With the adder from lesson 16 on the canvas</li>
+          <li>With the adder from lesson 17 on the canvas</li>
           <li>📦 Pack (P) → rectangle → <b>Create component</b></li>
           <li>Name it <b>ADD4</b></li>
           <li>Input pins, <b>in this click order</b>: A0, A1, A2, A3, B0, B1, B2, B3, Cin</li>
@@ -1618,7 +2019,7 @@ const LESSONS = [
         <p style="color:var(--dim); font-size:12px;">💡 Pin order = click order in the dialog. Click the A Inputs
         first (A0→A3), then B's, then Cin.</p>
         <p>With your ADD4 box, adding 4 bits takes one component. You have all the arithmetic
-        pieces for the ALU — built in lesson 18.</p>`,
+        pieces for the ALU — built in lesson 20.</p>`,
     },
     check() {
       const results = [];
@@ -1639,8 +2040,186 @@ const LESSONS = [
     },
   },
   {
-    id: "s18",
-    title: LL("18. ALU de 4 bits", "18. 4-bit ALU"),
+    id: "s19",
+    title: LL("19. Selector de 4 bits", "19. 4-bit selector"),
+    theory: {
+      es: `
+        <p>En la lección 10 armaste un selector MUX2 para elegir entre dos bits simples. Pero en
+        una CPU casi todas las señales viajan en grupos de 4 bits (buses).</p>
+        <p>Para elegir entre dos números completos de 4 bits — el bus A o el bus B — colocamos
+        <b>4 selectores MUX2 en paralelo</b>, todos controlados por una única entrada de selección <b>S</b>.</p>
+        <p>Con S=0 pasan los 4 bits de A; con S=1 pasan los 4 bits de B. Esta pieza es fundamental:
+        la usarás en la ALU para elegir operaciones, en el PC para elegir saltos, y en el bus de datos del CPU.</p>
+        <p><b>Componentes que necesitás:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>4× tu caja <b>MUX2</b> 🧩 (de la lección 11)</li>
+          <li>4× <b>Entrada</b> para el bus A (tecla 2) — A0, A1, A2, A3</li>
+          <li>4× <b>Entrada</b> para el bus B (tecla 2) — B0, B1, B2, B3</li>
+          <li>1× <b>Entrada</b> de selección (tecla 2) — S</li>
+          <li>4× <b>Salida</b> (tecla 3) — O0, O1, O2, O3</li>
+        </ul>
+        ${lay("Disposición en el canvas (de izquierda a derecha):", [
+          "Entradas: <b>A0-A3</b> arriba, <b>B0-B3</b> al medio, <b>S</b> abajo",
+          "4 cajas <b>MUX2</b>, una debajo de otra (bit 0 arriba, bit 3 abajo)",
+          "4 <b>Salidas O0-O3</b> (una al lado de cada MUX2)"
+        ], "Cada número es una columna. La señal S se ramifica hacia la entrada S (pin 2) de los 4 MUX2.")}
+        <p><b>Conexión:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Cada entrada A0-A3 va a la entrada A (pin 0) de su respectivo MUX2</li>
+          <li>Cada entrada B0-B3 va a la entrada B (pin 1) de su respectivo MUX2</li>
+          <li>La entrada de selección S va a la entrada S (pin 2) de las 4 cajas MUX2</li>
+          <li>La salida (pin 3) de cada MUX2 va a su Salida correspondiente (O0-O3)</li>
+        </ol>
+        <p><b>El experimento:</b> poné un número en A (p. ej. A=10: A1=1, A3=1) y otro en B (p. ej. B=5: B0=1, B2=1).
+        Con S=0, las salidas muestran 10 (copian A).
+        Con S=1, las salidas muestran 5 (copian B). ¡Elegís 4 bits de un solo golpe!</p>
+        <p style="color:var(--dim); font-size:12px;">💡 Al terminar, empaquetalo como <b>SEL4</b>:<br>
+        📦 Empaquetar (P) → rectángulo → <b>Crear componente</b>.<br>
+        Nombralo <b>SEL4</b>.<br>
+        Pines de entrada, <b>en este orden de click</b>: A0, A1, A2, A3, B0, B1, B2, B3, S.<br>
+        Pines de salida, <b>en este orden</b>: O0, O1, O2, O3.<br>
+        ¡Esta caja es el selector múltiple que conectará los órganos de tu CPU!</p>`,
+      en: `
+        <p>In lesson 10 you built a MUX2 to choose between two single bits. But in a CPU almost
+        all data travels in groups of 4 bits (buses).</p>
+        <p>To choose between two complete 4-bit numbers — bus A or bus B — we place <b>4 MUX2
+        selectors in parallel</b>, all controlled by a single select input <b>S</b>.</p>
+        <p>With S=0 the 4 bits of A pass through; with S=1 the 4 bits of B pass through. This
+        piece is essential: you will use it in the ALU to select operations, in the PC to handle jumps,
+        and in the CPU data bus.</p>
+        <p><b>Components you need:</b></p>
+        <ul style="padding-left:18px; margin:6px 0;">
+          <li>4× your <b>MUX2</b> box 🧩 (from lesson 11)</li>
+          <li>4× <b>Input</b> for bus A (key 2) — A0, A1, A2, A3</li>
+          <li>4× <b>Input</b> for bus B (key 2) — B0, B1, B2, B3</li>
+          <li>1× <b>Input</b> for selection (key 2) — S</li>
+          <li>4× <b>Output</b> (key 3) — O0, O1, O2, O3</li>
+        </ul>
+        ${lay("Layout on the canvas (left to right):", [
+          "Inputs: <b>A0-A3</b> on top, <b>B0-B3</b> in the middle, <b>S</b> below",
+          "4 <b>MUX2</b> boxes, stacked (bit 0 on top, bit 3 below)",
+          "4 <b>Outputs O0-O3</b> (one next to each MUX2)"
+        ], "Each number is a column. The S signal branches out to input S (pin 2) of all 4 MUX2 boxes.")}
+        <p><b>Wiring:</b></p>
+        <ol style="padding-left:18px; margin:6px 0;">
+          <li>Each input A0-A3 connects to input A (pin 0) of its MUX2</li>
+          <li>Each input B0-B3 connects to input B (pin 1) of its MUX2</li>
+          <li>Select input S connects to input S (pin 2) of all 4 MUX2 boxes</li>
+          <li>Output (pin 3) of each MUX2 connects to its Output (O0-O3)</li>
+        </ol>
+        <p><b>Experiment:</b> put a number on A (e.g. A=10: A1=1, A3=1) and another on B (e.g. B=5: B0=1, B2=1).
+        With S=0, the outputs show 10 (copying A).
+        With S=1, the outputs show 5 (copying B). You choose 4 bits at once!</p>
+        <p style="color:var(--dim); font-size:12px;">💡 When done, pack it as <b>SEL4</b>:<br>
+        📦 Pack (P) → rectangle → <b>Create component</b>.<br>
+        Name it <b>SEL4</b>.<br>
+        Input pins, <b>in this click order</b>: A0, A1, A2, A3, B0, B1, B2, B3, S.<br>
+        Output pins, <b>in this order</b>: O0, O1, O2, O3.<br>
+        This box is the multi-bit selector that will connect your CPU's organs!</p>`,
+    },
+    check() {
+      const results = [];
+      const mux2 = state.components.filter(c => c.type === "MUX2");
+      const sel4 = state.components.filter(c => c.type === "SEL4");
+      const sws = state.components.filter(c => c.type === "switch");
+      const outs = state.components.filter(c => c.type === "out");
+
+      const hasLib = !!lib["SEL4"];
+      const okLib = hasLib ? testPackedSel4() : false;
+
+      if (mux2.length < 4 && hasLib) {
+        return [
+          { name: TXT(LL("Caja SEL4 empaquetada (A×4, B×4, S | O×4)", "SEL4 box packaged (A×4, B×4, S | O×4)")), ok: okLib },
+          { name: TXT(LL("S=0 selecciona el bus A (4 bits)", "S=0 selects bus A (4 bits)")), ok: okLib },
+          { name: TXT(LL("S=1 selecciona el bus B (4 bits)", "S=1 selects bus B (4 bits)")), ok: okLib },
+        ];
+      }
+
+      const nameNeeds = TXT(LL(
+        "Circuito: 4 cajas MUX2 con selección S compartida",
+        "Circuit: 4 MUX2 boxes with shared S select"));
+      const hasComps = mux2.length >= 4 || sel4.length >= 1;
+      results.push({ name: nameNeeds, ok: hasComps && sws.length >= 9 });
+      if (!hasComps || sws.length < 9) return results;
+
+      const muxBoxes = mux2.slice(0, 4);
+      const getDrivingSwitch = (comp, pin) => {
+        const w = state.wires.find(w => (w.a.c === comp.id && w.a.t === pin) || (w.b.c === comp.id && w.b.t === pin));
+        if (!w) return null;
+        const otherId = w.a.c === comp.id ? w.b.c : w.a.c;
+        return sws.find(s => s.id === otherId) ?? null;
+      };
+
+      const sSwitches = muxBoxes.map(m => getDrivingSwitch(m, 2));
+      const sharedS = sSwitches[0];
+      const allSharedS = !!sharedS && sSwitches.every(s => s && s.id === sharedS.id);
+
+      results.push({
+        name: TXT(LL("La señal S está conectada a los 4 MUX2", "Signal S is connected to all 4 MUX2")),
+        ok: allSharedS,
+      });
+
+      const aSws = muxBoxes.map(m => getDrivingSwitch(m, 0));
+      const bSws = muxBoxes.map(m => getDrivingSwitch(m, 1));
+      const outList = muxBoxes.map(m => {
+        const w = state.wires.find(w => (w.a.c === m.id && w.a.t === 3) || (w.b.c === m.id && w.b.t === 3));
+        if (!w) return null;
+        const otherId = w.a.c === m.id ? w.b.c : w.a.c;
+        return outs.find(o => o.id === otherId) ?? null;
+      });
+
+      const savedSw = sws.map(s => ({ s, on: s.on }));
+      let okSel0 = false;
+      let okSel1 = false;
+
+      try {
+        if (allSharedS && aSws.every(Boolean) && bSws.every(Boolean)) {
+          const readVal = (r) => {
+            let v = 0;
+            for (let i = 0; i < 4; i++) {
+              const outC = outList[i];
+              let net;
+              if (outC) net = r.netOf.get(outC.id + ":0");
+              else net = r.netOf.get(muxBoxes[i].id + ":3");
+              const val = net !== undefined ? r.values[net] : -1;
+              if (val === 1) v |= (1 << i);
+              else if (val !== 0) return -1;
+            }
+            return v;
+          };
+
+          sharedS.on = false;
+          for (let i = 0; i < 4; i++) {
+            aSws[i].on = !!((10 >> i) & 1);
+            bSws[i].on = !!((5 >> i) & 1);
+          }
+          const v0 = readVal(simulate());
+
+          sharedS.on = true;
+          const v1 = readVal(simulate());
+
+          if (v0 === 10) okSel0 = true;
+          if (v1 === 5) okSel1 = true;
+        }
+      } catch (e) {
+        okSel0 = false;
+        okSel1 = false;
+      } finally {
+        savedSw.forEach(({ s, on }) => s.on = on);
+        simulate();
+      }
+
+      results.push({ name: TXT(LL("S=0 selecciona el bus A (4 bits)", "S=0 selects bus A (4 bits)")), ok: okSel0 });
+      results.push({ name: TXT(LL("S=1 selecciona el bus B (4 bits)", "S=1 selects bus B (4 bits)")), ok: okSel1 });
+      if (hasLib) {
+        results.push({ name: TXT(LL("Caja SEL4 empaquetada funciona", "Packaged SEL4 box works")), ok: okLib });
+      }
+      return results;
+    },
+  },
+  {
+    id: "s20",
+    title: LL("20. ALU de 4 bits", "20. 4-bit ALU"),
     theory: {
       es: `
         <p>La <b>ALU</b> (Unidad Aritmético-Lógica) es donde la CPU "piensa": recibe dos
@@ -1752,8 +2331,8 @@ const LESSONS = [
     },
   },
   {
-    id: "s19",
-    title: LL("19. Program Counter: el dedo del CPU", "19. Program Counter: the CPU's finger"),
+    id: "s21",
+    title: LL("21. Program Counter: el dedo del CPU", "21. Program Counter: the CPU's finger"),
     theory: {
       es: `
         <p>Ya sabés calcular (ALU) y recordar (registros). Falta la pieza que organiza
@@ -2012,8 +2591,8 @@ const LESSONS = [
     },
   },
   {
-    id: "s20",
-    title: LL("20. Repaso: los órganos de tu CPU", "20. Review: your CPU's organs"),
+    id: "s22",
+    title: LL("22. Repaso: los órganos de tu CPU", "22. Review: your CPU's organs"),
     theory: {
       es: `
         <p>Cierre del segundo bloque. Mirá lo que construiste — cada uno es un <b>órgano</b>
@@ -2063,8 +2642,8 @@ const LESSONS = [
     },
   },
   {
-    id: "s21",
-    title: LL("21. RAM: memoria con dirección", "21. RAM: addressed memory"),
+    id: "s23",
+    title: LL("23. RAM: memoria con dirección", "23. RAM: addressed memory"),
     theory: {
       es: `
         <p>Todos tus circuitos con memoria (latches, registros) guardan valores "sin nombre":
@@ -2120,8 +2699,8 @@ const LESSONS = [
     },
   },
   {
-    id: "s22",
-    title: LL("22. RAM16: la memoria del programa", "22. RAM16: program memory"),
+    id: "s24",
+    title: LL("24. RAM16: la memoria del programa", "24. RAM16: program memory"),
     theory: {
       es: `
         <p>Para ejecutar programas necesitamos memoria <i>direccionable</i> y fácil de usar.
@@ -2179,8 +2758,8 @@ const LESSONS = [
     },
   },
   {
-    id: "s23",
-    title: LL("23. Decodificador 2→4 y 3→8", "23. 2→4 and 3→8 Decoders"),
+    id: "s25",
+    title: LL("25. Decodificador 2→4 y 3→8", "25. 2→4 and 3→8 Decoders"),
     theory: {
       es: `
         <p>En una computadora las instrucciones y direcciones se guardan como números binarios
@@ -2441,8 +3020,8 @@ const LESSONS = [
     },
   },
   {
-    id: "s24",
-    title: LL("24. Contador de pasos y RESET (RING3)", "24. Step counter and RESET (RING3)"),
+    id: "s26",
+    title: LL("26. Contador de pasos y RESET (RING3)", "26. Step counter and RESET (RING3)"),
     theory: {
       es: `
         <p>Una computadora no puede hacer todo en un solo instante: necesita un compás rítmico
@@ -2677,8 +3256,8 @@ const LESSONS = [
     },
   },
   {
-    id: "s25",
-    title: LL("25. Registro con LOAD y la etapa de búsqueda (Fetch)", "25. Register with LOAD and the Fetch stage"),
+    id: "s27",
+    title: LL("27. Registro con LOAD y la etapa de búsqueda (Fetch)", "27. Register with LOAD and the Fetch stage"),
     theory: {
       es: `
         <p>En las lecciones anteriores construimos la memoria (<b>RAM16</b>), el contador de pasos (<b>RING3</b>)
@@ -3053,8 +3632,8 @@ const LESSONS = [
     },
   },
   {
-    id: "s26",
-    title: LL("26. Unidad de control", "26. Control Unit"),
+    id: "s28",
+    title: LL("28. Unidad de control", "28. Control Unit"),
     theory: {
       es: `
         <p>Una computadora no ejecuta todas sus piezas al mismo tiempo: necesita un
@@ -3420,8 +3999,8 @@ const LESSONS = [
     },
   },
   {
-    id: "s27",
-    title: LL("27. Tu primer CPU", "27. Your First CPU"),
+    id: "s29",
+    title: LL("29. Tu primer CPU", "29. Your First CPU"),
     desc: LL(
       "Uní todos los módulos construidos para ejecutar tu primer programa completo: Suma (5 + 3 = 8).",
       "Connect all built modules to execute your first complete program: Sum (5 + 3 = 8)."
@@ -3728,8 +4307,8 @@ const LESSONS = [
     },
   },
   {
-    id: "s28",
-    title: LL("28. Salto y Parada (JMP y HALT)", "28. Jump and Halt (JMP and HALT)"),
+    id: "s30",
+    title: LL("30. Salto y Parada (JMP y HALT)", "30. Jump and Halt (JMP and HALT)"),
     desc: LL(
       "Programá un bucle infinito (Contador) con JMP, verificá la detención limpia con HALT y celebrá tu computadora completa.",
       "Program an infinite loop (Counter) with JMP, verify clean stopping with HALT, and celebrate your complete computer."
