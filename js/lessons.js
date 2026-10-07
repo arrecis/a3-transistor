@@ -503,7 +503,7 @@ const LESSONS = [
           <li>2× <b>Salida</b> (tecla 3) — para ver Q y su inverso Q̄</li>
         </ul>
         ${lay('Disposición en el canvas (de izquierda a derecha):', [
-          'Entrada <b>S</b> (Set) arriba, Entrada <b>R</b> (Reset) abajo',
+          'Entrada <b>R</b> (Reset) arriba (alimenta la NOR de arriba), Entrada <b>S</b> (Set) abajo',
           '<b>NOR de arriba</b> (salida Q) arriba, <b>NOR de abajo</b> (salida Q̄) abajo',
           '<b>Salida Q</b> arriba, <b>Salida Q̄</b> abajo'
         ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
@@ -545,7 +545,7 @@ const LESSONS = [
           <li>2× <b>Output</b> (key 3) — to watch Q and its inverse Q̄</li>
         </ul>
         ${lay('Layout on the canvas (left to right):', [
-          'Input <b>S</b> (Set) on top, Input <b>R</b> (Reset) below',
+          'Input <b>R</b> (Reset) on top (feeds the top NOR), Input <b>S</b> (Set) below',
           '<b>Top NOR</b> (output Q) on top, <b>bottom NOR</b> (output Q̄) below',
           '<b>Output Q</b> on top, <b>Output Q̄</b> below'
         ], 'Each number is a column. Wires always flow to the right.')}
@@ -592,8 +592,8 @@ const LESSONS = [
         </ul>
         ${lay('Disposición en el canvas (de izquierda a derecha):', [
           'Entrada <b>D</b> arriba, Entrada <b>CLK</b> abajo',
-          '<b>NOT</b> (¬D) arriba, <b>AND de arriba</b> (D·CLK) abajo',
-          '<b>AND de abajo</b> (¬D·CLK) arriba',
+          '<b>NOT</b> (¬D) alineado con el AND de abajo',
+          '<b>AND de arriba</b> (D·CLK) arriba, <b>AND de abajo</b> (¬D·CLK) abajo',
           '<b>NOR de arriba</b> arriba, <b>NOR de abajo</b> abajo',
           '<b>Salida Q</b> arriba, <b>Salida Q̄</b> abajo'
         ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
@@ -634,8 +634,8 @@ const LESSONS = [
         </ul>
         ${lay('Layout on the canvas (left to right):', [
           'Input <b>D</b> on top, Input <b>CLK</b> below',
-          '<b>NOT</b> (¬D) on top, <b>top AND</b> (D·CLK) below',
-          '<b>bottom AND</b> (¬D·CLK) on top',
+          '<b>NOT</b> (¬D) aligned with the bottom AND',
+          '<b>top AND</b> (D·CLK) on top, <b>bottom AND</b> (¬D·CLK) below',
           '<b>top NOR</b> on top, <b>bottom NOR</b> below',
           '<b>Output Q</b> on top, <b>Output Q̄</b> below'
         ], 'Each number is a column. Wires always flow to the right.')}
@@ -725,9 +725,8 @@ const LESSONS = [
         </ul>
         ${lay('Disposición en el canvas (de izquierda a derecha):', [
           'Entrada <b>D</b> arriba, Entrada <b>CLK</b> abajo',
-          '<b>Maestro</b> (latch 1, salida <b>QM</b>) arriba, <b>¬CLK</b> (NOT aparte) abajo',
-          '<b>Esclavo</b> (latch 2) arriba',
-          '<b>Salida Q</b> abajo'
+          '<b>Maestro</b> (latch 1, armado como en la lección 7, salida <b>QM</b>) arriba, <b>¬CLK</b> (NOT aparte) abajo',
+          '<b>Esclavo</b> (latch 2, armado como en la lección 7) arriba, <b>Salida Q</b> a su misma altura'
         ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
         <p>Cada mitad es un <b>latch</b> (el de la lección 7); las dos juntas forman el <b>flip-flop</b>.</p>
         <p><b>Conexión:</b></p>
@@ -775,9 +774,8 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
         </ul>
         ${lay('Layout on the canvas (left to right):', [
           'Input <b>D</b> on top, Input <b>CLK</b> below',
-          '<b>Master</b> (latch 1, output <b>QM</b>) on top, <b>¬CLK</b> (separate NOT) below',
-          '<b>Slave</b> (latch 2) on top',
-          '<b>Output Q</b> below'
+          '<b>Master</b> (latch 1, built like lesson 7, output <b>QM</b>) on top, <b>¬CLK</b> (separate NOT) below',
+          '<b>Slave</b> (latch 2, built like lesson 7) on top, <b>Output Q</b> at the same height'
         ], 'Each number is a column. Wires always flow to the right.')}
         <p>Each half is a <b>latch</b> (the one from lesson 7); together they form the <b>flip-flop</b>.</p>
         <p><b>Wiring:</b></p>
@@ -979,13 +977,13 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>1× <b>Salida</b> (tecla 3)</li>
         </ul>
         ${lay('Disposición en el canvas (de izquierda a derecha):', [
-          'Entradas de datos <b>D</b> arriba y abajo (una por bit); <b>LOAD</b> y <b>CLK</b> a la izquierda, compartidos',
+          'Bit 0 arriba, bit 1 debajo, bit 2…; <b>LOAD</b> y <b>CLK</b> abajo del todo, compartidos',
           '<b>NOT</b> (¬LOAD)',
-          'Por cada bit: <b>AND (D·LOAD)</b> arriba, <b>AND (Q·¬LOAD)</b> abajo',
+          'Por cada bit: <b>AND (D·LOAD)</b> arriba, <b>AND (Q·¬LOAD)</b> debajo',
           'Por cada bit: <b>OR</b> del mux',
           'Por cada bit: caja <b>DFF</b>',
           'Por cada bit: <b>Salida Q</b>'
-        ], 'Cada número es una columna. Los cables siempre van hacia la derecha.')}
+        ], 'Cada número es una columna. El único cable que va hacia la izquierda es el de <b>Q</b> al AND (Q·¬LOAD): es la memoria que se reescribe a sí misma.')}
         <p>Y compartidos entre todos los bits: 1× <b>NOT</b> (tecla 5) para ¬LOAD,
         1× <b>Entrada</b> de CLK, 1× <b>Entrada</b> de LOAD
         (o un ⏱ reloj, tecla 4, si preferís que avance solo).</p>
@@ -1019,13 +1017,13 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>1× <b>Output</b> (key 3)</li>
         </ul>
         ${lay('Layout on the canvas (left to right):', [
-          'Data inputs <b>D</b> top and bottom (one per bit); <b>LOAD</b> and <b>CLK</b> on the left, shared',
+          'Bit 0 on top, bit 1 below, bit 2…; <b>LOAD</b> and <b>CLK</b> at the bottom, shared',
           '<b>NOT</b> (¬LOAD)',
           'Per bit: <b>AND (D·LOAD)</b> on top, <b>AND (Q·¬LOAD)</b> below',
           'Per bit: <b>OR</b> of the mux',
           'Per bit: <b>DFF</b> box',
           'Per bit: <b>Output Q</b>'
-        ], 'Each number is a column. Wires always flow to the right.')}
+        ], 'Each number is a column. The only wire that flows left is <b>Q</b> to the AND (Q·¬LOAD): that is the memory rewriting itself.')}
         <p>Shared by all bits: 1× <b>NOT</b> (key 5) for ¬LOAD,
         1× CLK <b>Input</b>, 1× LOAD <b>Input</b> (or a ⏱ clock, key 4).</p>
         <p><b>Mission (2 bits is enough — do 4 if you like):</b></p>
