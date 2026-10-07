@@ -273,27 +273,27 @@ const setNum = (sws, n) => sws.forEach((s, i) => s.on = !!(n >> i & 1));
 const readNum = outs => outs.map((o, i) => { const v = T.val(o, 0); return v === -1 ? NaN : v << i; }).reduce((a, b) => a + b, 0);
 
 /* ---------- tests ---------- */
-// s7 — D latch
+// s7 — D latch: empaquetado obligatorio
 {
   T.reset();
   const d = T.add("switch"), clk = T.add("switch");
   dLatch(d, 0, clk, 0);
-  expectCheck("s7 correct D latch", 6, true);
+  expectCheck("s7 D latch sin empaquetar FALLA", 6, false);
 }
 {
   T.reset();
   packLatchBox();
   const d = T.add("switch"), clk = T.add("switch");
   dLatch(d, 0, clk, 0);
-  expectCheck("s7 correct D latch with LATCH in lib", 6, true);
+  expectCheck("s7 correct D latch with LATCH packed", 6, true);
 }
 
-// s8 — flip-flop
+// s8 — flip-flop: debe usar cajas LATCH
 T.reset(); flipFlopBox();                 expectCheck("s8 correct FF from 2 LATCH boxes (D created first)", 7, true);
 T.reset(); flipFlopBox({ clkFirst: true }); expectCheck("s8 correct FF from 2 LATCH boxes (CLK created first)", 7, true);
 T.reset(); flipFlopBox({ edge: false });  expectCheck("s8 fake FF from 2 LATCH boxes (both latches on CLK) fails", 7, false);
-T.reset(); flipFlop();                 expectCheck("s8 correct loose-gate FF (D created first)", 7, true);
-T.reset(); flipFlop({ clkFirst: true }); expectCheck("s8 correct loose-gate FF (CLK created first)", 7, true);
+T.reset(); flipFlop();                 expectCheck("s8 loose-gate FF (D created first) FALLA", 7, false);
+T.reset(); flipFlop({ clkFirst: true }); expectCheck("s8 loose-gate FF (CLK created first) FALLA", 7, false);
 T.reset(); flipFlop({ edge: false });  expectCheck("s8 fake loose-gate FF (both latches on CLK) fails", 7, false);
 
 // s9 — packed DFF, both click orders (from boxes and loose gates)
@@ -328,23 +328,26 @@ for (const clkFirst of [false, true]) {
   expectCheck("s11 packed MUX2", 10, true);
 }
 
-// s12 — Registro de 1 bit (REG1)
+// s12 — Registro de 1 bit (REG1), empaquetado obligatorio
 {
   T.reset();
-  reg1({ feedback: true });
-  expectCheck("s12 REG1 correcto PASA", 11, true);
+  const r = reg1({ feedback: true });
+  T.pack("REG1", [r.d, r.load, r.clk], [r.q]);
+  expectCheck("s12 REG1 correcto + empaquetado PASA", 11, true);
 }
 {
   T.reset();
-  reg1({ feedback: false });
+  const r = reg1({ feedback: false });
+  T.pack("REG1", [r.d, r.load, r.clk], [r.q]);
   expectCheck("s12 REG1 sin la realimentación Q → MUX FALLA", 11, false);
 }
 
-// s13 — Registro de 4 bits (REG4)
+// s13 — Registro de 4 bits (REG4), empaquetado obligatorio
 {
   T.reset();
-  reg4Circuit();
-  expectCheck("s13 REG4 correcto PASA", 12, true);
+  const r = reg4Circuit();
+  T.pack("REG4", [...r.D, r.load, r.clk], [...r.Q]);
+  expectCheck("s13 REG4 correcto + empaquetado PASA", 12, true);
 }
 
 // s14 — half adder
