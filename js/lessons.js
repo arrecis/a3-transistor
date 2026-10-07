@@ -1593,6 +1593,14 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>9× <b>Entrada</b> (tecla 2) — A0-A3, B0-B3 y Cin (dejala en 0)</li>
           <li>4-5× <b>Salida</b> (tecla 3) — S0-S3 (y opcionalmente el Cout final)</li>
         </ul>
+        ${lay("Disposición en el canvas (de izquierda a derecha):", [
+          "Entradas: <b>A0-A3</b> arriba, <b>B0-B3</b> al medio, <b>Cin</b> abajo",
+          "<b>FULLADDER</b> del bit 0",
+          "<b>FULLADDER</b> del bit 1",
+          "<b>FULLADDER</b> del bit 2",
+          "<b>FULLADDER</b> del bit 3",
+          "Salidas <b>S0-S3</b> arriba, <b>Cout</b> abajo",
+        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
         <p><b>Conexión (la cascada):</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Bit 0: A0 y B0 a las entradas A/B del primer FULLADDER; su Cin va a una Entrada en 0 (un pin sin conectar queda indeterminado en este simulador) → su S0 a una Salida</li>
@@ -1614,6 +1622,14 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>9× <b>Input</b> (key 2) — A0-A3, B0-B3, and Cin (leave it at 0)</li>
           <li>4-5× <b>Output</b> (key 3) — S0-S3 (and optionally the final Cout)</li>
         </ul>
+        ${lay("Layout on the canvas (left to right):", [
+          "Inputs: <b>A0-A3</b> on top, <b>B0-B3</b> in the middle, <b>Cin</b> below",
+          "<b>FULLADDER</b> for bit 0",
+          "<b>FULLADDER</b> for bit 1",
+          "<b>FULLADDER</b> for bit 2",
+          "<b>FULLADDER</b> for bit 3",
+          "Outputs <b>S0-S3</b> on top, <b>Cout</b> below",
+        ], "Each number is a column. Wires always flow to the right.")}
         <p><b>Wiring (the cascade):</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Bit 0: A0 and B0 into the first FULLADDER's A/B inputs; its Cin connects to an Input at 0 (an unconnected pin stays indeterminate in this simulator) → its S0 to an Output</li>
@@ -1736,6 +1752,12 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>1× <b>Entrada</b> fija en 0 para Cin del ADD4 (¡no se marca como pin al empaquetar!)</li>
           <li>4× <b>Salida</b> (tecla 3): R0-R3</li>
         </ul>
+        ${lay("Disposición en el canvas (de izquierda a derecha):", [
+          "Entradas: <b>A0-A3</b> y <b>B0-B3</b> arriba, <b>Cin</b> (0) y <b>OP</b> abajo",
+          "<b>ADD4</b> arriba, 4 compuertas <b>AND</b> abajo (una por bit)",
+          "4 cajas <b>MUX2</b> (una por bit, de arriba a abajo)",
+          "Salidas <b>R0-R3</b> (de arriba a abajo)",
+        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Todas las Entradas de A y B van <i>a la vez</i> al ADD4 <i>y</i> a los AND (cada AND recibe un par Ax, Bx)</li>
@@ -1771,6 +1793,12 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>1× <b>Input</b> fixed at 0 for ADD4's Cin (do not select it as a pin when packing!)</li>
           <li>4× <b>Output</b> (key 3): R0-R3</li>
         </ul>
+        ${lay("Layout on the canvas (left to right):", [
+          "Inputs: <b>A0-A3</b> and <b>B0-B3</b> on top, <b>Cin</b> (0) and <b>OP</b> below",
+          "<b>ADD4</b> on top, 4 <b>AND</b> gates below (one per bit)",
+          "4 <b>MUX2</b> boxes (one per bit, top to bottom)",
+          "Outputs <b>R0-R3</b> (top to bottom)",
+        ], "Each number is a column. Wires always flow to the right.")}
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>All A and B Inputs go <i>at once</i> into the ADD4 <i>and</i> into the ANDs (each AND gets one Ax, Bx pair)</li>
@@ -1853,6 +1881,14 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>1× <b>Entrada</b> de CLK (tecla 2) o un <b>Reloj</b> (⏱, tecla 4)</li>
           <li>4× <b>Salida</b> (tecla 3) para ver los 4 bits del PC en vivo</li>
         </ul>
+        ${lay("Disposición en el canvas (de izquierda a derecha):", [
+          "Entradas: <b>JUMP</b>, destino <b>D0-D3</b> y <b>CLK</b>",
+          "Compuerta <b>NOT</b> (¬JUMP)",
+          "4 cajas <b>MUX2</b> (eligen entre D0-D3 y PC+1)",
+          "4 cajas <b>DFF</b> (registro del PC)",
+          "<b>Sumador +1</b> (4 XOR y AND en cascada; su salida vuelve a los MUX)",
+          "4 <b>Salidas</b> (conectadas a las salidas Q del PC)",
+        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
         <p><b>El experimento:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li><b>RESET</b>: poné JUMP=1 y las 4 Entradas de destino en 0. Dale un pulso de CLK (1 y luego 0): las 4 salidas Q se limpian y quedan en 0000.</li>
@@ -1895,6 +1931,14 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>1× CLK <b>Input</b> (key 2) or a <b>Clock</b> (⏱, key 4)</li>
           <li>4× <b>Outputs</b> (key 3) to watch the PC's 4 bits live</li>
         </ul>
+        ${lay("Layout on the canvas (left to right):", [
+          "Inputs: <b>JUMP</b>, target <b>D0-D3</b>, and <b>CLK</b>",
+          "<b>NOT</b> gate (¬JUMP)",
+          "4 <b>MUX2</b> boxes (select between D0-D3 and PC+1)",
+          "4 <b>DFF</b> boxes (PC register)",
+          "<b>+1 adder</b> (4 XOR and AND gates in cascade; outputs loop back to MUXes)",
+          "4 <b>Outputs</b> (connected to PC Q outputs)",
+        ], "Each number is a column. Wires always flow to the right.")}
         <p><b>The experiment:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li><b>RESET</b>: set JUMP=1 and the 4 target Inputs to 0. Give one CLK pulse (1 then 0): all 4 Q outputs clear to 0000.</li>
@@ -2250,6 +2294,12 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>4× <b>AND</b> (tecla 6): una por salida</li>
           <li>4× <b>Salida</b> (tecla 3): Y0 a Y3</li>
         </ul>
+        ${lay("Disposición en el canvas (de izquierda a derecha):", [
+          "Entradas <b>A0</b> arriba, <b>A1</b> abajo",
+          "2 compuertas <b>NOT</b> (una para cada entrada)",
+          "4 compuertas <b>AND</b> (para Y0, Y1, Y2 e Y3, de arriba a abajo)",
+          "Salidas <b>Y0 a Y3</b> (de arriba a abajo)",
+        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Conectá cada Entrada a un NOT para disponer de A0, ¬A0, A1 y ¬A1</li>
@@ -2284,6 +2334,12 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>4× <b>AND</b> (key 6): one per output</li>
           <li>4× <b>Output</b> (key 3): Y0 through Y3</li>
         </ul>
+        ${lay("Layout on the canvas (left to right):", [
+          "Inputs <b>A0</b> on top, <b>A1</b> below",
+          "2 <b>NOT</b> gates (one for each input)",
+          "4 <b>AND</b> gates (for Y0, Y1, Y2, and Y3, top to bottom)",
+          "Outputs <b>Y0 through Y3</b> (top to bottom)",
+        ], "Each number is a column. Wires always flow to the right.")}
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Connect each Input to a NOT to obtain A0, ¬A0, A1, and ¬A1</li>
@@ -2509,6 +2565,13 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>2× <b>Entrada</b> (tecla 2): RESET y CLK (o un Reloj ⏱ tecla 4)</li>
           <li>3× <b>Salida</b> (tecla 3): T0, T1, T2</li>
         </ul>
+        ${lay("Disposición en el canvas (de izquierda a derecha):", [
+          "Entradas: <b>RESET</b> arriba, <b>CLK</b> abajo",
+          "Compuerta <b>NOT</b> (¬RESET)",
+          "<b>OR</b> arriba (T0), <b>AND1</b> al medio (T1), <b>AND2</b> abajo (T2)",
+          "3 cajas <b>DFF</b>: <b>DFF0</b>, <b>DFF1</b> y <b>DFF2</b> (de arriba a abajo)",
+          "Salidas <b>T0</b>, <b>T1</b> y <b>T2</b> (de arriba a abajo)",
+        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
         <p><b>Conexión:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Conectá CLK a la entrada de reloj (CLK) de los 3 DFF</li>
@@ -2555,6 +2618,13 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>2× <b>Input</b> (key 2): RESET and CLK (or a Clock ⏱ key 4)</li>
           <li>3× <b>Output</b> (key 3): T0, T1, T2</li>
         </ul>
+        ${lay("Layout on the canvas (left to right):", [
+          "Inputs: <b>RESET</b> on top, <b>CLK</b> below",
+          "<b>NOT</b> gate (¬RESET)",
+          "<b>OR</b> on top (T0), <b>AND1</b> in the middle (T1), <b>AND2</b> below (T2)",
+          "3 <b>DFF</b> boxes: <b>DFF0</b>, <b>DFF1</b>, and <b>DFF2</b> (top to bottom)",
+          "Outputs <b>T0</b>, <b>T1</b>, and <b>T2</b> (top to bottom)",
+        ], "Each number is a column. Wires always flow to the right.")}
         <p><b>Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Connect CLK to the clock input (CLK) of all 3 DFFs</li>
@@ -2730,6 +2800,12 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>6× <b>Entrada</b> (tecla 2): D<sub>0</sub>, D<sub>1</sub>, D<sub>2</sub>, D<sub>3</sub>, LOAD y CLK</li>
           <li>4× <b>Salida</b> (tecla 3): Q<sub>0</sub>, Q<sub>1</sub>, Q<sub>2</sub>, Q<sub>3</sub></li>
         </ul>
+        ${lay("Disposición en el canvas (de izquierda a derecha):", [
+          "Entradas: <b>D0-D3</b> arriba, <b>LOAD</b> y <b>CLK</b> abajo",
+          "4 cajas <b>MUX2</b> (una por bit, de arriba a abajo)",
+          "4 cajas <b>DFF</b> (una por bit; la salida Q vuelve a la entrada A del MUX)",
+          "Salidas <b>Q0 a Q3</b> (de arriba a abajo)",
+        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
         <p><b>Conexión de REG4:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Para cada bit i de 0 a 3, colocá un <code>MUX2</code> frente a la entrada D de su <code>DFF</code>.</li>
@@ -2785,6 +2861,12 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>6× <b>Input</b> (key 2): D<sub>0</sub>, D<sub>1</sub>, D<sub>2</sub>, D<sub>3</sub>, LOAD, and CLK</li>
           <li>4× <b>Output</b> (key 3): Q<sub>0</sub>, Q<sub>1</sub>, Q<sub>2</sub>, Q<sub>3</sub></li>
         </ul>
+        ${lay("Layout on the canvas (left to right):", [
+          "Inputs: <b>D0-D3</b> on top, <b>LOAD</b> and <b>CLK</b> below",
+          "4 <b>MUX2</b> boxes (one per bit, top to bottom)",
+          "4 <b>DFF</b> boxes (one per bit; output Q loops back to MUX input A)",
+          "Outputs <b>Q0 through Q3</b> (top to bottom)",
+        ], "Each number is a column. Wires always flow to the right.")}
         <p><b>REG4 Wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>For each bit i from 0 to 3, place a <code>MUX2</code> in front of input D of its <code>DFF</code>.</li>
@@ -3122,6 +3204,13 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>6× <b>Entrada</b> (tecla 2): OP0, OP1, OP2 (código OP) y T0, T1, T2 (paso)</li>
           <li>7× <b>Salida</b> (tecla 3): PC_LOAD, JMP_SEL, A_LOAD, A_SEL, B_LOAD, OUT_LOAD, HALT_SET</li>
         </ul>
+        ${lay("Disposición en el canvas (de izquierda a derecha):", [
+          "Entradas: <b>OP0-OP2</b> arriba, <b>T0-T2</b> abajo",
+          "Decodificador <b>DEC3</b>",
+          "Compuertas <b>OR</b> (A_SEL) y <b>AND</b>s con T2 (JMP_SEL, B_LOAD, OUT_LOAD, HALT_SET)",
+          "Compuertas <b>OR</b> (para PC_LOAD) y <b>AND</b> (para A_LOAD)",
+          "Salidas de control (<b>PC_LOAD</b>, <b>JMP_SEL</b>, <b>A_LOAD</b>, <b>A_SEL</b>, <b>B_LOAD</b>, <b>OUT_LOAD</b>, <b>HALT_SET</b>)",
+        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
         <p><b>Conexión paso a paso:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Conectá las Entradas OP0, OP1, OP2 a los pines de entrada A0, A1, A2 de la caja <code>DEC3</code>. Recordá que sus salidas son Y0 (NOP), Y1 (LDA), Y2 (LDB), Y3 (ADD), Y4 (AND), Y5 (OUT), Y6 (JMP) e Y7 (HALT).</li>
@@ -3195,6 +3284,13 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>6× <b>Input</b> (key 2): OP0, OP1, OP2 (opcode) and T0, T1, T2 (timing phase)</li>
           <li>7× <b>Output</b> (key 3): PC_LOAD, JMP_SEL, A_LOAD, A_SEL, B_LOAD, OUT_LOAD, HALT_SET</li>
         </ul>
+        ${lay("Layout on the canvas (left to right):", [
+          "Inputs: <b>OP0-OP2</b> on top, <b>T0-T2</b> below",
+          "Decoder <b>DEC3</b>",
+          "Gates: <b>OR</b> (A_SEL) and <b>AND</b>s with T2 (JMP_SEL, B_LOAD, OUT_LOAD, HALT_SET)",
+          "Gates: <b>OR</b>s (for PC_LOAD) and <b>AND</b> (for A_LOAD)",
+          "Control Outputs (<b>PC_LOAD</b>, <b>JMP_SEL</b>, <b>A_LOAD</b>, <b>A_SEL</b>, <b>B_LOAD</b>, <b>OUT_LOAD</b>, <b>HALT_SET</b>)",
+        ], "Each number is a column. Wires always flow to the right.")}
         <p><b>Step-by-step wiring:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li>Connect Inputs OP0, OP1, OP2 to pins A0, A1, A2 of the <code>DEC3</code> box. Recall its outputs are Y0 (NOP), Y1 (LDA), Y2 (LDB), Y3 (ADD), Y4 (AND), Y5 (OUT), Y6 (JMP), and Y7 (HALT).</li>
@@ -3445,6 +3541,16 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>1× <b>Entrada</b> RESET (tecla 2) y 1× Entrada CLK (tecla 2) o Reloj ⏱ (tecla 4)</li>
           <li>4× <b>Salida</b> (tecla 3) conectadas a las salidas del registro OUT</li>
         </ul>
+        ${lay("Disposición en el canvas (de izquierda a derecha):", [
+          "Entradas: <b>CLK</b>, <b>RESET</b> y constantes (0 y 1)",
+          "Reloj y pasos: bandera <b>H</b>, compuertas de <b>CPU_CLK</b> y <b>RING3</b>",
+          "<b>PC</b> (4 DFF, MUXes y ADD4) y memoria <b>RAM16</b>",
+          "Registros <b>OP</b> arriba y <b>ARG</b> abajo",
+          "Unidad de Control: <b>DEC3</b> y compuertas lógicas",
+          "Ruta de datos: <b>ALU4</b>, 4 MUX2 y registros <b>A</b> y <b>B</b>",
+          "Registro <b>OUT</b>",
+          "4 <b>Salidas</b> visuales",
+        ], "Cada número es una columna. Los cables siempre van hacia la derecha.")}
         <p><b>Guía de interconexión paso a paso:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li><b>Bandera de parada H y CPU_CLK:</b><br>
@@ -3503,6 +3609,16 @@ CLK ──────┴────► [NOT] ── ¬CLK ──────�
           <li>1× RESET <b>Input</b> (key 2) and 1× CLK Input (key 2) or Clock ⏱ (key 4)</li>
           <li>4× <b>Output</b> (key 3) connected to OUT register outputs</li>
         </ul>
+        ${lay("Layout on the canvas (left to right):", [
+          "Inputs: <b>CLK</b>, <b>RESET</b>, and constants (0 and 1)",
+          "Clock and timing: <b>H</b> flag, <b>CPU_CLK</b> gates, and <b>RING3</b>",
+          "<b>PC</b> (4 DFFs, MUXes, ADD4) and <b>RAM16</b> memory",
+          "Registers: <b>OP</b> on top and <b>ARG</b> below",
+          "Control Unit: <b>DEC3</b> and logic gates",
+          "Datapath: <b>ALU4</b>, 4 MUX2s, and registers <b>A</b> and <b>B</b>",
+          "Register <b>OUT</b>",
+          "4 visual <b>Outputs</b>",
+        ], "Each number is a column. Wires always flow to the right.")}
         <p><b>Step-by-step wiring guide:</b></p>
         <ol style="padding-left:18px; margin:6px 0;">
           <li><b>Halt flag H and CPU_CLK:</b><br>
