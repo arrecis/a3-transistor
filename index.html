@@ -262,10 +262,10 @@
 
   <!-- Tutorial panel (lessons) -->
   <div id="lessonPanel" style="display:none; position:absolute; left:0; top:0; bottom:0; width:340px; background:var(--panel); border-right:1px solid var(--border); z-index:60; flex-direction:column; padding:18px; overflow:auto;">
-    <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
-      <button id="lessonClose" title="Cerrar tutorial" style="padding:2px 8px; font-size:13px; line-height:1;">✕</button>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+      <h3 id="lessonTitle" style="font-size:15px; color:var(--accent);">Lección</h3>
+      <button id="lessonClose" title="Cerrar tutorial" style="flex:none; padding:2px 8px; font-size:13px; line-height:1;">✕</button>
     </div>
-    <h3 id="lessonTitle" style="font-size:15px; color:var(--accent);">Lección</h3>
     <div id="lessonProgress" style="font-size:11px; color:var(--dim); margin:2px 0 10px;"></div>
     <div id="lessonNav" style="display:flex; gap:6px; align-items:center; margin-bottom:10px;"></div>
     <div id="lessonBody" style="font-size:13px; line-height:1.65; color:var(--text); flex:1;"></div>
