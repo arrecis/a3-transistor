@@ -176,6 +176,71 @@ function ring3({ withReset = true } = {}) {
     return { dff, CLK };
   }
 }
+function packDFFBox() {
+  if (T.lib()["DFF"]) return;
+  const f = flipFlop();
+  T.pack("DFF", [f.D, f.C], [f.out]);
+  T.clearCanvas();
+}
+function packMUX2Box() {
+  if (T.lib()["MUX2"]) return;
+  const a = T.add("switch"), b = T.add("switch"), s = T.add("switch");
+  const n = T.add("not"), a1 = T.add("and"), a2 = T.add("and"), o = T.add("or"), out = T.add("out");
+  T.w(s, 0, n, 0); T.w(a, 0, a1, 0); T.w(n, 1, a1, 1);
+  T.w(b, 0, a2, 0); T.w(s, 0, a2, 1);
+  T.w(a1, 2, o, 0); T.w(a2, 2, o, 1); T.w(o, 2, out, 0);
+  T.pack("MUX2", [a, b, s], [out]);
+  T.clearCanvas();
+}
+function reg1({ feedback = true } = {}) {
+  packDFFBox();
+  packMUX2Box();
+  const d = T.add("switch"), load = T.add("switch"), clk = T.add("switch");
+  const ff = T.add("DFF"), m = T.add("MUX2");
+  if (feedback) T.w(ff, 2, m, 0); // Q -> A
+  T.w(d, 0, m, 1);    // D -> B
+  T.w(load, 0, m, 2); // LOAD -> S
+  T.w(m, 3, ff, 0);   // OUT -> D
+  T.w(clk, 0, ff, 1); // CLK
+  const q = T.add("out"); T.w(ff, 2, q, 0);
+  return { d, load, clk, ff, m, q };
+}
+function packREG1Box() {
+  if (T.lib()["REG1"]) return;
+  const r = reg1();
+  T.pack("REG1", [r.d, r.load, r.clk], [r.q]);
+  T.clearCanvas();
+}
+function reg4Circuit() {
+  packREG1Box();
+  const D = [0, 1, 2, 3].map(() => T.add("switch"));
+  const load = T.add("switch"), clk = T.add("switch");
+  const reg1s = [0, 1, 2, 3].map(() => T.add("REG1"));
+  const Q = [0, 1, 2, 3].map(() => T.add("out"));
+  for (let i = 0; i < 4; i++) {
+    T.w(D[i], 0, reg1s[i], 0);
+    T.w(load, 0, reg1s[i], 1);
+    T.w(clk, 0, reg1s[i], 2);
+    T.w(reg1s[i], 3, Q[i], 0);
+  }
+  return { D, load, clk, reg1s, Q };
+}
+function sel4Circuit({ sharedS = true } = {}) {
+  packMUX2Box();
+  const A = [0, 1, 2, 3].map(() => T.add("switch"));
+  const B = [0, 1, 2, 3].map(() => T.add("switch"));
+  const S = T.add("switch");
+  const muxes = [0, 1, 2, 3].map(() => T.add("MUX2"));
+  const outs = [0, 1, 2, 3].map(() => T.add("out"));
+  for (let i = 0; i < 4; i++) {
+    T.w(A[i], 0, muxes[i], 0);
+    T.w(B[i], 0, muxes[i], 1);
+    if (sharedS || i === 0) T.w(S, 0, muxes[i], 2);
+    T.w(muxes[i], 3, outs[i], 0);
+  }
+  return { A, B, S, muxes, outs };
+}
+
 const setNum = (sws, n) => sws.forEach((s, i) => s.on = !!(n >> i & 1));
 const readNum = outs => outs.map((o, i) => { const v = T.val(o, 0); return v === -1 ? NaN : v << i; }).reduce((a, b) => a + b, 0);
 
@@ -194,59 +259,71 @@ for (const clkFirst of [false, true]) {
   expectCheck(`s9 packed DFF (clicked ${clkFirst ? "CLK, D" : "D, CLK"})`, 8, true);
 }
 
-// s10 — 2-bit register with LOAD mux
-{
-  T.reset(); const f = flipFlop(); T.pack("DFF", [f.D, f.C], [f.out]); T.clearCanvas();
-  const LOAD = T.add("switch"), CLK = T.add("switch"), nL = T.add("not"); T.w(LOAD, 0, nL, 0);
-  for (let i = 0; i < 2; i++) {
-    const d = T.add("switch"), a1 = T.add("and"), a2 = T.add("and"), o = T.add("or"), ff = T.add("DFF"), q = T.add("out");
-    T.w(d, 0, a1, 0); T.w(LOAD, 0, a1, 1);
-    T.w(ff, 2, a2, 0); T.w(nL, 1, a2, 1);
-    T.w(a1, 2, o, 0); T.w(a2, 2, o, 1);
-    T.w(o, 2, ff, 0); T.w(CLK, 0, ff, 1); T.w(ff, 2, q, 0);
-  }
-  expectCheck("s10 correct 2-bit register", 9, true);
-}
-
-// s11 — MUX with Inputs created in S, B, A order
+// s10 — MUX with Inputs created in S, B, A order
 {
   T.reset(); const S = T.add("switch"), B = T.add("switch"), A = T.add("switch");
   const n = T.add("not"), a1 = T.add("and"), a2 = T.add("and"), o = T.add("or"), out = T.add("out");
   T.w(S, 0, n, 0); T.w(A, 0, a1, 0); T.w(n, 1, a1, 1); T.w(B, 0, a2, 0); T.w(S, 0, a2, 1);
   T.w(a1, 2, o, 0); T.w(a2, 2, o, 1); T.w(o, 2, out, 0);
-  expectCheck("s11 correct MUX (Inputs created S, B, A)", 10, true);
+  expectCheck("s10 correct MUX (Inputs created S, B, A)", 9, true);
 }
 
-// s13 — half adder
+// s11 — Empaquetá el MUX2
+{
+  T.reset();
+  packMUX2Box();
+  expectCheck("s11 packed MUX2", 10, true);
+}
+
+// s12 — Registro de 1 bit (REG1)
+{
+  T.reset();
+  reg1({ feedback: true });
+  expectCheck("s12 REG1 correcto PASA", 11, true);
+}
+{
+  T.reset();
+  reg1({ feedback: false });
+  expectCheck("s12 REG1 sin la realimentación Q → MUX FALLA", 11, false);
+}
+
+// s13 — Registro de 4 bits (REG4)
+{
+  T.reset();
+  reg4Circuit();
+  expectCheck("s13 REG4 correcto PASA", 12, true);
+}
+
+// s14 — half adder
 {
   T.reset(); const A = T.add("switch"), B = T.add("switch"), x = T.add("xor"), a = T.add("and");
   T.w(A, 0, x, 0); T.w(B, 0, x, 1); T.w(A, 0, a, 0); T.w(B, 0, a, 1);
-  expectCheck("s13 correct half adder", 12, true);
+  expectCheck("s14 correct half adder", 13, true);
   T.reset(); const A1 = T.add("switch"), B1 = T.add("switch"), A2 = T.add("switch"), B2 = T.add("switch");
   const x2 = T.add("xor"), a2 = T.add("and");
   T.w(A1, 0, x2, 0); T.w(B1, 0, x2, 1); T.w(A2, 0, a2, 0); T.w(B2, 0, a2, 1);
-  expectCheck("s13 XOR and AND on separate Inputs fails", 12, false);
+  expectCheck("s14 XOR and AND on separate Inputs fails", 13, false);
 }
 
-// s14 / s15 — full adder and its package
-T.reset(); fullAdder();                    expectCheck("s14 correct full adder", 13, true);
-T.reset(); fullAdder({ xor2First: true }); expectCheck("s14 correct full adder (XOR2 created first)", 13, true);
+// s15 / s16 — full adder and its package
+T.reset(); fullAdder();                    expectCheck("s15 correct full adder", 14, true);
+T.reset(); fullAdder({ xor2First: true }); expectCheck("s15 correct full adder (XOR2 created first)", 14, true);
 T.reset(); { const f = fullAdder(); T.pack("FULLADDER", [f.A, f.B, f.Ci], [f.S, f.Co]); }
-expectCheck("s15 packed FULLADDER", 14, true);
+expectCheck("s16 packed FULLADDER", 15, true);
 
-// s16 / s17 — 4-bit adder, its experiments and its package
+// s17 / s18 — 4-bit adder, its experiments and its package
 {
   packFullAdder();
   const a = adder4();
-  expectCheck("s16 correct 4-bit adder (9 Inputs)", 15, true);
+  expectCheck("s17 correct 4-bit adder (9 Inputs)", 16, true);
   setNum(a.A, 5); setNum(a.B, 3);
-  expect("s16 experiment 5+3 = 8", readNum(a.S) === 8, "S=" + readNum(a.S));
+  expect("s17 experiment 5+3 = 8", readNum(a.S) === 8, "S=" + readNum(a.S));
   setNum(a.A, 15); setNum(a.B, 1);
   const s = readNum(a.S), co = T.val(a.Co, 0);
-  expect("s16 experiment 15+1 = 0 with Cout=1 (overflow)", s === 0 && co === 1, `S=${s} Cout=${co}`);
+  expect("s17 experiment 15+1 = 0 with Cout=1 (overflow)", s === 0 && co === 1, `S=${s} Cout=${co}`);
   setNum(a.A, 0); setNum(a.B, 0);
   T.pack("ADD4", [...a.A, ...a.B, a.Cin], [...a.S, a.Co]);
-  expectCheck("s17 ADD4 packed as the lesson says", 16, true);
+  expectCheck("s18 ADD4 packed as the lesson says", 17, true);
 }
 // regression: a package CONTAINING another package (ADD4 ⊃ FULLADDER)
 // must stay connected after flattening (pin pseudo-wires use the
@@ -273,7 +350,7 @@ expectCheck("s15 packed FULLADDER", 14, true);
   const s = readNum(S), co = T.val(Co, 0);
   expect("ADD4 instance (nested boxes) computes 5+3 = 8", s === 8 && co === 0, `S=${s} Cout=${co}`);
 }
-// why s16 needs a Cin Input: an unconnected pin stays indeterminate (-1)
+// why s17 needs a Cin Input: an unconnected pin stays indeterminate (-1)
 {
   packFullAdder();
   const a = adder4({ cinSwitch: false });
@@ -281,7 +358,20 @@ expectCheck("s15 packed FULLADDER", 14, true);
   const s0 = T.val(a.S[0], 0);
   expect("engine: unconnected Cin leaves S0 indeterminate", s0 === -1, "S0=" + s0);
 }
-// s19 — Program Counter (PC)
+
+// s19 — Selector de 4 bits (SEL4)
+{
+  T.reset();
+  sel4Circuit({ sharedS: true });
+  expectCheck("s19 SEL4 correcto PASA", 18, true);
+}
+{
+  T.reset();
+  sel4Circuit({ sharedS: false });
+  expectCheck("s19 SEL4 con S en un solo MUX FALLA", 18, false);
+}
+
+// s21 — Program Counter (PC)
 {
   // 1. Correct PC: 4 DFF + incrementer XOR/AND with Cin=1 + MUX per bit with JUMP and 4 destination Inputs
   T.reset();
@@ -326,7 +416,7 @@ expectCheck("s15 packed FULLADDER", 14, true);
     T.w(o, 2, dffs[i], 0);
   }
 
-  expectCheck("s19 correct PC", 18, true);
+  expectCheck("s21 correct PC", 20, true);
 
   // 2. PC without MUX/JUMP (only DFF + incrementer): fails because startup indeterminate (-1) stays stuck
   T.reset();
@@ -356,7 +446,7 @@ expectCheck("s15 packed FULLADDER", 14, true);
     T.w(badXors[i], 2, badDffs[i], 0);
   }
 
-  expectCheck("s19 PC without MUX/JUMP fails", 18, false);
+  expectCheck("s21 PC without MUX/JUMP fails", 20, false);
 
   // 3. PC with Cin=1 from a constant Input: passes because check tries other inputs during count
   T.reset();
@@ -402,61 +492,61 @@ expectCheck("s15 packed FULLADDER", 14, true);
     T.w(o, 2, dffs3[i], 0);
   }
 
-  expectCheck("s19 correct PC (Cin=1 from a constant Input)", 18, true);
+  expectCheck("s21 correct PC (Cin=1 from a constant Input)", 20, true);
 }
 
-// s22 — RAM16 with data
+// s24 — RAM16 with data
 {
   T.reset(); const ram = T.add("ram"); T.val(ram, 0); T.ramData().get(ram.id)[3] = 7;
-  expectCheck("s22 RAM16 with data written", 21, true);
+  expectCheck("s24 RAM16 with data written", 23, true);
 }
 
-// s23 — decoders (DEC2 and DEC3)
+// s25 — decoders (DEC2 and DEC3)
 {
   T.reset(); dec2();
-  expectCheck("DEC2 correcto pasa", 22, true);
+  expectCheck("DEC2 correcto pasa", 24, true);
 }
 {
   T.reset(); dec2({ miswire: true });
-  expectCheck("DEC2 con una salida mal cableada falla", 22, false);
+  expectCheck("DEC2 con una salida mal cableada falla", 24, false);
 }
 {
   T.reset(); dec2({ reverseOuts: true });
-  expectCheck("DEC2 correcto con Salidas creadas en orden inverso PASA", 22, true);
+  expectCheck("DEC2 correcto con Salidas creadas en orden inverso PASA", 24, true);
 }
 {
   T.reset(); dec2({ multiActive: true });
-  expectCheck("un decodificador donde un valor enciende 2 salidas FALLA", 22, false);
+  expectCheck("un decodificador donde un valor enciende 2 salidas FALLA", 24, false);
 }
 {
   T.reset();
   const d = dec2();
   T.pack("DEC2", [d.A0, d.A1], [d.y1, d.y0, d.y2, d.y3]); // Y1 before Y0
-  const checks = T.check(22);
+  const checks = T.check(24);
   const boxItem = checks.find(c => c.name.includes("Caja DEC2"));
   expect("DEC2 empaquetada con pines de salida en orden incorrecto (Y1 antes que Y0) hace FALLAR el ítem de la caja",
     boxItem && !boxItem.ok, checks.map(c => (c.ok ? "✓ " : "✗ ") + c.name).join(" | "));
 }
 {
   T.reset(); dec3();
-  expectCheck("DEC3 correcto pasa", 22, true);
+  expectCheck("DEC3 correcto pasa", 24, true);
 }
 
-// s24 — step counter (RING3)
+// s26 — step counter (RING3)
 {
   T.reset();
   const f = flipFlop(); T.pack("DFF", [f.D, f.C], [f.out]); T.clearCanvas();
   ring3({ withReset: true });
-  expectCheck("RING3 correcto pasa", 23, true);
+  expectCheck("RING3 correcto pasa", 25, true);
 }
 {
   T.reset();
   const f = flipFlop(); T.pack("DFF", [f.D, f.C], [f.out]); T.clearCanvas();
   ring3({ withReset: false });
-  expectCheck("RING3 sin RESET (D_T0 = T2 solamente) falla", 23, false);
+  expectCheck("RING3 sin RESET (D_T0 = T2 solamente) falla", 25, false);
 }
 
-// s18 — ALU4 packed with brief pin order: A0-A3, B0-B3, OP | R0-R3
+// s20 — ALU4 packed with brief pin order: A0-A3, B0-B3, OP | R0-R3
 {
   packFullAdder();
   const a = adder4();
@@ -528,21 +618,7 @@ expectCheck("s15 packed FULLADDER", 14, true);
   expect("pack: click order defines pin order", def.inStubs[0] === f.C.id, "inStubs=" + def.inStubs.join(","));
 }
 
-// s25 — REG4 & Fetch
-function packDFFBox() {
-  const f = flipFlop();
-  T.pack("DFF", [f.D, f.C], [f.out]);
-  T.clearCanvas();
-}
-function packMUX2Box() {
-  const a = T.add("switch"), b = T.add("switch"), s = T.add("switch");
-  const n = T.add("not"), a1 = T.add("and"), a2 = T.add("and"), o = T.add("or"), out = T.add("out");
-  T.w(s, 0, n, 0); T.w(a, 0, a1, 0); T.w(n, 1, a1, 1);
-  T.w(b, 0, a2, 0); T.w(s, 0, a2, 1);
-  T.w(a1, 2, o, 0); T.w(a2, 2, o, 1); T.w(o, 2, out, 0);
-  T.pack("MUX2", [a, b, s], [out]);
-  T.clearCanvas();
-}
+// s27 — REG4 & Fetch
 function packREG4Box({ swapPins = false } = {}) {
   const load = T.add("switch"), clk = T.add("switch");
   const D = [], outs = [];
@@ -565,11 +641,11 @@ function packREG4Box({ swapPins = false } = {}) {
 
 {
   T.reset(); packDFFBox(); packMUX2Box(); packREG4Box();
-  expectCheck("s25 REG4 empaquetado correctamente PASA", 24, true);
+  expectCheck("s27 REG4 empaquetado correctamente PASA", 26, true);
 }
 {
   T.reset(); packDFFBox(); packMUX2Box(); packREG4Box({ swapPins: true });
-  expectCheck("s25 REG4 con pines LOAD/CLK invertidos FALLA", 24, false);
+  expectCheck("s27 REG4 con pines LOAD/CLK invertidos FALLA", 26, false);
 }
 function packFullAdderBox() {
   const f = fullAdder();
@@ -645,15 +721,15 @@ function buildFetchStage({ miswire = false } = {}) {
 {
   T.reset(); packDFFBox(); packMUX2Box(); packREG4Box(); packADD4Box(); packRING3Box();
   buildFetchStage({ miswire: false });
-  expectCheck("s25 circuito de Fetch correcto PASA", 24, true);
+  expectCheck("s27 circuito de Fetch correcto PASA", 26, true);
 }
 {
   T.reset(); packDFFBox(); packMUX2Box(); packREG4Box(); packADD4Box(); packRING3Box();
   buildFetchStage({ miswire: true });
-  expectCheck("s25 circuito de Fetch sin conectar PC a RAM FALLA", 24, false);
+  expectCheck("s27 circuito de Fetch sin conectar PC a RAM FALLA", 26, false);
 }
 
-// s26 — Unidad de control
+// s28 — Unidad de control
 function packDEC3Box() {
   const d = dec3();
   T.pack("DEC3", [d.A0, d.A1, d.A2], d.yOuts);
@@ -742,15 +818,15 @@ function buildControlUnit({ invertASel = false } = {}) {
 {
   T.reset(); packDEC3Box();
   buildControlUnit({ invertASel: false });
-  expectCheck("s26 Unidad de control correcta PASA", 25, true);
+  expectCheck("s28 Unidad de control correcta PASA", 27, true);
 }
 {
   T.reset(); packDEC3Box();
   buildControlUnit({ invertASel: true });
-  expectCheck("s26 Unidad de control con A_SEL invertido FALLA", 25, false);
+  expectCheck("s28 Unidad de control con A_SEL invertido FALLA", 27, false);
 }
 
-// s27 & s28 — Tu primer CPU / JMP y HALT
+// s29 & s30 — Tu primer CPU / JMP y HALT
 function packALU4Box() {
   const A = [0, 1, 2, 3].map(() => T.add("switch"));
   const B = [0, 1, 2, 3].map(() => T.add("switch"));
@@ -880,22 +956,22 @@ function buildFullCpuFixture({ withoutPcRam = false, withoutHalt = false } = {})
 {
   T.reset(); packAllCpuBoxes();
   buildFullCpuFixture({ withoutPcRam: false, withoutHalt: false });
-  expectCheck("s27 Tu primer CPU correcta PASA", 26, true);
+  expectCheck("s29 Tu primer CPU correcta PASA", 28, true);
 }
 {
   T.reset(); packAllCpuBoxes();
   buildFullCpuFixture({ withoutPcRam: true, withoutHalt: false });
-  expectCheck("s27 sin cable PC a RAM FALLA", 26, false);
+  expectCheck("s29 sin cable PC a RAM FALLA", 28, false);
 }
 {
   T.reset(); packAllCpuBoxes();
   buildFullCpuFixture({ withoutPcRam: false, withoutHalt: false });
-  expectCheck("s28 JMP y HALT correcto PASA", 27, true);
+  expectCheck("s30 JMP y HALT correcto PASA", 29, true);
 }
 {
   T.reset(); packAllCpuBoxes();
   buildFullCpuFixture({ withoutPcRam: false, withoutHalt: true });
-  expectCheck("s28 sin HALT (H nunca se activa) FALLA en la parte de HALT", 27, false);
+  expectCheck("s30 sin HALT (H nunca se activa) FALLA en la parte de HALT", 29, false);
 }
 
 // Test de contenido para TODAS las lecciones
